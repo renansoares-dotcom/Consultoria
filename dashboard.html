@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+
+  <nav class="nav-cascade">
+    <div class="nav-item active">
+      <button>Início</button>
+    </div>
+
+    <div class="nav-item">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="#"><span class="code">＋</span> Novo lançamento</a>
+        <a href="#"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="#"><span class="code">✓</span> Conciliação (Pago)</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Fluxo de Caixa</button>
+      <div class="nav-panel">
+        <span class="group-label">Realizado</span>
+        <a href="#"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="#"><span class="code">4.3</span> Fluxo Mensal</a>
+        <span class="group-label">Pagamentos por Plano de Contas</span>
+        <a href="#"><span class="code">4.5</span> Entradas Pagas</a>
+        <a href="#"><span class="code">4.6</span> Saídas Pagas</a>
+        <a href="#"><span class="code">4.7</span> Transferências</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <span class="group-label">Em aberto</span>
+        <a href="#"><span class="code">5.1</span> Necessidade de Caixa</a>
+        <a href="#"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="#"><span class="code">5.3</span> Contas a Pagar</a>
+        <a href="#"><span class="code">5.5</span> Inadimplência</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <span class="group-label">Planejamento</span>
+        <a href="#"><span class="code">6.1</span> Budget Anual</a>
+        <a href="#"><span class="code">6.2</span> Forecast</a>
+        <a href="#"><span class="code">TR</span> Taxa de Realização</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <span class="group-label">Base</span>
+        <a href="#"><span class="code">1</span> Plano de Contas</a>
+        <a href="#"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="#"><span class="code">3</span> Contas Bancárias</a>
+        <a href="#"><span class="code">4</span> Centros de Custo</a>
+        <a href="#"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <span class="group-label">Sistema</span>
+        <a href="#"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="#"><span class="code">◆</span> Auditoria</a>
+        <a href="#"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="saldo-ticker">
+      <span>SALDO ATUAL</span>
+      <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
+    </div>
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Visão geral · Julho 2026</span>
+      <h1>Painel do Fluxo de Caixa</h1>
+    </div>
+    <button class="btn primary">＋ Novo lançamento</button>
+  </div>
+
+  <section class="grid grid-4" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="label">Saldo Realizado (Pago)</div>
+      <div class="big valor positivo">R$ 4.707.779,54</div>
+    </div>
+    <div class="card">
+      <div class="label">Em Aberto (Previsto)</div>
+      <div class="big valor aberto">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <div class="label">Saldo Projetado</div>
+      <div class="big valor positivo">R$ 4.707.779,54</div>
+    </div>
+    <div class="card">
+      <div class="label">Inadimplência</div>
+      <div class="big valor negativo">R$ 0,00</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="label" style="margin-bottom:14px;">Últimos lançamentos</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Plano de Contas</th><th>Favorecido</th><th>Centro de Custo</th><th>Status</th><th class="num">Valor</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-lancamentos">
+        <tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Conectando ao Supabase…</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+
+  const sessao = await exigirSessao();
+  if (sessao) {
+    const usuario = await usuarioAtual();
+    if (usuario) {
+      document.getElementById('user-nome').textContent = usuario.nome;
+      document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+    }
+  }
+
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) {
+      await supabase.auth.signOut();
+      window.location.href = '../index.html';
+    }
+  });
+
+  // Exemplo de carga real: últimos 10 lançamentos do tenant (RLS filtra automaticamente)
+  const { data: lancamentos, error } = await supabase
+    .from('lancamentos')
+    .select('data, descricao, status, valor, plano_contas(nome_conta), favorecidos(nome), centros_custo(nome)')
+    .order('data', { ascending: false })
+    .limit(10);
+
+  const tbody = document.getElementById('tabela-lancamentos');
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px;">Erro ao carregar: ${error.message}</td></tr>`;
+  } else if (!lancamentos?.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Nenhum lançamento ainda.</td></tr>`;
+  } else {
+    tbody.innerHTML = lancamentos.map(l => `
+      <tr>
+        <td>${new Date(l.data).toLocaleDateString('pt-BR')}</td>
+        <td>${l.plano_contas?.nome_conta ?? '-'}</td>
+        <td>${l.favorecidos?.nome ?? '-'}</td>
+        <td>${l.centros_custo?.nome ?? '-'}</td>
+        <td><span class="badge ${l.status.replace('_','')}">${l.status.replace('_',' ')}</span></td>
+        <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${l.valor.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+      </tr>
+    `).join('');
+  }
+</script>
+</body>
+</html>
