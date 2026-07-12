@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastros — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+
+    <div class="nav-item">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Fluxo de Caixa</button>
+      <div class="nav-panel">
+        <a href="#"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="#"><span class="code">4.3</span> Fluxo Mensal</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <a href="#"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="#"><span class="code">5.3</span> Contas a Pagar</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <a href="#"><span class="code">6.1</span> Budget Anual</a>
+        <a href="#"><span class="code">6.2</span> Forecast</a>
+      </div>
+    </div>
+
+    <div class="nav-item active">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <span class="group-label">Base</span>
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <a href="#"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="#"><span class="code">◆</span> Auditoria</a>
+        <a href="#"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Base do sistema</span>
+      <h1>Cadastros</h1>
+    </div>
+  </div>
+
+  <nav class="subnav" id="subnav"></nav>
+
+  <div class="toolbar">
+    <input class="input" id="busca" placeholder="Buscar...">
+    <span class="count-pill" id="contador">0 registros</span>
+    <div class="spacer"></div>
+    <button class="btn primary" id="btn-novo">＋ Novo</button>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody">
+        <tr><td colspan="6" class="empty-state">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<!-- Modal de criação/edição -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2 id="modal-titulo">Novo registro</h2>
+    <div class="modal-sub" id="modal-sub"></div>
+    <form id="form-registro"></form>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar">Cancelar</button>
+      <button class="btn primary" type="submit" form="form-registro" id="btn-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
+});
+
+const TENANT_ID = usuario?.tenant_id;
+
+// ============================================================================
+// Configuração de cada cadastro: campos da tabela, colunas exibidas e o
+// formulário do modal. Adicionar um novo cadastro = adicionar uma entrada aqui.
+// ============================================================================
+const ENTIDADES = {
+  plano_contas: {
+    label: 'Plano de Contas',
+    tabela: 'plano_contas',
+    ordem: 'codigo_conta',
+    colunas: [
+      { chave: 'tipo', titulo: 'Tipo', render: v => ({entrada:'Entrada', saida:'Saída', transferencia:'Transferência'}[v] || v) },
+      { chave: 'codigo_grupo', titulo: 'Cód. Grupo' },
+      { chave: 'nome_grupo', titulo: 'Grupo' },
+      { chave: 'codigo_conta', titulo: 'Cód. Conta' },
+      { chave: 'nome_conta', titulo: 'Conta' },
+      { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
+    ],
+    campos: [
+      { nome: 'tipo', label: 'Tipo', tipo: 'select', opcoes: [['entrada','Entrada'],['saida','Saída'],['transferencia','Transferência']], obrigatorio: true },
+      { nome: 'codigo_grupo', label: 'Código do Grupo', tipo: 'text', placeholder: 'Ex: 1.01', obrigatorio: true },
+      { nome: 'nome_grupo', label: 'Nome do Grupo', tipo: 'text', placeholder: 'Ex: Receita de vendas', obrigatorio: true },
+      { nome: 'codigo_conta', label: 'Código da Conta', tipo: 'text', placeholder: 'Ex: 1.01.01', obrigatorio: true },
+      { nome: 'nome_conta', label: 'Nome da Conta', tipo: 'text', placeholder: 'Ex: Receita com vendas de produtos', obrigatorio: true },
+      { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
+    ],
+  },
+  grupos_empresariais: {
+    label: 'Grupos Empresariais',
+    tabela: 'grupos_empresariais',
+    ordem: 'nome',
+    colunas: [
+      { chave: 'nome', titulo: 'Nome' },
+      { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
+    ],
+    campos: [
+      { nome: 'nome', label: 'Nome do Grupo Empresarial', tipo: 'text', placeholder: 'Ex: Matriz', obrigatorio: true },
+      { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
+    ],
+  },
+  contas_bancarias: {
+    label: 'Contas Bancárias',
+    tabela: 'contas_bancarias',
+    ordem: 'nome',
+    colunas: [
+      { chave: 'nome', titulo: 'Conta' },
+      { chave: 'disponibilidade', titulo: 'Disponibilidade' },
+      { chave: 'saldo_inicial', titulo: 'Saldo Inicial', num: true, render: v => 'R$ ' + Number(v ?? 0).toLocaleString('pt-BR', {minimumFractionDigits:2}) },
+      { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
+    ],
+    campos: [
+      { nome: 'nome', label: 'Nome da Conta', tipo: 'text', placeholder: 'Ex: Bradesco', obrigatorio: true },
+      { nome: 'disponibilidade', label: 'Disponibilidade', tipo: 'text', placeholder: 'Ex: Conta com recursos disponíveis' },
+      { nome: 'grupo_empresarial_id', label: 'Grupo Empresarial', tipo: 'select-remoto', tabelaRef: 'grupos_empresariais', obrigatorio: true },
+      { nome: 'saldo_inicial', label: 'Saldo Inicial (R$)', tipo: 'number', padrao: 0 },
+      { nome: 'data_saldo_inicial', label: 'Data do Saldo Inicial', tipo: 'date' },
+      { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
+    ],
+  },
+  centros_custo: {
+    label: 'Centros de Custo',
+    tabela: 'centros_custo',
+    ordem: 'nome',
+    colunas: [
+      { chave: 'nome', titulo: 'Nome' },
+      { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
+    ],
+    campos: [
+      { nome: 'nome', label: 'Nome do Centro de Custo', tipo: 'text', placeholder: 'Ex: Produção', obrigatorio: true },
+      { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
+    ],
+  },
+  favorecidos: {
+    label: 'Favorecidos',
+    tabela: 'favorecidos',
+    ordem: 'nome',
+    colunas: [
+      { chave: 'tipo', titulo: 'Tipo', render: v => ({fornecedores:'Fornecedor', clientes:'Cliente', funcionarios:'Funcionário', socios:'Sócio', outros:'Outro'}[v] || v) },
+      { chave: 'nome', titulo: 'Nome' },
+      { chave: 'segmento', titulo: 'Segmento' },
+      { chave: 'cnpj_cpf', titulo: 'CNPJ/CPF' },
+      { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
+    ],
+    campos: [
+      { nome: 'tipo', label: 'Tipo', tipo: 'select', opcoes: [['fornecedores','Fornecedor'],['clientes','Cliente'],['funcionarios','Funcionário'],['socios','Sócio'],['outros','Outro']], obrigatorio: true },
+      { nome: 'nome', label: 'Nome do Favorecido', tipo: 'text', obrigatorio: true },
+      { nome: 'segmento', label: 'Segmento', tipo: 'text' },
+      { nome: 'cnpj_cpf', label: 'CNPJ / CPF', tipo: 'text' },
+      { nome: 'forma_pagamento', label: 'Forma de Pagamento', tipo: 'text' },
+      { nome: 'dados_bancarios', label: 'Dados Bancários', tipo: 'text' },
+      { nome: 'periodicidade', label: 'Periodicidade', tipo: 'text' },
+      { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
+    ],
+  },
+};
+
+let entidadeAtual = Object.keys(ENTIDADES)[0];
+let registros = [];
+let editandoId = null;
+const cacheRef = {}; // cache de listas para selects remotos (ex: grupos_empresariais)
+
+// ---------- Sub-navegação ----------
+const subnav = document.getElementById('subnav');
+subnav.innerHTML = Object.entries(ENTIDADES).map(([chave, e]) =>
+  `<button data-entidade="${chave}">${e.label}</button>`
+).join('');
+subnav.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-entidade]');
+  if (!btn) return;
+  entidadeAtual = btn.dataset.entidade;
+  location.hash = entidadeAtual;
+  render();
+});
+
+function marcarSubnavAtiva() {
+  [...subnav.querySelectorAll('button')].forEach(b => b.classList.toggle('active', b.dataset.entidade === entidadeAtual));
+}
+
+if (location.hash && ENTIDADES[location.hash.slice(1)]) {
+  entidadeAtual = location.hash.slice(1);
+}
+
+// ---------- Carrega e renderiza a tabela ----------
+async function carregar() {
+  const cfg = ENTIDADES[entidadeAtual];
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="${cfg.colunas.length+1}" class="empty-state">Carregando…</td></tr>`;
+  const { data, error } = await supabase.from(cfg.tabela).select('*').order(cfg.ordem);
+  if (error) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="${cfg.colunas.length+1}" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    registros = [];
+    return;
+  }
+  registros = data || [];
+  desenharTabela();
+}
+
+function desenharTabela() {
+  const cfg = ENTIDADES[entidadeAtual];
+  const busca = document.getElementById('busca').value.trim().toLowerCase();
+  const filtrados = busca
+    ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca))
+    : registros;
+
+  document.getElementById('thead').innerHTML = `<tr>${cfg.colunas.map(c => `<th${c.num?' class="num"':''}>${c.titulo}</th>`).join('')}<th class="num">Ações</th></tr>`;
+  document.getElementById('contador').textContent = `${filtrados.length} registro${filtrados.length===1?'':'s'}`;
+
+  if (!filtrados.length) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="${cfg.colunas.length+1}" class="empty-state">Nenhum registro encontrado. Clique em "＋ Novo" para cadastrar.</td></tr>`;
+    return;
+  }
+
+  document.getElementById('tbody').innerHTML = filtrados.map(r => `
+    <tr>
+      ${cfg.colunas.map(c => `<td${c.num?' class="num"':''}>${c.render ? c.render(r[c.chave]) : (r[c.chave] ?? '-')}</td>`).join('')}
+      <td class="num">
+        <div class="row-actions">
+          <button class="icon-btn" data-editar="${r.id}">Editar</button>
+          <button class="icon-btn danger" data-excluir="${r.id}">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('busca').addEventListener('input', desenharTabela);
+
+document.getElementById('tbody').addEventListener('click', async e => {
+  const idEditar = e.target.dataset?.editar;
+  const idExcluir = e.target.dataset?.excluir;
+  if (idEditar) abrirModal(registros.find(r => String(r.id) === idEditar));
+  if (idExcluir) {
+    if (!confirm('Excluir este registro? Essa ação não pode ser desfeita.')) return;
+    const cfg = ENTIDADES[entidadeAtual];
+    const { error } = await supabase.from(cfg.tabela).delete().eq('id', idExcluir);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+    await carregar();
+  }
+});
+
+// ---------- Modal (criar/editar) ----------
+const overlay = document.getElementById('modal-overlay');
+const form = document.getElementById('form-registro');
+
+async function opcoesRemotas(tabelaRef) {
+  if (cacheRef[tabelaRef]) return cacheRef[tabelaRef];
+  const { data } = await supabase.from(tabelaRef).select('id, nome').eq('ativo', true).order('nome');
+  cacheRef[tabelaRef] = data || [];
+  return cacheRef[tabelaRef];
+}
+
+async function abrirModal(registro = null) {
+  const cfg = ENTIDADES[entidadeAtual];
+  editandoId = registro?.id ?? null;
+  document.getElementById('modal-titulo').textContent = registro ? `Editar ${cfg.label.replace(/s$/,'')}` : `Novo em ${cfg.label}`;
+  document.getElementById('modal-sub').textContent = registro ? 'Atualize os campos e salve.' : 'Preencha os campos abaixo.';
+
+  const camposHtml = [];
+  for (const campo of cfg.campos) {
+    const valor = registro ? registro[campo.nome] : (campo.padrao ?? '');
+    if (campo.tipo === 'checkbox') {
+      camposHtml.push(`
+        <div class="checkbox-field">
+          <input type="checkbox" id="f_${campo.nome}" ${valor ? 'checked' : ''}>
+          <label for="f_${campo.nome}">${campo.label}</label>
+        </div>`);
+    } else if (campo.tipo === 'select') {
+      camposHtml.push(`
+        <label class="field">
+          <span class="field-label">${campo.label}${campo.obrigatorio?' *':''}</span>
+          <select class="input" id="f_${campo.nome}" ${campo.obrigatorio?'required':''}>
+            <option value="">Selecione…</option>
+            ${campo.opcoes.map(([v,t]) => `<option value="${v}" ${valor===v?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </label>`);
+    } else if (campo.tipo === 'select-remoto') {
+      const opts = await opcoesRemotas(campo.tabelaRef);
+      camposHtml.push(`
+        <label class="field">
+          <span class="field-label">${campo.label}${campo.obrigatorio?' *':''}</span>
+          <select class="input" id="f_${campo.nome}" ${campo.obrigatorio?'required':''}>
+            <option value="">Selecione…</option>
+            ${opts.map(o => `<option value="${o.id}" ${valor===o.id?'selected':''}>${o.nome}</option>`).join('')}
+          </select>
+        </label>`);
+    } else {
+      camposHtml.push(`
+        <label class="field">
+          <span class="field-label">${campo.label}${campo.obrigatorio?' *':''}</span>
+          <input class="input" type="${campo.tipo}" id="f_${campo.nome}" placeholder="${campo.placeholder ?? ''}" value="${valor ?? ''}" ${campo.obrigatorio?'required':''}>
+        </label>`);
+    }
+  }
+  form.innerHTML = camposHtml.join('');
+  overlay.classList.add('open');
+}
+
+function fecharModal() {
+  overlay.classList.remove('open');
+  form.innerHTML = '';
+  editandoId = null;
+}
+
+document.getElementById('btn-novo').addEventListener('click', () => abrirModal());
+document.getElementById('btn-cancelar').addEventListener('click', fecharModal);
+overlay.addEventListener('click', e => { if (e.target === overlay) fecharModal(); });
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const cfg = ENTIDADES[entidadeAtual];
+  const payload = { tenant_id: TENANT_ID };
+  for (const campo of cfg.campos) {
+    const el = document.getElementById(`f_${campo.nome}`);
+    if (campo.tipo === 'checkbox') payload[campo.nome] = el.checked;
+    else if (campo.tipo === 'number') payload[campo.nome] = el.value === '' ? null : Number(el.value);
+    else payload[campo.nome] = el.value === '' ? null : el.value;
+  }
+
+  const btnSalvar = document.getElementById('btn-salvar');
+  btnSalvar.disabled = true; btnSalvar.textContent = 'Salvando…';
+
+  const query = editandoId
+    ? supabase.from(cfg.tabela).update(payload).eq('id', editandoId)
+    : supabase.from(cfg.tabela).insert(payload);
+
+  const { error } = await query;
+  btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar';
+
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  fecharModal();
+  await carregar();
+});
+
+// ---------- Boot ----------
+async function render() {
+  marcarSubnavAtiva();
+  document.getElementById('busca').value = '';
+  await carregar();
+}
+render();
+</script>
+</body>
+</html>
