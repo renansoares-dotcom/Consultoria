@@ -306,6 +306,95 @@ td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-
 label.field { display: block; margin-bottom: 14px; }
 label.field .field-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink-soft); }
 
+/* ---------- Sub-navegação (usada dentro de Cadastros) ---------- */
+.subnav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line-strong);
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.subnav button {
+  all: unset;
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.subnav button:hover { color: var(--ink); }
+.subnav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ---------- Toolbar de listagem ---------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.toolbar .input { max-width: 280px; }
+.toolbar .spacer { flex: 1; }
+.count-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+/* ---------- Ações de linha ---------- */
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.icon-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-soft);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.icon-btn.danger:hover { background: var(--red-soft); color: var(--red); }
+
+.status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; }
+.status-dot.on { background: var(--accent); }
+.status-dot.off { background: var(--line-strong); }
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(16,35,28,.45);
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh 16px;
+  z-index: 200;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  width: 100%; max-width: 520px;
+  background: var(--paper-raised);
+  border-radius: var(--radius-md);
+  box-shadow: 0 30px 70px rgba(0,0,0,.3);
+  padding: 24px 26px 22px;
+}
+.modal h2 { font-size: 18px; margin-bottom: 4px; }
+.modal .modal-sub { color: var(--ink-soft); font-size: 12.5px; margin-bottom: 18px; }
+.modal .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.checkbox-field { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 16px; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
