@@ -23,6 +23,13 @@
       </div>
     </div>
     <div class="nav-item">
+      <button>Fluxo de Caixa</button>
+      <div class="nav-panel">
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
+      </div>
+    </div>
+    <div class="nav-item">
       <button>Cadastros</button>
       <div class="nav-panel">
         <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
@@ -79,6 +86,8 @@
 
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+import { initNav } from '../js/nav.js';
+initNav();
 
 const sessao = await exigirSessao();
 const usuario = await usuarioAtual();
