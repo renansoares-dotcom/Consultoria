@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<style>
+  .diff-box { font-family: var(--font-mono); font-size: 11px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px; max-width: 360px; max-height: 120px; overflow: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item active">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <span class="group-label">Sistema</span>
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Administração</span>
+      <h1>Auditoria</h1>
+    </div>
+  </div>
+
+  <div class="toolbar" style="flex-wrap:wrap;">
+    <select class="input" id="f_tabela" style="max-width:180px;">
+      <option value="">Tabela: todas</option>
+      <option value="lancamentos">Lançamentos</option>
+      <option value="plano_contas">Plano de Contas</option>
+      <option value="contas_bancarias">Contas Bancárias</option>
+      <option value="centros_custo">Centros de Custo</option>
+      <option value="favorecidos">Favorecidos</option>
+      <option value="grupos_empresariais">Grupos Empresariais</option>
+    </select>
+    <select class="input" id="f_acao" style="max-width:150px;">
+      <option value="">Ação: todas</option>
+      <option value="insert">Criação</option>
+      <option value="update">Edição</option>
+      <option value="delete">Exclusão</option>
+    </select>
+    <input class="input" type="date" id="f_data" style="max-width:160px;">
+    <span class="count-pill" id="contador">0 eventos</span>
+    <div class="spacer"></div>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead>
+        <tr><th>Quando</th><th>Tabela</th><th>Ação</th><th>Alterações</th></tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="4" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+  <p style="color:var(--ink-soft); font-size:11.5px; margin-top:10px;">
+    Hoje só a tabela <strong>lançamentos</strong> tem trigger de auditoria ativo (ver <code>supabase/schema.sql</code>). Replique o mesmo trigger nas demais tabelas quando quiser rastrear também cadastros.
+  </p>
+</main>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+import { initNav } from '../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
+});
+
+const ROTULO_ACAO = { insert: 'Criação', update: 'Edição', delete: 'Exclusão', login: 'Login', export: 'Exportação' };
+const CLASSE_ACAO = { insert: 'pago', update: 'aberto', delete: 'inadimplente' };
+
+async function carregar() {
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="4" class="empty-state">Carregando…</td></tr>`;
+
+  let query = supabase.from('auditoria').select('*').order('criado_em', { ascending: false }).limit(200);
+  const tabela = document.getElementById('f_tabela').value;
+  const acao = document.getElementById('f_acao').value;
+  const data = document.getElementById('f_data').value;
+  if (tabela) query = query.eq('tabela', tabela);
+  if (acao) query = query.eq('acao', acao);
+  if (data) query = query.gte('criado_em', `${data}T00:00:00`).lte('criado_em', `${data}T23:59:59`);
+
+  const { data: rows, error } = await query;
+  const tbody = document.getElementById('tbody');
+  if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+
+  document.getElementById('contador').textContent = `${(rows||[]).length} evento${(rows||[]).length===1?'':'s'}`;
+
+  if (!rows?.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nenhum evento encontrado.</td></tr>`; return; }
+
+  tbody.innerHTML = rows.map(r => {
+    const diff = r.acao === 'update'
+      ? montarDiff(r.dados_antes, r.dados_depois)
+      : JSON.stringify(r.dados_depois ?? r.dados_antes ?? {}, null, 1);
+    return `
+      <tr>
+        <td class="mono" style="font-size:12px;">${new Date(r.criado_em).toLocaleString('pt-BR')}</td>
+        <td>${r.tabela}</td>
+        <td><span class="badge ${CLASSE_ACAO[r.acao] ?? 'aberto'}">${ROTULO_ACAO[r.acao] ?? r.acao}</span></td>
+        <td><div class="diff-box">${diff}</div></td>
+      </tr>`;
+  }).join('');
+}
+
+function montarDiff(antes, depois) {
+  if (!antes || !depois) return '-';
+  const linhas = [];
+  const chaves = new Set([...Object.keys(antes), ...Object.keys(depois)]);
+  chaves.forEach(k => {
+    if (['criado_em','atualizado_em','id'].includes(k)) return;
+    const a = antes[k], d = depois[k];
+    if (JSON.stringify(a) !== JSON.stringify(d)) linhas.push(`${k}: ${a ?? '—'} → ${d ?? '—'}`);
+  });
+  return linhas.length ? linhas.join('\n') : 'Sem alteração de campos.';
+}
+
+document.getElementById('f_tabela').addEventListener('change', carregar);
+document.getElementById('f_acao').addEventListener('change', carregar);
+document.getElementById('f_data').addEventListener('change', carregar);
+
+await carregar();
+</script>
+</body>
+</html>

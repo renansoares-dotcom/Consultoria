@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usuários — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+    <div class="nav-item active">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <span class="group-label">Sistema</span>
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Administração</span>
+      <h1>Usuários e Níveis de Acesso</h1>
+    </div>
+  </div>
+
+  <nav class="subnav">
+    <button class="active" data-aba="usuarios">Usuários</button>
+    <button data-aba="perfis">Perfis de Acesso</button>
+  </nav>
+
+  <div id="aviso-passo" class="card" style="margin-bottom:16px; font-size:12.5px; color:var(--ink-soft);">
+    <strong>Como adicionar um novo usuário:</strong> crie o login em Supabase → Authentication → Users → Add user (e-mail/senha, marque "Auto Confirm"). Depois volte aqui e clique em "＋ Vincular usuário" para associá-lo a um perfil de acesso.
+  </div>
+
+  <!-- ===== Aba Usuários ===== -->
+  <div id="painel-usuarios">
+    <div class="toolbar">
+      <span class="count-pill" id="contador-usuarios">0 usuários</span>
+      <div class="spacer"></div>
+      <button class="btn primary" id="btn-vincular">＋ Vincular usuário</button>
+    </div>
+    <section class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th class="num">Ações</th></tr></thead>
+        <tbody id="tbody-usuarios"><tr><td colspan="5" class="empty-state">Carregando…</td></tr></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ===== Aba Perfis ===== -->
+  <div id="painel-perfis" style="display:none;">
+    <div class="toolbar">
+      <span class="count-pill" id="contador-perfis">0 perfis</span>
+      <div class="spacer"></div>
+      <button class="btn primary" id="btn-novo-perfil">＋ Novo perfil</button>
+    </div>
+    <section class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead><tr><th>Nome</th><th>Lançamentos</th><th>Cadastros</th><th>Relatórios</th><th>Usuários</th><th class="num">Ações</th></tr></thead>
+        <tbody id="tbody-perfis"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
+      </table>
+    </section>
+  </div>
+</main>
+
+<!-- Modal: vincular usuário -->
+<div class="modal-overlay" id="modal-vincular">
+  <div class="modal">
+    <h2>Vincular usuário</h2>
+    <div class="modal-sub">Cole o UID do usuário criado no Supabase Authentication.</div>
+    <form id="form-vincular">
+      <label class="field"><span class="field-label">UID (Authentication → Users) *</span><input class="input" id="v_uid" required placeholder="ex: 9c62d32c-f2b3-46f2-..."></label>
+      <label class="field"><span class="field-label">Nome *</span><input class="input" id="v_nome" required></label>
+      <label class="field"><span class="field-label">E-mail *</span><input class="input" type="email" id="v_email" required></label>
+      <label class="field"><span class="field-label">Perfil de Acesso *</span><select class="input" id="v_perfil" required></select></label>
+    </form>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="cancelar-vincular">Cancelar</button>
+      <button class="btn primary" type="submit" form="form-vincular">Vincular</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: perfil de acesso -->
+<div class="modal-overlay" id="modal-perfil">
+  <div class="modal">
+    <h2 id="titulo-perfil">Novo perfil</h2>
+    <div class="modal-sub">Defina o nível de acesso de cada módulo.</div>
+    <form id="form-perfil">
+      <label class="field"><span class="field-label">Nome do perfil *</span><input class="input" id="p_nome" required placeholder="Ex: Financeiro"></label>
+      <div class="row-2">
+        <label class="field"><span class="field-label">Lançamentos</span>
+          <select class="input" id="p_lancamentos"><option value="none">Sem acesso</option><option value="r">Somente visualizar</option><option value="rw" selected>Ver e editar</option></select>
+        </label>
+        <label class="field"><span class="field-label">Cadastros</span>
+          <select class="input" id="p_cadastros"><option value="none">Sem acesso</option><option value="r">Somente visualizar</option><option value="rw" selected>Ver e editar</option></select>
+        </label>
+      </div>
+      <div class="row-2">
+        <label class="field"><span class="field-label">Relatórios</span>
+          <select class="input" id="p_relatorios"><option value="none">Sem acesso</option><option value="r" selected>Somente visualizar</option></select>
+        </label>
+        <label class="field"><span class="field-label">Usuários</span>
+          <select class="input" id="p_usuarios"><option value="none" selected>Sem acesso</option><option value="r">Somente visualizar</option><option value="rw">Ver e editar</option></select>
+        </label>
+      </div>
+    </form>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="cancelar-perfil">Cancelar</button>
+      <button class="btn primary" type="submit" form="form-perfil">Salvar perfil</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+import { initNav } from '../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  const aba = b.dataset.aba;
+  document.getElementById('painel-usuarios').style.display = aba === 'usuarios' ? 'block' : 'none';
+  document.getElementById('painel-perfis').style.display = aba === 'perfis' ? 'block' : 'none';
+}));
+
+// ---------- Usuários ----------
+async function carregarUsuarios() {
+  const { data, error } = await supabase.from('usuarios').select('id, nome, email, ativo, perfis_acesso(nome)').order('nome');
+  const tbody = document.getElementById('tbody-usuarios');
+  if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+  document.getElementById('contador-usuarios').textContent = `${(data||[]).length} usuário${(data||[]).length===1?'':'s'}`;
+  tbody.innerHTML = (data||[]).length ? data.map(u => `
+    <tr>
+      <td>${u.nome}</td>
+      <td>${u.email}</td>
+      <td>${u.perfis_acesso?.nome ?? '<span style="color:var(--ink-soft)">Sem perfil</span>'}</td>
+      <td>${u.ativo ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo'}</td>
+      <td class="num"><div class="row-actions">
+        <button class="icon-btn" data-toggle="${u.id}" data-ativo="${u.ativo}">${u.ativo ? 'Desativar' : 'Ativar'}</button>
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="5" class="empty-state">Nenhum usuário vinculado ainda.</td></tr>`;
+}
+
+document.getElementById('tbody-usuarios').addEventListener('click', async e => {
+  const id = e.target.dataset?.toggle;
+  if (!id) return;
+  const ativo = e.target.dataset.ativo === 'true';
+  const { error } = await supabase.from('usuarios').update({ ativo: !ativo }).eq('id', id);
+  if (error) { alert('Erro: ' + error.message); return; }
+  await carregarUsuarios();
+});
+
+// Modal vincular
+const modalVincular = document.getElementById('modal-vincular');
+document.getElementById('btn-vincular').addEventListener('click', async () => {
+  const { data: perfis } = await supabase.from('perfis_acesso').select('id, nome').order('nome');
+  document.getElementById('v_perfil').innerHTML = (perfis||[]).map(p => `<option value="${p.id}">${p.nome}</option>`).join('') || '<option value="">Cadastre um perfil primeiro</option>';
+  document.getElementById('form-vincular').reset();
+  modalVincular.classList.add('open');
+});
+document.getElementById('cancelar-vincular').addEventListener('click', () => modalVincular.classList.remove('open'));
+modalVincular.addEventListener('click', e => { if (e.target === modalVincular) modalVincular.classList.remove('open'); });
+
+document.getElementById('form-vincular').addEventListener('submit', async e => {
+  e.preventDefault();
+  const payload = {
+    id: document.getElementById('v_uid').value.trim(),
+    tenant_id: TENANT_ID,
+    nome: document.getElementById('v_nome').value.trim(),
+    email: document.getElementById('v_email').value.trim(),
+    perfil_id: document.getElementById('v_perfil').value,
+  };
+  const { error } = await supabase.from('usuarios').insert(payload);
+  if (error) { alert('Erro ao vincular: ' + error.message); return; }
+  modalVincular.classList.remove('open');
+  await carregarUsuarios();
+});
+
+// ---------- Perfis de Acesso ----------
+const ROTULO_NIVEL = { none: '—', r: 'Ver', rw: 'Ver e editar' };
+async function carregarPerfis() {
+  const { data, error } = await supabase.from('perfis_acesso').select('*').order('nome');
+  const tbody = document.getElementById('tbody-perfis');
+  if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+  document.getElementById('contador-perfis').textContent = `${(data||[]).length} perfis`;
+  tbody.innerHTML = (data||[]).length ? data.map(p => `
+    <tr>
+      <td>${p.nome}</td>
+      <td>${ROTULO_NIVEL[p.permissoes?.lancamentos] ?? '—'}</td>
+      <td>${ROTULO_NIVEL[p.permissoes?.cadastros] ?? '—'}</td>
+      <td>${ROTULO_NIVEL[p.permissoes?.relatorios] ?? '—'}</td>
+      <td>${ROTULO_NIVEL[p.permissoes?.usuarios] ?? '—'}</td>
+      <td class="num"><div class="row-actions">
+        <button class="icon-btn" data-editar-perfil="${p.id}">Editar</button>
+        <button class="icon-btn danger" data-excluir-perfil="${p.id}">Excluir</button>
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="6" class="empty-state">Nenhum perfil cadastrado.</td></tr>`;
+}
+
+let perfisCache = [];
+async function abrirModalPerfil(id = null) {
+  const modal = document.getElementById('modal-perfil');
+  document.getElementById('form-perfil').reset();
+  document.getElementById('titulo-perfil').textContent = id ? 'Editar perfil' : 'Novo perfil';
+  modal.dataset.editando = id ?? '';
+
+  if (id) {
+    if (!perfisCache.length) { const { data } = await supabase.from('perfis_acesso').select('*'); perfisCache = data || []; }
+    const p = perfisCache.find(x => x.id === id);
+    if (p) {
+      document.getElementById('p_nome').value = p.nome;
+      document.getElementById('p_lancamentos').value = p.permissoes?.lancamentos ?? 'rw';
+      document.getElementById('p_cadastros').value = p.permissoes?.cadastros ?? 'rw';
+      document.getElementById('p_relatorios').value = p.permissoes?.relatorios ?? 'r';
+      document.getElementById('p_usuarios').value = p.permissoes?.usuarios ?? 'none';
+    }
+  }
+  modal.classList.add('open');
+}
+document.getElementById('btn-novo-perfil').addEventListener('click', () => abrirModalPerfil());
+document.getElementById('cancelar-perfil').addEventListener('click', () => document.getElementById('modal-perfil').classList.remove('open'));
+document.getElementById('modal-perfil').addEventListener('click', e => { if (e.target.id === 'modal-perfil') e.target.classList.remove('open'); });
+
+document.getElementById('tbody-perfis').addEventListener('click', async e => {
+  const editar = e.target.dataset?.editarPerfil;
+  const excluir = e.target.dataset?.excluirPerfil;
+  if (editar) abrirModalPerfil(editar);
+  if (excluir) {
+    if (!confirm('Excluir este perfil? Usuários vinculados ficarão sem perfil.')) return;
+    const { error } = await supabase.from('perfis_acesso').delete().eq('id', excluir);
+    if (error) { alert('Erro: ' + error.message); return; }
+    perfisCache = [];
+    await carregarPerfis();
+  }
+});
+
+document.getElementById('form-perfil').addEventListener('submit', async e => {
+  e.preventDefault();
+  const modal = document.getElementById('modal-perfil');
+  const editando = modal.dataset.editando;
+  const payload = {
+    nome: document.getElementById('p_nome').value.trim(),
+    permissoes: {
+      lancamentos: document.getElementById('p_lancamentos').value,
+      cadastros: document.getElementById('p_cadastros').value,
+      relatorios: document.getElementById('p_relatorios').value,
+      usuarios: document.getElementById('p_usuarios').value,
+    },
+  };
+  if (!editando) payload.tenant_id = TENANT_ID;
+  const query = editando ? supabase.from('perfis_acesso').update(payload).eq('id', editando) : supabase.from('perfis_acesso').insert(payload);
+  const { error } = await query;
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  perfisCache = [];
+  modal.classList.remove('open');
+  await carregarPerfis();
+});
+
+await Promise.all([carregarUsuarios(), carregarPerfis()]);
+</script>
+</body>
+</html>
