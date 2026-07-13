@@ -29,7 +29,7 @@
   /* Tipografia */
   --font-display: "IBM Plex Sans", "Inter", -apple-system, Segoe UI, sans-serif;
   --font-body:    "Inter", -apple-system, Segoe UI, sans-serif;
-  --font-mono:    "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+  --font-mono:    "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
 
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -304,7 +304,7 @@ thead th {
 }
 tbody td { padding: 9px 10px; border-bottom: 1px solid var(--line); }
 tbody tr:hover { background: var(--accent-soft); }
-td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
