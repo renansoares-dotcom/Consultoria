@@ -439,6 +439,16 @@ label.field .field-label { display: block; font-size: 12px; font-weight: 600; ma
   * { transition: none !important; animation: none !important; }
 }
 
+/* ---------- Impressão / Exportar PDF ---------- */
+@media print {
+  .topbar, .toolbar, .page-header .btn, .no-print, .modal-overlay { display: none !important; }
+  body { background: #fff; }
+  .page { max-width: 100%; padding: 0; }
+  .card { box-shadow: none; border: 1px solid #ccc; }
+  table { font-size: 11px; }
+  a[href]::after { content: ""; }
+}
+
 @media (max-width: 900px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
 
