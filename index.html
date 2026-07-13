@@ -73,6 +73,8 @@
 
 <script type="module">
   import { supabase } from './js/supabase-client.js';
+  import { initTheme } from './js/theme.js';
+  initTheme();
 
   const form = document.getElementById('form-login');
   const erroBox = document.getElementById('erro');
