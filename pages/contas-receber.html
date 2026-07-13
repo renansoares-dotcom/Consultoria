@@ -233,9 +233,19 @@ document.getElementById('tbody').addEventListener('click', async e => {
   if (editar) window.location.href = `lancamento-novo.html?id=${editar}`;
 
   if (pagar) {
-    const hoje = new Date().toISOString().slice(0,10);
-    const { error } = await supabase.from('lancamentos').update({ status: 'pago', data_pagamento: hoje }).eq('id', pagar);
-    if (error) { alert('Erro: ' + error.message); return; }
+    if (!confirm('Confirmar baixa total deste lançamento pelo saldo em aberto?')) return;
+    const { data: lanc } = await supabase.from('lancamentos').select('valor').eq('id', pagar).single();
+    const { data: baixasExistentes } = await supabase.from('baixas').select('valor_pago, desconto').eq('lancamento_id', pagar);
+    const totalJaPago = (baixasExistentes||[]).reduce((s,b) => s + Number(b.valor_pago) + Number(b.desconto), 0);
+    const saldoRestante = Math.abs(lanc.valor) - totalJaPago;
+    const { error } = await supabase.from('baixas').insert({
+      tenant_id: usuario?.tenant_id,
+      lancamento_id: pagar,
+      data: new Date().toISOString().slice(0,10),
+      valor_pago: saldoRestante,
+      criado_por: usuario?.id || null,
+    });
+    if (error) { alert('Erro ao dar baixa: ' + error.message); return; }
     await carregar();
   }
 
