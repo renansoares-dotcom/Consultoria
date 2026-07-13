@@ -37,6 +37,37 @@
   --shadow-card: 0 1px 2px rgba(18,22,28,.04), 0 1px 0 rgba(18,22,28,.03);
 }
 
+/* ---------- Tema escuro ---------- */
+[data-theme="dark"] {
+  --ink:            #e8eae6;
+  --ink-soft:       #98a29b;
+  --paper:          #0d1210;
+  --paper-raised:   #161d1a;
+  --line:           #262f2a;
+  --line-strong:    #37423b;
+
+  --accent:         #34a67d;
+  --accent-soft:    #143026;
+  --amber:          #d9a44c;
+  --amber-soft:     #33280f;
+  --red:            #e08585;
+  --red-soft:       #351d1d;
+
+  --shadow-card: 0 1px 2px rgba(0,0,0,.35), 0 1px 0 rgba(0,0,0,.25);
+}
+
+.theme-toggle {
+  all: unset;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--radius-md);
+  color: #cfd8d2;
+}
+.theme-toggle:hover { background: var(--ledger-tab-hover); }
+
 @font-face-fallback { /* carregado via <link> no HTML: Fraunces, Inter, IBM Plex Mono (Google Fonts) */ }
 
 * { box-sizing: border-box; }
@@ -49,6 +80,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color .15s ease, color .15s ease;
 }
 
 a { color: inherit; }
@@ -302,7 +334,7 @@ td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-
   padding: 11px 12px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--paper-raised);
   color: var(--ink);
 }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
