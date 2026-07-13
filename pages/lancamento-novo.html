@@ -512,6 +512,13 @@ async function carregarPlanoContas() {
   planosCache = data || [];
 }
 
+// Estado da Distribuição (rateio) — precisa existir ANTES de alternarBlocoConta()
+// ser chamado logo abaixo, já que ele já renderiza a aba Distribuição.
+let distContas = [];
+let distCCs = [];
+let centrosCustoCache = [];
+supabase.from('centros_custo').select('id, nome').eq('ativo', true).order('nome').then(({ data }) => { centrosCustoCache = data || []; });
+
 await Promise.all([
   carregarSelect('f_grupo', 'grupos_empresariais'),
   carregarSelect('f_favorecido', 'favorecidos'),
@@ -544,11 +551,6 @@ document.getElementById('f_aprovado').addEventListener('change', e => {
 // ============================================================================
 // DISTRIBUIÇÃO (rateio)
 // ============================================================================
-let distContas = [];
-let distCCs = [];
-let centrosCustoCache = [];
-supabase.from('centros_custo').select('id, nome').eq('ativo', true).order('nome').then(({ data }) => { centrosCustoCache = data || []; });
-
 function valorTotalAtual() { return Number(document.getElementById('f_valor').value || 0); }
 
 function renderDistribuicaoConta() {
