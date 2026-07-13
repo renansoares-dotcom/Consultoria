@@ -78,13 +78,43 @@
   }
   .janela-abas button { padding: 10px 14px; font-size: 12.5px; }
 
-  .janela-corpo { padding: 20px 22px 24px; }
-  .janela-corpo label.field { margin-bottom: 12px; }
+  .janela-corpo { padding: 18px 22px 20px; }
   .janela-corpo .field-label { font-size: 11px; margin-bottom: 3px; }
-  .janela-corpo .input { padding: 8px 10px; font-size: 13px; }
+  .janela-corpo .input { padding: 7px 9px; font-size: 13px; width: 100%; }
 
   .janela-secao { padding: 16px 0; border-bottom: 1px solid var(--line); }
   .janela-secao:first-child { padding-top: 0; }
+
+  /* ---------- Campos com largura própria (não esticam mais 100%) ---------- */
+  .linha-flex { display: flex; flex-wrap: wrap; gap: 12px 14px; margin-bottom: 12px; }
+  .linha-flex .field { margin-bottom: 0; }
+  .f-70  { width: 70px !important; }
+  .f-100 { width: 100px !important; }
+  .f-130 { width: 130px !important; }
+  .f-160 { width: 160px !important; }
+  .f-200 { width: 200px !important; }
+  .f-260 { width: 260px !important; }
+  .f-grow { flex: 1 1 220px; }
+
+  .dados-grid { display: grid; grid-template-columns: 1fr 250px; gap: 0 22px; align-items: start; }
+  @media (max-width: 860px) { .dados-grid { grid-template-columns: 1fr; } }
+  .painel-lateral { display: flex; flex-direction: column; gap: 14px; }
+  .painel-lateral textarea.input {
+    width: 100%; min-height: 132px; resize: vertical;
+    font-family: var(--font-body); font-size: 13px; padding: 8px 9px;
+    border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink);
+  }
+  .caixa-info {
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px;
+    background: var(--paper); font-size: 11.5px; color: var(--ink-soft); line-height: 1.6;
+  }
+  .caixa-info strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Baixas efetuadas — grade persistente na janela ---------- */
+  .baixas-persistentes { margin-top: 4px; }
+  .baixas-persistentes-titulo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .baixas-persistentes table { font-size: 12px; }
+  .baixas-tabela-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
 </style>
 </head>
 <body>
@@ -154,7 +184,7 @@
   </div>
 </header>
 
-<main class="page" style="max-width:960px; padding-top:24px;">
+<main class="page" style="max-width:1180px; padding-top:24px;">
   <div class="janela">
     <div class="janela-titulo">
       <div class="janela-titulo-texto">
@@ -190,141 +220,147 @@
   <!-- ============================== ABA DADOS ============================== -->
   <div id="tab-dados">
     <form id="form-dados">
+      <div class="dados-grid">
 
-      <div class="row-2">
-        <label class="field">
-          <span class="field-label">Tipo de Lançamento *</span>
-          <select class="input" id="f_tipo" required>
-            <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
-            <option value="transferencia">Transferência</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="field-label">Grupo Empresarial *</span>
-          <select class="input" id="f_grupo" required></select>
-        </label>
+        <!-- Coluna principal: campos compactos -->
+        <div>
+          <div class="linha-flex">
+            <label class="field f-160">
+              <span class="field-label">Tipo de Lançamento *</span>
+              <select class="input" id="f_tipo" required>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+                <option value="transferencia">Transferência</option>
+              </select>
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Grupo Empresarial *</span>
+              <select class="input" id="f_grupo" required></select>
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Data (competência) *</span>
+              <input class="input" type="date" id="f_data" required>
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Data de Emissão</span>
+              <input class="input" type="date" id="f_data_emissao">
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-160">
+              <span class="field-label">Nº do Documento</span>
+              <input class="input" type="text" id="f_documento" placeholder="Ex: NF 12345">
+            </label>
+            <label class="field f-70">
+              <span class="field-label">Parcela</span>
+              <input class="input" type="number" min="1" id="f_parcela_num" placeholder="1">
+            </label>
+            <label class="field f-70">
+              <span class="field-label">de</span>
+              <input class="input" type="number" min="1" id="f_parcela_total" placeholder="1">
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Forma de Pagamento</span>
+              <select class="input" id="f_forma_pagamento">
+                <option value="">Selecione…</option>
+                <option>PIX</option><option>Boleto</option><option>TED</option><option>Cartão</option>
+                <option>Dinheiro</option><option>Cheque</option><option>Débito Automático</option><option>Outro</option>
+              </select>
+            </label>
+            <label class="field f-grow">
+              <span class="field-label">Favorecido</span>
+              <select class="input" id="f_favorecido"><option value="">Selecione…</option></select>
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-grow">
+              <span class="field-label">Descrição</span>
+              <input class="input" type="text" id="f_descricao" placeholder="Ex: Pagamento de fornecedor XYZ">
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-160">
+              <span class="field-label">Valor Original (R$) *</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor" placeholder="0,00" required>
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Status</span>
+              <select class="input" id="f_status">
+                <option value="em_aberto">Em aberto</option>
+                <option value="inadimplente">Inadimplente</option>
+                <option value="parcial" disabled>Parcial (automático)</option>
+                <option value="pago" disabled>Pago (automático)</option>
+              </select>
+            </label>
+            <div id="bloco-conta-unica">
+              <label class="field f-260">
+                <span class="field-label">Conta Bancária *</span>
+                <select class="input" id="f_conta"><option value="">Selecione…</option></select>
+              </label>
+            </div>
+            <div id="bloco-transferencia" style="display:none; gap:12px 14px;" class="linha-flex">
+              <label class="field f-200">
+                <span class="field-label">Conta de Origem *</span>
+                <select class="input" id="f_conta_origem"><option value="">Selecione…</option></select>
+              </label>
+              <label class="field f-200">
+                <span class="field-label">Conta de Destino *</span>
+                <select class="input" id="f_conta_destino"><option value="">Selecione…</option></select>
+              </label>
+            </div>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-130">
+              <span class="field-label">Vencimento</span>
+              <input class="input" type="date" id="f_vencimento">
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Data Pagamento</span>
+              <input class="input" type="date" id="f_pagamento" disabled title="Preenchido automaticamente quando o compromisso é totalmente quitado">
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Prorrogação Venc.</span>
+              <input class="input" type="date" id="f_prorrogacao">
+            </label>
+            <label class="field f-grow">
+              <span class="field-label">Motivo da Prorrogação</span>
+              <input class="input" type="text" id="f_motivo_prorrogacao">
+            </label>
+          </div>
+
+          <div class="checkbox-field" style="margin-top:2px;">
+            <input type="checkbox" id="f_aprovado">
+            <label for="f_aprovado">Pagamento aprovado/liberado</label>
+            <span id="info-aprovacao" style="color:var(--ink-soft); font-size:12px; margin-left:8px;"></span>
+          </div>
+
+          <div id="card-saldo" class="saldo-card" style="display:none; border-top:1px solid var(--line-strong); padding-top:14px; margin-top:14px;">
+            <div class="item"><div class="label">Valor Original</div><div class="num" id="saldo-original">R$ 0,00</div></div>
+            <div class="item"><div class="label">Total Pago (baixas)</div><div class="num valor positivo" id="saldo-pago">R$ 0,00</div></div>
+            <div class="item"><div class="label">Saldo Atual</div><div class="num valor aberto" id="saldo-atual">R$ 0,00</div></div>
+          </div>
+        </div>
+
+        <!-- Coluna lateral: Observações + informações do registro -->
+        <div class="painel-lateral">
+          <label class="field" style="margin-bottom:0;">
+            <span class="field-label">Observações</span>
+            <textarea class="input" id="f_obs" placeholder="Anotações internas sobre este compromisso…"></textarea>
+          </label>
+          <div class="caixa-info" id="info-registro">
+            <strong>Registro</strong><br>
+            Criado por: <span id="info-criado-por">—</span><br>
+            Criado em: <span id="info-criado-em">—</span>
+          </div>
+        </div>
+
       </div>
 
-      <div class="row-2">
-        <label class="field">
-          <span class="field-label">Data (competência) *</span>
-          <input class="input" type="date" id="f_data" required>
-        </label>
-        <label class="field">
-          <span class="field-label">Data de Emissão</span>
-          <input class="input" type="date" id="f_data_emissao">
-        </label>
-      </div>
-
-      <div class="row-3">
-        <label class="field">
-          <span class="field-label">Nº do Documento</span>
-          <input class="input" type="text" id="f_documento" placeholder="Ex: NF 12345">
-        </label>
-        <label class="field">
-          <span class="field-label">Parcela nº</span>
-          <input class="input" type="number" min="1" id="f_parcela_num" placeholder="1">
-        </label>
-        <label class="field">
-          <span class="field-label">Total de parcelas</span>
-          <input class="input" type="number" min="1" id="f_parcela_total" placeholder="1">
-        </label>
-      </div>
-
-      <div class="row-2">
-        <label class="field">
-          <span class="field-label">Favorecido</span>
-          <select class="input" id="f_favorecido"><option value="">Selecione…</option></select>
-        </label>
-        <label class="field">
-          <span class="field-label">Forma de Pagamento</span>
-          <select class="input" id="f_forma_pagamento">
-            <option value="">Selecione…</option>
-            <option>PIX</option><option>Boleto</option><option>TED</option><option>Cartão</option>
-            <option>Dinheiro</option><option>Cheque</option><option>Débito Automático</option><option>Outro</option>
-          </select>
-        </label>
-      </div>
-
-      <label class="field">
-        <span class="field-label">Descrição</span>
-        <input class="input" type="text" id="f_descricao" placeholder="Ex: Pagamento de fornecedor XYZ">
-      </label>
-
-      <div class="row-2">
-        <label class="field">
-          <span class="field-label">Valor Original (R$) *</span>
-          <input class="input mono" type="number" step="0.01" min="0" id="f_valor" placeholder="0,00" required>
-        </label>
-        <label class="field">
-          <span class="field-label">Status</span>
-          <select class="input" id="f_status">
-            <option value="em_aberto">Em aberto</option>
-            <option value="inadimplente">Inadimplente</option>
-            <option value="parcial" disabled>Parcial (automático)</option>
-            <option value="pago" disabled>Pago (automático)</option>
-          </select>
-        </label>
-      </div>
-
-      <div id="bloco-conta-unica">
-        <label class="field">
-          <span class="field-label">Conta Bancária *</span>
-          <select class="input" id="f_conta"><option value="">Selecione…</option></select>
-        </label>
-      </div>
-      <div id="bloco-transferencia" class="row-2" style="display:none;">
-        <label class="field">
-          <span class="field-label">Conta de Origem *</span>
-          <select class="input" id="f_conta_origem"><option value="">Selecione…</option></select>
-        </label>
-        <label class="field">
-          <span class="field-label">Conta de Destino *</span>
-          <select class="input" id="f_conta_destino"><option value="">Selecione…</option></select>
-        </label>
-      </div>
-
-      <div class="row-2">
-        <label class="field">
-          <span class="field-label">Data de Vencimento</span>
-          <input class="input" type="date" id="f_vencimento">
-        </label>
-        <label class="field">
-          <span class="field-label">Data de Pagamento</span>
-          <input class="input" type="date" id="f_pagamento" disabled title="Preenchido automaticamente quando o compromisso é totalmente quitado">
-        </label>
-      </div>
-
-      <div class="row-2">
-        <label class="field">
-          <span class="field-label">Prorrogação de Vencimento</span>
-          <input class="input" type="date" id="f_prorrogacao">
-        </label>
-        <label class="field">
-          <span class="field-label">Motivo da Prorrogação</span>
-          <input class="input" type="text" id="f_motivo_prorrogacao">
-        </label>
-      </div>
-
-      <div class="checkbox-field">
-        <input type="checkbox" id="f_aprovado">
-        <label for="f_aprovado">Pagamento aprovado/liberado</label>
-        <span id="info-aprovacao" style="color:var(--ink-soft); font-size:12px; margin-left:8px;"></span>
-      </div>
-
-      <label class="field">
-        <span class="field-label">Observações</span>
-        <input class="input" type="text" id="f_obs">
-      </label>
-
-      <div id="card-saldo" class="saldo-card" style="display:none; border-top:1px solid var(--line-strong); padding-top:16px; margin-top:6px;">
-        <div class="item"><div class="label">Valor Original</div><div class="num" id="saldo-original">R$ 0,00</div></div>
-        <div class="item"><div class="label">Total Pago (baixas)</div><div class="num valor positivo" id="saldo-pago">R$ 0,00</div></div>
-        <div class="item"><div class="label">Saldo Atual</div><div class="num valor aberto" id="saldo-atual">R$ 0,00</div></div>
-      </div>
-
-      <div class="modal-actions" style="margin-top:10px;">
+      <div class="modal-actions" style="margin-top:14px;">
         <button class="btn primary" type="submit" id="btn-salvar">Salvar compromisso</button>
       </div>
     </form>
@@ -359,14 +395,28 @@
     </table>
   </div>
 
+  <!-- ============================== BAIXAS EFETUADAS (persistente, visível em qualquer aba) ============================== -->
+  <div id="baixas-persistentes" class="baixas-persistentes janela-secao" style="display:none; border-bottom:none; border-top:1px solid var(--line-strong); margin-top:6px;">
+    <div class="baixas-persistentes-titulo">
+      <div class="label" style="margin-bottom:0;">Baixas Efetuadas</div>
+      <button type="button" class="btn ghost no-print" id="btn-nova-baixa" style="padding:6px 12px; font-size:12px;">＋ Nova baixa</button>
+    </div>
+    <div class="baixas-tabela-wrap">
+      <table>
+        <thead><tr><th>Data</th><th class="num">Pago</th><th class="num">Juros</th><th class="num">Multa</th><th class="num">Desconto</th><th>Forma</th><th class="num">Ações</th></tr></thead>
+        <tbody id="tbody-baixas"><tr><td colspan="7" class="empty-state">Nenhuma baixa registrada.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
     </div> <!-- /janela-corpo -->
   </div> <!-- /janela -->
 </main>
 
-<!-- Modal: registrar baixa -->
+<!-- Modal: registrar nova baixa -->
 <div class="modal-overlay" id="modal-baixa">
   <div class="modal">
-    <h2>Baixar compromisso</h2>
+    <h2>Registrar baixa</h2>
     <div class="modal-sub" id="modal-baixa-sub">Registre um pagamento (total ou parcial) deste compromisso.</div>
     <form id="form-baixa">
       <div class="row-2">
@@ -393,14 +443,6 @@
     <div class="modal-actions">
       <button class="btn ghost" type="button" id="cancelar-baixa">Cancelar</button>
       <button class="btn primary" type="submit" form="form-baixa">Registrar baixa</button>
-    </div>
-
-    <div style="margin-top:20px; border-top:1px solid var(--line); padding-top:14px;">
-      <div class="label" style="margin-bottom:8px;">Baixas já efetuadas</div>
-      <table style="font-size:12.5px;">
-        <thead><tr><th>Data</th><th class="num">Pago</th><th class="num">Juros</th><th class="num">Multa</th><th class="num">Desconto</th><th>Forma</th><th class="num">Ações</th></tr></thead>
-        <tbody id="tbody-baixas"><tr><td colspan="7" class="empty-state">Nenhuma baixa registrada.</td></tr></tbody>
-      </table>
     </div>
   </div>
 </div>
@@ -451,7 +493,10 @@ if (!idEdicao) {
   document.getElementById('acao-anexar').disabled = true;
   document.getElementById('acao-baixar').disabled = true;
   document.getElementById('acao-excluir').disabled = true;
+} else {
+  document.getElementById('baixas-persistentes').style.display = 'block';
 }
+document.getElementById('btn-nova-baixa').addEventListener('click', abrirModalBaixa);
 
 // ---------- Carregar selects ----------
 async function carregarSelect(id, tabela, campoNome = 'nome') {
@@ -482,7 +527,7 @@ function alternarBlocoConta() {
   const tipo = document.getElementById('f_tipo').value;
   const ehTransferencia = tipo === 'transferencia';
   document.getElementById('bloco-conta-unica').style.display = ehTransferencia ? 'none' : 'block';
-  document.getElementById('bloco-transferencia').style.display = ehTransferencia ? 'grid' : 'none';
+  document.getElementById('bloco-transferencia').style.display = ehTransferencia ? 'flex' : 'none';
   document.getElementById('f_conta').required = !ehTransferencia;
   document.getElementById('f_conta_origem').required = ehTransferencia;
   document.getElementById('f_conta_destino').required = ehTransferencia;
@@ -807,6 +852,12 @@ async function carregarDadosExistentes() {
     document.getElementById('info-aprovacao').textContent = aprovador ? `aprovado por ${aprovador.nome}${l.aprovado_em ? ' em ' + new Date(l.aprovado_em).toLocaleDateString('pt-BR') : ''}` : '';
   }
 
+  document.getElementById('info-criado-em').textContent = l.criado_em ? new Date(l.criado_em).toLocaleString('pt-BR') : '—';
+  if (l.criado_por) {
+    const { data: criador } = await supabase.from('usuarios').select('nome').eq('id', l.criado_por).single();
+    document.getElementById('info-criado-por').textContent = criador?.nome ?? '—';
+  }
+
   const [{ data: dc }, { data: dcc }] = await Promise.all([
     supabase.from('lancamento_distribuicao_conta').select('plano_conta_id, percentual').eq('lancamento_id', idEdicao),
     supabase.from('lancamento_distribuicao_cc').select('centro_custo_id, percentual').eq('lancamento_id', idEdicao),
@@ -818,7 +869,7 @@ async function carregarDadosExistentes() {
   renderDistribuicaoConta();
   renderDistribuicaoCC();
 
-  await atualizarCardSaldo();
+  await carregarBaixas();
 
   document.getElementById('acao-anexar').disabled = false;
   document.getElementById('acao-baixar').disabled = false;
