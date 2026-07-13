@@ -64,6 +64,9 @@
       </label>
 
       <button class="btn primary" type="submit" style="width:100%; padding:12px;" id="btn-entrar">Entrar</button>
+      <div style="text-align:center; margin-top:14px;">
+        <a href="#" id="link-esqueci" style="font-size:12.5px; color:var(--ink-soft); text-decoration:underline;">Esqueci minha senha</a>
+      </div>
     </form>
     <div class="login-footer">ACESSO RESTRITO · DADOS AUDITADOS</div>
   </div>
@@ -100,6 +103,28 @@
     }
 
     window.location.href = 'pages/dashboard.html';
+  });
+
+  document.getElementById('link-esqueci').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    if (!email) {
+      erroBox.textContent = 'Digite seu e-mail no campo acima e clique em "Esqueci minha senha" de novo.';
+      erroBox.style.display = 'block';
+      erroBox.style.background = 'var(--amber-soft)';
+      erroBox.style.color = 'var(--amber)';
+      return;
+    }
+    const redirectTo = window.location.origin + window.location.pathname.replace('index.html', '') + 'pages/redefinir-senha.html';
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    erroBox.style.display = 'block';
+    if (error) {
+      erroBox.style.background = 'var(--red-soft)'; erroBox.style.color = 'var(--red)';
+      erroBox.textContent = 'Erro ao enviar: ' + error.message;
+    } else {
+      erroBox.style.background = 'var(--accent-soft)'; erroBox.style.color = 'var(--accent)';
+      erroBox.textContent = 'Enviamos um link de redefinição para ' + email + '. Confira sua caixa de entrada (e o spam).';
+    }
   });
 </script>
 </body>
