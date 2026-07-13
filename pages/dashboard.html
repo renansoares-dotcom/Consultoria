@@ -99,7 +99,7 @@
 <main class="page">
   <div class="page-header">
     <div>
-      <span class="eyebrow">Visão geral · Julho 2026</span>
+      <span class="eyebrow" id="eyebrow-mes">Visão geral</span>
       <h1>Painel do Fluxo de Caixa</h1>
     </div>
     <a href="lancamento-novo.html" class="btn primary">＋ Novo lançamento</a>
@@ -108,19 +108,19 @@
   <section class="grid grid-4" style="margin-bottom:16px;">
     <div class="card">
       <div class="label">Saldo Realizado (Pago)</div>
-      <div class="big valor positivo">R$ 4.707.779,54</div>
+      <div class="big valor" id="card-realizado">R$ 0,00</div>
     </div>
     <div class="card">
       <div class="label">Em Aberto (Previsto)</div>
-      <div class="big valor aberto">R$ 0,00</div>
+      <div class="big valor aberto" id="card-aberto">R$ 0,00</div>
     </div>
     <div class="card">
       <div class="label">Saldo Projetado</div>
-      <div class="big valor positivo">R$ 4.707.779,54</div>
+      <div class="big valor" id="card-projetado">R$ 0,00</div>
     </div>
     <div class="card">
       <div class="label">Inadimplência</div>
-      <div class="big valor negativo">R$ 0,00</div>
+      <div class="big valor negativo" id="card-inadimplencia">R$ 0,00</div>
     </div>
   </section>
 
@@ -159,6 +159,50 @@ initNav();
       window.location.href = '../index.html';
     }
   });
+
+  const MESES_EXT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const agora = new Date();
+  document.getElementById('eyebrow-mes').textContent = `Visão geral · ${MESES_EXT[agora.getMonth()]} ${agora.getFullYear()}`;
+
+  // ---------- Cards de saldo (Realizado, Em aberto, Projetado, Inadimplência) ----------
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+  async function carregarCards() {
+    const { data: contas } = await supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
+    const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+
+    const { data: lanc, error: erroLanc } = await supabase
+      .from('lancamentos')
+      .select('status, valor, plano_contas(tipo)');
+
+    if (erroLanc) { console.error(erroLanc); return; }
+
+    let realizado = saldoInicialContas;
+    let aberto = 0;
+    let inadimplencia = 0;
+
+    (lanc || []).forEach(l => {
+      const tipo = l.plano_contas?.tipo;
+      if (tipo === 'transferencia' || !tipo) return; // não altera o caixa total da empresa
+      const valorAbs = Math.abs(Number(l.valor));
+      const sinal = tipo === 'entrada' ? 1 : -1;
+
+      if (l.status === 'pago') realizado += valorAbs * sinal;
+      else if (l.status === 'em_aberto') aberto += valorAbs * sinal;
+      else if (l.status === 'inadimplente') inadimplencia += valorAbs; // exibido como valor em risco
+    });
+
+    const projetado = realizado + aberto;
+
+    document.getElementById('card-realizado').textContent = fmt(realizado);
+    document.getElementById('card-realizado').classList.add(realizado >= 0 ? 'positivo' : 'negativo');
+    document.getElementById('card-aberto').textContent = fmt(aberto);
+    document.getElementById('card-projetado').textContent = fmt(projetado);
+    document.getElementById('card-projetado').classList.add(projetado >= 0 ? 'positivo' : 'negativo');
+    document.getElementById('card-inadimplencia').textContent = fmt(inadimplencia);
+    document.getElementById('saldo-topo').textContent = fmt(realizado);
+  }
+  await carregarCards();
 
   // Exemplo de carga real: últimos 10 lançamentos do tenant (RLS filtra automaticamente)
   const { data: lancamentos, error } = await supabase
