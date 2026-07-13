@@ -88,7 +88,10 @@
       <span class="eyebrow">Realizado (pago) · 4.1</span>
       <h1>Fluxo de Caixa Diário</h1>
     </div>
-    <input class="input" type="month" id="f_mes" style="width:170px;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <select class="input" id="f_grupo" style="width:170px;"></select>
+      <input class="input" type="month" id="f_mes" style="width:170px;">
+    </div>
   </div>
 
   <section class="grid grid-3" style="margin-bottom:16px;">
@@ -132,6 +135,11 @@ const inputMes = document.getElementById('f_mes');
 inputMes.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
 inputMes.addEventListener('change', carregar);
 
+const selGrupo = document.getElementById('f_grupo');
+const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+selGrupo.addEventListener('change', carregar);
+
 async function carregar() {
   const [ano, mes] = inputMes.value.split('-').map(Number);
   const inicioMes = `${ano}-${String(mes).padStart(2,'0')}-01`;
@@ -140,21 +148,19 @@ async function carregar() {
 
   document.querySelector('#tabela-fd tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
 
-  const { data: contas } = await supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
+  let queryContas = supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
+  if (selGrupo.value) queryContas = queryContas.eq('grupo_empresarial_id', selGrupo.value);
+  const { data: contas } = await queryContas;
   const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
 
-  const { data: anteriores, error: erroAnt } = await supabase
-    .from('lancamentos')
-    .select('valor, plano_contas(tipo)')
-    .eq('status', 'pago')
-    .lt('data', inicioMes);
-
-  const { data: doMes, error } = await supabase
-    .from('lancamentos')
-    .select('data, valor, conta_destino_id, plano_contas(tipo)')
-    .eq('status', 'pago')
-    .gte('data', inicioMes)
-    .lte('data', fimMes);
+  let queryAnteriores = supabase.from('lancamentos').select('valor, plano_contas(tipo)').eq('status', 'pago').lt('data', inicioMes);
+  let queryDoMes = supabase.from('lancamentos').select('data, valor, conta_destino_id, plano_contas(tipo)').eq('status', 'pago').gte('data', inicioMes).lte('data', fimMes);
+  if (selGrupo.value) {
+    queryAnteriores = queryAnteriores.eq('grupo_empresarial_id', selGrupo.value);
+    queryDoMes = queryDoMes.eq('grupo_empresarial_id', selGrupo.value);
+  }
+  const { data: anteriores, error: erroAnt } = await queryAnteriores;
+  const { data: doMes, error } = await queryDoMes;
 
   if (error || erroAnt) {
     document.querySelector('#tabela-fd tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro ao carregar dados.</td></tr>`;

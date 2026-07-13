@@ -85,7 +85,7 @@
   </div>
 
   <div class="toolbar" style="flex-wrap:wrap;">
-    <input class="input" id="busca" placeholder="Buscar por descrição, favorecido..." style="max-width:240px;">
+    <input class="input" id="busca" placeholder="Buscar nesta página..." style="max-width:240px;" title="A busca considera apenas os lançamentos carregados na página atual">
     <select class="input" id="f_status" style="max-width:160px;">
       <option value="">Status: todos</option>
       <option value="pago">Pago</option>
@@ -109,6 +109,12 @@
       </tbody>
     </table>
   </section>
+
+  <div class="toolbar" style="justify-content:center; margin-top:14px;">
+    <button class="btn ghost" id="btn-pag-anterior">← Anterior</button>
+    <span class="count-pill" id="pagina-atual">Página 1</span>
+    <button class="btn ghost" id="btn-pag-proxima">Próxima →</button>
+  </div>
 </main>
 
 <script type="module">
@@ -131,15 +137,32 @@ const params = new URLSearchParams(location.search);
 if (params.get('status')) document.getElementById('f_status').value = params.get('status');
 
 let lancamentos = [];
+let totalRegistros = 0;
+let paginaAtual = 0;
+const TAMANHO_PAGINA = 50;
+
+function atualizarControlesPagina(count) {
+  totalRegistros = count;
+  const totalPaginas = Math.max(1, Math.ceil(count / TAMANHO_PAGINA));
+  document.getElementById('pagina-atual').textContent = `Página ${paginaAtual + 1} de ${totalPaginas}`;
+  document.getElementById('btn-pag-anterior').disabled = paginaAtual === 0;
+  document.getElementById('btn-pag-proxima').disabled = paginaAtual >= totalPaginas - 1;
+}
+
+document.getElementById('btn-pag-anterior').addEventListener('click', () => { if (paginaAtual > 0) { paginaAtual--; carregar(); } });
+document.getElementById('btn-pag-proxima').addEventListener('click', () => { paginaAtual++; carregar(); });
 
 async function carregar() {
   document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
 
+  const inicio = paginaAtual * TAMANHO_PAGINA;
+  const fim = inicio + TAMANHO_PAGINA - 1;
+
   let query = supabase
     .from('lancamentos')
-    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome)')
+    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome)', { count: 'exact' })
     .order('data', { ascending: false })
-    .limit(300);
+    .range(inicio, fim);
 
   const status = document.getElementById('f_status').value;
   if (status) query = query.eq('status', status);
@@ -147,16 +170,17 @@ async function carregar() {
   const mes = document.getElementById('f_mes').value; // yyyy-mm
   if (mes) {
     const [ano, m] = mes.split('-');
-    const inicio = `${ano}-${m}-01`;
-    const fim = new Date(Number(ano), Number(m), 0).toISOString().slice(0,10);
-    query = query.gte('data', inicio).lte('data', fim);
+    const inicioMes = `${ano}-${m}-01`;
+    const fimMes = new Date(Number(ano), Number(m), 0).toISOString().slice(0,10);
+    query = query.gte('data', inicioMes).lte('data', fimMes);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) {
     document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
     return;
   }
+  atualizarControlesPagina(count ?? 0);
   lancamentos = data || [];
   desenhar();
 }
@@ -167,7 +191,9 @@ function desenhar() {
     ? lancamentos.filter(l => JSON.stringify(l).toLowerCase().includes(busca))
     : lancamentos;
 
-  document.getElementById('contador').textContent = `${filtrados.length} lançamento${filtrados.length===1?'':'s'}`;
+  document.getElementById('contador').textContent = busca
+    ? `${filtrados.length} nesta página`
+    : `${totalRegistros} lançamento${totalRegistros===1?'':'s'} no total`;
 
   if (!filtrados.length) {
     document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum lançamento encontrado.</td></tr>`;
@@ -198,8 +224,8 @@ function desenhar() {
 }
 
 document.getElementById('busca').addEventListener('input', desenhar);
-document.getElementById('f_status').addEventListener('change', carregar);
-document.getElementById('f_mes').addEventListener('change', carregar);
+document.getElementById('f_status').addEventListener('change', () => { paginaAtual = 0; carregar(); });
+document.getElementById('f_mes').addEventListener('change', () => { paginaAtual = 0; carregar(); });
 
 document.getElementById('tbody').addEventListener('click', async e => {
   const editar = e.target.dataset?.editar;

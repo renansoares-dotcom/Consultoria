@@ -102,7 +102,10 @@
       <span class="eyebrow" id="eyebrow-mes">Visão geral</span>
       <h1>Painel do Fluxo de Caixa</h1>
     </div>
-    <a href="lancamento-novo.html" class="btn primary">＋ Novo lançamento</a>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <select class="input" id="f_grupo" style="width:170px;"></select>
+      <a href="lancamento-novo.html" class="btn primary">＋ Novo lançamento</a>
+    </div>
   </div>
 
   <section class="grid grid-4" style="margin-bottom:16px;">
@@ -164,16 +167,26 @@ initNav();
   const agora = new Date();
   document.getElementById('eyebrow-mes').textContent = `Visão geral · ${MESES_EXT[agora.getMonth()]} ${agora.getFullYear()}`;
 
+  // ---------- Seletor de Grupo Empresarial ----------
+  const selGrupo = document.getElementById('f_grupo');
+  const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+  selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+  selGrupo.addEventListener('change', () => { carregarCards(); carregarUltimosLancamentos(); });
+
   // ---------- Cards de saldo (Realizado, Em aberto, Projetado, Inadimplência) ----------
   const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
 
   async function carregarCards() {
-    const { data: contas } = await supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
+    const grupoId = selGrupo.value;
+
+    let queryContas = supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
+    if (grupoId) queryContas = queryContas.eq('grupo_empresarial_id', grupoId);
+    const { data: contas } = await queryContas;
     const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
 
-    const { data: lanc, error: erroLanc } = await supabase
-      .from('lancamentos')
-      .select('status, valor, plano_contas(tipo)');
+    let queryLanc = supabase.from('lancamentos').select('status, valor, plano_contas(tipo)');
+    if (grupoId) queryLanc = queryLanc.eq('grupo_empresarial_id', grupoId);
+    const { data: lanc, error: erroLanc } = await queryLanc;
 
     if (erroLanc) { console.error(erroLanc); return; }
 
@@ -205,29 +218,35 @@ initNav();
   await carregarCards();
 
   // Exemplo de carga real: últimos 10 lançamentos do tenant (RLS filtra automaticamente)
-  const { data: lancamentos, error } = await supabase
-    .from('lancamentos')
-    .select('data, descricao, status, valor, plano_contas(nome_conta), favorecidos(nome), centros_custo(nome)')
-    .order('data', { ascending: false })
-    .limit(10);
+  async function carregarUltimosLancamentos() {
+    const grupoId = selGrupo.value;
+    let query = supabase
+      .from('lancamentos')
+      .select('data, descricao, status, valor, plano_contas(nome_conta), favorecidos(nome), centros_custo(nome)')
+      .order('data', { ascending: false })
+      .limit(10);
+    if (grupoId) query = query.eq('grupo_empresarial_id', grupoId);
 
-  const tbody = document.getElementById('tabela-lancamentos');
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px;">Erro ao carregar: ${error.message}</td></tr>`;
-  } else if (!lancamentos?.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Nenhum lançamento ainda.</td></tr>`;
-  } else {
-    tbody.innerHTML = lancamentos.map(l => `
-      <tr>
-        <td>${new Date(l.data).toLocaleDateString('pt-BR')}</td>
-        <td>${l.plano_contas?.nome_conta ?? '-'}</td>
-        <td>${l.favorecidos?.nome ?? '-'}</td>
-        <td>${l.centros_custo?.nome ?? '-'}</td>
-        <td><span class="badge ${l.status.replace('_','')}">${l.status.replace('_',' ')}</span></td>
-        <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${l.valor.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-      </tr>
-    `).join('');
+    const { data: lancamentos, error } = await query;
+    const tbody = document.getElementById('tabela-lancamentos');
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px;">Erro ao carregar: ${error.message}</td></tr>`;
+    } else if (!lancamentos?.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Nenhum lançamento ainda.</td></tr>`;
+    } else {
+      tbody.innerHTML = lancamentos.map(l => `
+        <tr>
+          <td>${new Date(l.data).toLocaleDateString('pt-BR')}</td>
+          <td>${l.plano_contas?.nome_conta ?? '-'}</td>
+          <td>${l.favorecidos?.nome ?? '-'}</td>
+          <td>${l.centros_custo?.nome ?? '-'}</td>
+          <td><span class="badge ${l.status.replace('_','')}">${l.status.replace('_',' ')}</span></td>
+          <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${l.valor.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+        </tr>
+      `).join('');
+    }
   }
+  await carregarUltimosLancamentos();
 </script>
 </body>
 </html>

@@ -91,6 +91,7 @@
       <h1>Fluxo de Caixa Mensal</h1>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
+      <select class="input" id="f_grupo" style="width:170px;"></select>
       <select class="input" id="f_ano" style="width:110px;"></select>
     </div>
   </div>
@@ -132,19 +133,29 @@ const selAno = document.getElementById('f_ano');
 for (let a = anoAtual + 1; a >= anoAtual - 4; a--) selAno.innerHTML += `<option value="${a}" ${a===anoAtual?'selected':''}>${a}</option>`;
 selAno.addEventListener('change', carregar);
 
+const selGrupo = document.getElementById('f_grupo');
+const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+selGrupo.addEventListener('change', carregar);
+
 async function carregar() {
   const ano = Number(selAno.value);
   document.querySelector('#tabela-fc thead').innerHTML = `<tr><td colspan="14" class="empty-state">Carregando…</td></tr>`;
   document.querySelector('#tabela-fc tbody').innerHTML = '';
 
-  const { data: contas } = await supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
-  const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+  const grupoId = selGrupo.value;
+  let queryContas = supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
+  if (grupoId) queryContas = queryContas.eq('grupo_empresarial_id', grupoId);
+  const { data: contasFiltradas } = await queryContas;
+  const saldoInicialContas = (contasFiltradas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
 
-  const { data: lanc, error } = await supabase
+  let query = supabase
     .from('lancamentos')
     .select('data, valor, plano_contas(tipo, codigo_grupo, nome_grupo)')
     .eq('status', 'pago')
     .lte('data', `${ano}-12-31`);
+  if (grupoId) query = query.eq('grupo_empresarial_id', grupoId);
+  const { data: lanc, error } = await query;
 
   if (error) {
     document.querySelector('#tabela-fc thead').innerHTML = `<tr><td colspan="14" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;

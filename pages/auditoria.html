@@ -52,6 +52,8 @@
       <option value="centros_custo">Centros de Custo</option>
       <option value="favorecidos">Favorecidos</option>
       <option value="grupos_empresariais">Grupos Empresariais</option>
+      <option value="orcamentos">Orçamentos</option>
+      <option value="usuarios">Usuários</option>
     </select>
     <select class="input" id="f_acao" style="max-width:150px;">
       <option value="">Ação: todas</option>
@@ -73,7 +75,7 @@
     </table>
   </section>
   <p style="color:var(--ink-soft); font-size:11.5px; margin-top:10px;">
-    Hoje só a tabela <strong>lançamentos</strong> tem trigger de auditoria ativo (ver <code>supabase/schema.sql</code>). Replique o mesmo trigger nas demais tabelas quando quiser rastrear também cadastros.
+    Rastreamos criação, edição e exclusão em lançamentos, cadastros (plano de contas, contas bancárias, centros de custo, favorecidos, grupos), orçamentos e usuários.
   </p>
 </main>
 
