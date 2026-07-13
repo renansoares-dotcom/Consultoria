@@ -5,7 +5,11 @@
 // por classe .open via JS: abre no clique, fecha ao clicar fora, fecha com
 // Esc, e fecha o painel anterior ao abrir outro.
 // ============================================================================
+import { initTheme } from './theme.js';
+
 export function initNav() {
+  initTheme();
+
   const nav = document.querySelector('.nav-cascade');
   const topbar = document.querySelector('.topbar');
   const itens = document.querySelectorAll('.nav-item');
