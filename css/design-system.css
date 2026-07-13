@@ -314,6 +314,7 @@ td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-
 .badge.pago { background: var(--accent-soft); color: var(--accent); }
 .badge.aberto { background: var(--amber-soft); color: var(--amber); }
 .badge.inadimplente { background: var(--red-soft); color: var(--red); }
+.badge.parcial { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--accent); }
 
 .btn {
   font-family: var(--font-body);
