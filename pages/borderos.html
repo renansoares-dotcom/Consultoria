@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Configurações — Fluxo de Caixa</title>
+<title>Borderôs de Antecipação — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
@@ -24,7 +24,7 @@
         <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
       </div>
     </div>
-    <div class="nav-item">
+    <div class="nav-item active">
       <button>Lançamentos</button>
       <div class="nav-panel">
         <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
@@ -48,7 +48,6 @@
     <div class="nav-item">
       <button>Contas a Receber/Pagar</button>
       <div class="nav-panel">
-        <span class="group-label">Em aberto</span>
         <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
         <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
         <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
@@ -57,16 +56,14 @@
     <div class="nav-item">
       <button>Budget &amp; Forecast</button>
       <div class="nav-panel">
-        <span class="group-label">Planejamento</span>
         <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
         <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
         <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
       </div>
     </div>
-    <div class="nav-item active">
+    <div class="nav-item">
       <button>Administração</button>
       <div class="nav-panel">
-        <span class="group-label">Sistema</span>
         <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
         <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
         <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
@@ -81,57 +78,30 @@
   </div>
 </header>
 
-<main class="page" style="max-width:640px;">
+<main class="page">
   <div class="page-header">
     <div>
-      <span class="eyebrow">Administração</span>
-      <h1>Configurações</h1>
+      <span class="eyebrow">Operações especiais</span>
+      <h1>Borderôs de Antecipação</h1>
     </div>
+    <a href="bordero-novo.html" class="btn primary">＋ Novo Borderô</a>
   </div>
 
-  <div id="aviso" class="card" style="display:none; margin-bottom:16px; font-size:13px;"></div>
+  <div class="toolbar">
+    <input class="input" id="busca" placeholder="Buscar por nº, FIDC/Factoring..." style="max-width:260px;">
+    <span class="count-pill" id="contador">0 borderôs</span>
+    <div class="spacer"></div>
+  </div>
 
-  <form id="form-config" class="card">
-    <label class="field">
-      <span class="field-label">Nome fantasia</span>
-      <input class="input" id="c_nome" placeholder="Nome exibido no sistema">
-    </label>
-    <label class="field">
-      <span class="field-label">URL do logotipo</span>
-      <input class="input" id="c_logo" placeholder="https://...">
-    </label>
-    <div class="row-2">
-      <label class="field">
-        <span class="field-label">Moeda</span>
-        <select class="input" id="c_moeda">
-          <option value="BRL">Real (R$)</option>
-          <option value="USD">Dólar (US$)</option>
-          <option value="EUR">Euro (€)</option>
-        </select>
-      </label>
-      <label class="field">
-        <span class="field-label">Início do ano fiscal</span>
-        <select class="input" id="c_ano_fiscal">
-          <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
-          <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
-          <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
-          <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-        </select>
-      </label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn primary" type="submit">Salvar configurações</button>
-    </div>
-  </form>
-
-  <section class="card" style="margin-top:20px;">
-    <div class="label" style="margin-bottom:10px;">Sobre este ambiente</div>
+  <section class="card" style="padding:0; overflow:hidden;">
     <table>
-      <tbody>
-        <tr><td style="color:var(--ink-soft); width:160px;">Usuário logado</td><td id="info-usuario">-</td></tr>
-        <tr><td style="color:var(--ink-soft);">Perfil de acesso</td><td id="info-perfil">-</td></tr>
-        <tr><td style="color:var(--ink-soft);">Tenant (ID interno)</td><td class="mono" id="info-tenant" style="font-size:11px;">-</td></tr>
-      </tbody>
+      <thead>
+        <tr>
+          <th>Data</th><th>Nº Borderô</th><th>FIDC/Factoring</th><th>Conta Recebimento</th>
+          <th class="num">Valor de Face</th><th class="num">Deságio+Taxas</th><th class="num">Valor Líquido</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
     </table>
   </section>
 </main>
@@ -146,50 +116,52 @@ const usuario = await usuarioAtual();
 if (usuario) {
   document.getElementById('user-nome').textContent = usuario.nome;
   document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  document.getElementById('info-usuario').textContent = `${usuario.nome} (${usuario.email})`;
-  document.getElementById('info-perfil').textContent = usuario.perfis_acesso?.nome ?? 'Sem perfil definido';
-  document.getElementById('info-tenant').textContent = usuario.tenant_id;
 }
 document.getElementById('user-chip').addEventListener('click', async () => {
   if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
 });
-const TENANT_ID = usuario?.tenant_id;
 
-function mostrarAviso(msg, erro=false) {
-  const box = document.getElementById('aviso');
-  box.textContent = msg;
-  box.style.borderColor = erro ? 'var(--red)' : 'var(--accent)';
-  box.style.background = erro ? 'var(--red-soft)' : 'var(--accent-soft)';
-  box.style.color = erro ? 'var(--red)' : 'var(--accent)';
-  box.style.display = 'block';
-  setTimeout(() => box.style.display = 'none', 4000);
-}
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+let registros = [];
 
 async function carregar() {
-  const { data, error } = await supabase.from('configuracoes').select('*').eq('tenant_id', TENANT_ID).maybeSingle();
-  if (error) { mostrarAviso('Erro ao carregar: ' + error.message, true); return; }
-  if (data) {
-    document.getElementById('c_nome').value = data.nome_fantasia ?? '';
-    document.getElementById('c_logo').value = data.logo_url ?? '';
-    document.getElementById('c_moeda').value = data.moeda ?? 'BRL';
-    document.getElementById('c_ano_fiscal').value = data.ano_fiscal_inicio ?? 1;
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+  const { data, error } = await supabase
+    .from('operacoes_antecipacao')
+    .select('id, data_operacao, numero_bordero, valor_face, valor_desagio, iof, outras_taxas, valor_liquido, favorecidos(nome), contas_bancarias(nome)')
+    .order('data_operacao', { ascending: false });
+
+  if (error) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    return;
   }
+  registros = data || [];
+  desenhar();
 }
 
-document.getElementById('form-config').addEventListener('submit', async e => {
-  e.preventDefault();
-  const payload = {
-    tenant_id: TENANT_ID,
-    nome_fantasia: document.getElementById('c_nome').value || null,
-    logo_url: document.getElementById('c_logo').value || null,
-    moeda: document.getElementById('c_moeda').value,
-    ano_fiscal_inicio: Number(document.getElementById('c_ano_fiscal').value),
-  };
-  const { error } = await supabase.from('configuracoes').upsert(payload, { onConflict: 'tenant_id' });
-  if (error) { mostrarAviso('Erro ao salvar: ' + error.message, true); return; }
-  mostrarAviso('Configurações salvas com sucesso.');
-});
+function desenhar() {
+  const busca = document.getElementById('busca').value.trim().toLowerCase();
+  const filtrados = busca ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca)) : registros;
+  document.getElementById('contador').textContent = `${filtrados.length} borderô${filtrados.length===1?'':'s'}`;
 
+  if (!filtrados.length) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum borderô lançado ainda. <a href="bordero-novo.html">Lançar o primeiro</a>.</td></tr>`;
+    return;
+  }
+
+  document.getElementById('tbody').innerHTML = filtrados.map(r => `
+    <tr>
+      <td>${new Date(r.data_operacao+'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td>${r.numero_bordero ?? '-'}</td>
+      <td>${r.favorecidos?.nome ?? '-'}</td>
+      <td>${r.contas_bancarias?.nome ?? '-'}</td>
+      <td class="num mono">${fmt(r.valor_face)}</td>
+      <td class="num mono valor negativo">${fmt(Number(r.valor_desagio||0) + Number(r.iof||0) + Number(r.outras_taxas||0))}</td>
+      <td class="num mono valor positivo">${fmt(r.valor_liquido)}</td>
+    </tr>`).join('');
+}
+
+document.getElementById('busca').addEventListener('input', desenhar);
 await carregar();
 </script>
 </body>
