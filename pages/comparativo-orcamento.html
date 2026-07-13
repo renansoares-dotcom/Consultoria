@@ -88,6 +88,7 @@
     <div style="display:flex; gap:10px; align-items:center;">
       <select class="input" id="f_grupo" style="width:170px;"></select>
       <select class="input" id="f_ano" style="width:110px;"></select>
+      <div id="area-exportar" style="display:flex; gap:8px;"></div>
     </div>
   </div>
 
@@ -118,7 +119,9 @@
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
+import { adicionarBotoesExportacao } from '../js/export.js';
 initNav();
+adicionarBotoesExportacao('#area-exportar', '#tabela-grupo', 'taxa-de-realizacao');
 
 const sessao = await exigirSessao();
 const usuario = await usuarioAtual();

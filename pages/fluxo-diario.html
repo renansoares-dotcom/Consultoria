@@ -94,6 +94,7 @@
     <div style="display:flex; gap:10px; align-items:center;">
       <select class="input" id="f_grupo" style="width:170px;"></select>
       <input class="input" type="month" id="f_mes" style="width:170px;">
+      <div id="area-exportar" style="display:flex; gap:8px;"></div>
     </div>
   </div>
 
@@ -120,7 +121,9 @@
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
+import { adicionarBotoesExportacao } from '../js/export.js';
 initNav();
+adicionarBotoesExportacao('#area-exportar', '#tabela-fd', 'fluxo-caixa-diario');
 
 const sessao = await exigirSessao();
 const usuario = await usuarioAtual();

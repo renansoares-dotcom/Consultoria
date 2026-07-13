@@ -98,10 +98,11 @@
     <input class="input" type="month" id="f_mes" style="max-width:170px;">
     <span class="count-pill" id="contador">0 lançamentos</span>
     <div class="spacer"></div>
+    <div id="area-exportar" style="display:flex; gap:8px;"></div>
   </div>
 
   <section class="card" style="padding:0; overflow:hidden;">
-    <table>
+    <table id="tabela-relatorio">
       <thead>
         <tr>
           <th>Data</th><th>Plano de Contas</th><th>Descrição</th><th>Favorecido</th><th>Status</th><th class="num">Valor</th><th class="num">Ações</th>
@@ -123,7 +124,9 @@
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
+import { adicionarBotoesExportacao } from '../js/export.js';
 initNav();
+adicionarBotoesExportacao('#area-exportar', '#tabela-relatorio', 'lancamentos');
 
 const sessao = await exigirSessao();
 const usuario = await usuarioAtual();
