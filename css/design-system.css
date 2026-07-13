@@ -149,7 +149,13 @@ h1, h2, h3, .display {
   padding: 6px;
 }
 .nav-item:hover .nav-panel,
-.nav-item.active .nav-panel { display: block; }
+.nav-item.open .nav-panel { display: block; }
+.nav-item:hover > button,
+.nav-item.open > button {
+  color: #fff;
+  background: var(--ledger-tab-hover);
+  border-bottom-color: var(--accent);
+}
 
 .nav-panel .group-label {
   font-size: 10px;
