@@ -449,6 +449,125 @@ label.field .field-label { display: block; font-size: 12px; font-weight: 600; ma
   a[href]::after { content: ""; }
 }
 
+/* ============================================================================
+   JANELA RETANGULAR — estilo tela de manutenção de títulos/compromissos.
+   Reaproveitada por Compromisso, Borderô de Antecipação e telas parecidas.
+============================================================================ */
+.row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 900px) { .row-3 { grid-template-columns: 1fr; } }
+
+.menu-acoes { position: relative; }
+.menu-acoes-btn {
+  all: unset; cursor: pointer; font-size: 20px; line-height: 1;
+  padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-md);
+}
+.menu-acoes-btn:hover { background: var(--paper); }
+.menu-acoes-lista {
+  display: none; position: absolute; right: 0; top: 110%;
+  background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(16,35,28,.16); min-width: 220px; padding: 6px; z-index: 50;
+}
+.menu-acoes.open .menu-acoes-lista { display: block; }
+.menu-acoes-lista button {
+  all: unset; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box;
+  padding: 9px 10px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer;
+}
+.menu-acoes-lista button:hover { background: var(--accent-soft); color: var(--accent); }
+.menu-acoes-lista button.perigo:hover { background: var(--red-soft); color: var(--red); }
+.menu-acoes-lista button:disabled { opacity: .4; cursor: not-allowed; }
+.menu-acoes-lista hr { border: none; border-top: 1px solid var(--line); margin: 5px 0; }
+
+.dist-linha { display: grid; grid-template-columns: 1fr 90px 120px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.dist-total { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; padding-top: 8px; border-top: 1px solid var(--line-strong); margin-top: 4px; }
+.dist-total.ok { color: var(--accent); }
+.dist-total.erro { color: var(--red); }
+
+.saldo-card { display: flex; gap: 20px; flex-wrap: wrap; }
+.saldo-card .item { flex: 1; min-width: 140px; }
+.saldo-card .item .num { font-family: var(--font-mono); font-size: 20px; font-weight: 600; }
+
+.janela {
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 18px 44px rgba(16,35,28,.12);
+  background: var(--paper-raised);
+  margin-bottom: 40px;
+}
+.janela-titulo {
+  background: var(--ledger);
+  color: #eef3f0;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.janela-titulo-texto {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-display); font-size: 14.5px; font-weight: 600; color: #fff;
+}
+.janela-titulo-icone { opacity: .6; font-size: 14px; }
+.janela-titulo-acoes { display: flex; align-items: center; gap: 4px; }
+.janela-btn {
+  all: unset; cursor: pointer; color: #cfd8d2;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; font-size: 15px;
+}
+.janela-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+.janela-abas {
+  margin: 0; padding: 0 14px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line-strong);
+}
+.janela-abas button { padding: 10px 14px; font-size: 12.5px; }
+
+.janela-corpo { padding: 18px 22px 20px; }
+.janela-corpo .field-label { font-size: 11px; margin-bottom: 3px; }
+.janela-corpo .input { padding: 7px 9px; font-size: 13px; width: 100%; }
+
+.janela-secao { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.janela-secao:first-child { padding-top: 0; }
+
+/* Campos com largura própria (não esticam 100%) */
+.linha-flex { display: flex; flex-wrap: wrap; gap: 12px 14px; margin-bottom: 12px; }
+.linha-flex .field { margin-bottom: 0; }
+.f-70  { width: 70px !important; }
+.f-100 { width: 100px !important; }
+.f-130 { width: 130px !important; }
+.f-160 { width: 160px !important; }
+.f-200 { width: 200px !important; }
+.f-260 { width: 260px !important; }
+.f-grow { flex: 1 1 220px; }
+
+.dados-grid { display: grid; grid-template-columns: 1fr 250px; gap: 0 22px; align-items: start; }
+@media (max-width: 860px) { .dados-grid { grid-template-columns: 1fr; } }
+.painel-lateral { display: flex; flex-direction: column; gap: 14px; }
+.painel-lateral textarea.input {
+  width: 100%; min-height: 132px; resize: vertical;
+  font-family: var(--font-body); font-size: 13px; padding: 8px 9px;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink);
+}
+.caixa-info {
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px;
+  background: var(--paper); font-size: 11.5px; color: var(--ink-soft); line-height: 1.6;
+}
+.caixa-info strong { color: var(--ink); font-weight: 600; }
+
+/* Baixas efetuadas — grade persistente na janela */
+.baixas-persistentes { margin-top: 4px; }
+.baixas-persistentes-titulo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.baixas-persistentes table { font-size: 12px; }
+.baixas-tabela-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+
+/* Checklist de títulos (usado no Borderô de Antecipação) */
+.lista-selecao { border: 1px solid var(--line); border-radius: var(--radius-sm); max-height: 320px; overflow-y: auto; }
+.lista-selecao-linha { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.lista-selecao-linha:last-child { border-bottom: none; }
+.lista-selecao-linha:hover { background: var(--paper); }
+.lista-selecao-linha .col-desc { flex: 1; }
+.lista-selecao-linha .col-valor { font-family: var(--font-mono); font-weight: 600; min-width: 100px; text-align: right; }
+
 @media (max-width: 900px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
 
