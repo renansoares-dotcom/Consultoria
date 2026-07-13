@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Compromisso — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 </head>
 <body>
@@ -186,9 +186,9 @@
               <span class="field-label">Status</span>
               <select class="input" id="f_status">
                 <option value="em_aberto">Em aberto</option>
-                <option value="inadimplente">Inadimplente</option>
-                <option value="parcial" disabled>Parcial (automático)</option>
-                <option value="pago" disabled>Pago (automático)</option>
+                <option value="inadimplente" id="opcao-inadimplente">Inadimplente</option>
+                <option value="parcial" disabled id="opcao-parcial">Parcial (automático)</option>
+                <option value="pago" disabled id="opcao-pago">Pago (automático)</option>
               </select>
             </label>
             <div id="bloco-conta-unica">
@@ -435,6 +435,11 @@ function alternarBlocoConta() {
   document.getElementById('f_conta_origem').required = ehTransferencia;
   document.getElementById('f_conta_destino').required = ehTransferencia;
   renderDistribuicaoConta();
+
+  // "Pago" não é a palavra certa para transferência entre contas próprias — vira "Confirmada"
+  document.getElementById('opcao-pago').textContent = ehTransferencia ? 'Confirmada (automático)' : 'Pago (automático)';
+  document.getElementById('opcao-inadimplente').style.display = ehTransferencia ? 'none' : '';
+  document.getElementById('acao-baixar').textContent = ehTransferencia ? '💲 Confirmar transferência' : '💲 Baixar compromisso';
 }
 document.getElementById('f_tipo').addEventListener('change', alternarBlocoConta);
 alternarBlocoConta();
@@ -613,6 +618,11 @@ function montarResumo(ev) {
 const modalBaixa = document.getElementById('modal-baixa');
 function abrirModalBaixa() {
   if (!idEdicao) return;
+  const ehTransferencia = document.getElementById('f_tipo').value === 'transferencia';
+  document.querySelector('#modal-baixa h2').textContent = ehTransferencia ? 'Confirmar transferência' : 'Registrar baixa';
+  document.getElementById('modal-baixa-sub').textContent = ehTransferencia
+    ? 'Confirme que o valor já foi efetivamente transferido entre as contas (total ou parcial).'
+    : 'Registre um pagamento (total ou parcial) deste compromisso.';
   document.getElementById('form-baixa').reset();
   document.getElementById('b_data').value = new Date().toISOString().slice(0,10);
   carregarBaixas();

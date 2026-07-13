@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lançamentos — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 </head>
 <body>
@@ -95,9 +95,24 @@
 
   <div class="toolbar" style="flex-wrap:wrap;">
     <input class="input" id="busca" placeholder="Buscar nesta página..." style="max-width:240px;" title="A busca considera apenas os lançamentos carregados na página atual">
+    <div class="menu-acoes" id="filtro-tipo">
+      <button type="button" class="menu-acoes-btn" id="filtro-tipo-btn" style="font-size:13px; padding:9px 12px; font-weight:500;">Tipo: Todos ▾</button>
+      <div class="menu-acoes-lista" style="min-width:190px;">
+        <label style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; font-weight:400; font-size:13px;">
+          <input type="checkbox" class="chk-tipo" value="entrada" checked> Entradas
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; font-weight:400; font-size:13px;">
+          <input type="checkbox" class="chk-tipo" value="saida" checked> Saídas
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; font-weight:400; font-size:13px;">
+          <input type="checkbox" class="chk-tipo" value="transferencia" checked> Transferências
+        </label>
+      </div>
+    </div>
     <select class="input" id="f_status" style="max-width:160px;">
       <option value="">Status: todos</option>
-      <option value="pago">Pago</option>
+      <option value="pago">Pago / Confirmada</option>
+      <option value="parcial">Parcial</option>
       <option value="em_aberto">Em aberto</option>
       <option value="inadimplente">Inadimplente</option>
     </select>
@@ -170,11 +185,19 @@ async function carregar() {
   const inicio = paginaAtual * TAMANHO_PAGINA;
   const fim = inicio + TAMANHO_PAGINA - 1;
 
+  const tiposMarcados = [...document.querySelectorAll('.chk-tipo:checked')].map(c => c.value);
+  const selectClause = tiposMarcados.length < 3
+    ? 'id, data, descricao, status, valor, conta_destino_id, plano_contas!inner(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)'
+    : 'id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)';
+
   let query = supabase
     .from('lancamentos')
-    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)', { count: 'exact' })
+    .select(selectClause, { count: 'exact' })
     .order('data', { ascending: false })
     .range(inicio, fim);
+
+  if (tiposMarcados.length && tiposMarcados.length < 3) query = query.in('plano_contas.tipo', tiposMarcados);
+  if (!tiposMarcados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Selecione ao menos um tipo no filtro.</td></tr>`; atualizarControlesPagina(0); return; }
 
   const status = document.getElementById('f_status').value;
   if (status) query = query.eq('status', status);
@@ -213,9 +236,11 @@ function desenhar() {
   }
 
   document.getElementById('tbody').innerHTML = filtrados.map(l => {
-    const badgeClasse = l.status.replace('_','');
-    const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente', parcial:'Parcial'}[l.status];
     const ehTransferencia = !!l.conta_destino_id;
+    const badgeClasse = l.status.replace('_','');
+    const badgeTexto = ehTransferencia
+      ? {pago:'Confirmada', em_aberto:'Em aberto', inadimplente:'Inadimplente', parcial:'Parcial'}[l.status]
+      : {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente', parcial:'Parcial'}[l.status];
     const contaTxt = ehTransferencia
       ? `Débito: ${l.contas_bancarias?.nome ?? '-'} → Crédito: ${l.contas_destino?.nome ?? '-'}`
       : (l.contas_bancarias?.nome ?? '-');
@@ -229,7 +254,7 @@ function desenhar() {
         <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${Math.abs(l.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
         <td class="num">
           <div class="row-actions">
-            ${l.status !== 'pago' ? `<button class="icon-btn" data-pagar="${l.id}">Marcar Pago</button>` : ''}
+            ${l.status !== 'pago' ? `<button class="icon-btn" data-pagar="${l.id}">${ehTransferencia ? 'Confirmar' : 'Marcar Pago'}</button>` : ''}
             <button class="icon-btn" data-editar="${l.id}">Editar</button>
             <button class="icon-btn danger" data-excluir="${l.id}">Excluir</button>
           </div>
@@ -241,6 +266,21 @@ function desenhar() {
 document.getElementById('busca').addEventListener('input', desenhar);
 document.getElementById('f_status').addEventListener('change', () => { paginaAtual = 0; carregar(); });
 document.getElementById('f_mes').addEventListener('change', () => { paginaAtual = 0; carregar(); });
+
+// ---------- Filtro de tipo (Entradas/Saídas/Transferências) ----------
+const filtroTipo = document.getElementById('filtro-tipo');
+document.getElementById('filtro-tipo-btn').addEventListener('click', e => { e.stopPropagation(); filtroTipo.classList.toggle('open'); });
+document.addEventListener('click', () => filtroTipo.classList.remove('open'));
+filtroTipo.querySelector('.menu-acoes-lista').addEventListener('click', e => e.stopPropagation());
+
+const ROTULO_TIPO = { entrada: 'Entradas', saida: 'Saídas', transferencia: 'Transferências' };
+document.querySelectorAll('.chk-tipo').forEach(chk => chk.addEventListener('change', () => {
+  const marcados = [...document.querySelectorAll('.chk-tipo:checked')].map(c => c.value);
+  const btn = document.getElementById('filtro-tipo-btn');
+  btn.textContent = marcados.length === 3 ? 'Tipo: Todos ▾' : (marcados.length ? `Tipo: ${marcados.map(t=>ROTULO_TIPO[t]).join(', ')} ▾` : 'Tipo: nenhum ▾');
+  paginaAtual = 0;
+  carregar();
+}));
 
 document.getElementById('tbody').addEventListener('click', async e => {
   const editar = e.target.dataset?.editar;

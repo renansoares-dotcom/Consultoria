@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Taxa de Realização — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 <style>
   .tbl-tr { font-size: 12.5px; }
@@ -234,8 +234,23 @@ async function carregar() {
   document.getElementById('c-budget').textContent = fmt(totalBudget);
   document.getElementById('c-forecast').textContent = fmt(totalForecast);
   document.getElementById('c-real').textContent = fmt(totalReal);
+
   const trGeral = totalBudget !== 0 ? totalReal / totalBudget : 0;
-  document.getElementById('c-tr').textContent = fmtPct(trGeral);
+  const elTr = document.getElementById('c-tr');
+  if (totalBudget === 0 && totalReal !== 0) {
+    elTr.textContent = 'Sem Budget';
+    elTr.title = 'Nenhum valor de Budget foi cadastrado para este grupo/ano — cadastre em Budget Anual para calcular a Taxa de Realização.';
+    elTr.style.color = 'var(--amber)';
+  } else if (Math.abs(trGeral) > 9.99) {
+    elTr.textContent = '⚠ Conferir Budget';
+    elTr.title = `O cálculo deu ${fmtPct(trGeral)} — o Budget cadastrado (${fmt(totalBudget)}) parece muito baixo perto do Realizado (${fmt(totalReal)}). Confira os valores em Budget Anual.`;
+    elTr.style.color = 'var(--red)';
+    elTr.style.fontSize = '15px';
+  } else {
+    elTr.textContent = fmtPct(trGeral);
+    elTr.style.color = '';
+    elTr.style.fontSize = '';
+  }
 }
 
 await carregar();
