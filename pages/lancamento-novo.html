@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Novo Lançamento — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item active">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:760px;">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow" id="eyebrow">Movimentação</span>
+      <h1 id="titulo-pagina">Novo Lançamento</h1>
+    </div>
+    <a href="lancamentos.html" class="btn ghost">← Voltar à listagem</a>
+  </div>
+
+  <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+  <form id="form-lancamento" class="card">
+
+    <div class="row-2">
+      <label class="field">
+        <span class="field-label">Data *</span>
+        <input class="input" type="date" id="f_data" required>
+      </label>
+      <label class="field">
+        <span class="field-label">Grupo Empresarial *</span>
+        <select class="input" id="f_grupo" required></select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Plano de Contas *</span>
+      <select class="input" id="f_plano" required></select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Descrição</span>
+      <input class="input" type="text" id="f_descricao" placeholder="Ex: Pagamento de fornecedor XYZ">
+    </label>
+
+    <div class="row-2">
+      <label class="field">
+        <span class="field-label">Favorecido</span>
+        <select class="input" id="f_favorecido"><option value="">Selecione…</option></select>
+      </label>
+      <label class="field">
+        <span class="field-label">Centro de Custo</span>
+        <select class="input" id="f_centro_custo"><option value="">Selecione…</option></select>
+      </label>
+    </div>
+
+    <div class="row-2">
+      <label class="field">
+        <span class="field-label">Status *</span>
+        <select class="input" id="f_status" required>
+          <option value="pago">Pago</option>
+          <option value="em_aberto" selected>Em aberto</option>
+          <option value="inadimplente">Inadimplente</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">Valor (R$) *</span>
+        <input class="input mono" type="number" step="0.01" min="0" id="f_valor" placeholder="0,00" required>
+      </label>
+    </div>
+
+    <!-- Entrada / Saída: uma única conta -->
+    <div id="bloco-conta-unica">
+      <label class="field">
+        <span class="field-label">Conta Bancária *</span>
+        <select class="input" id="f_conta"><option value="">Selecione…</option></select>
+      </label>
+    </div>
+
+    <!-- Transferência: origem + destino -->
+    <div id="bloco-transferencia" class="row-2" style="display:none;">
+      <label class="field">
+        <span class="field-label">Conta de Origem *</span>
+        <select class="input" id="f_conta_origem"><option value="">Selecione…</option></select>
+      </label>
+      <label class="field">
+        <span class="field-label">Conta de Destino *</span>
+        <select class="input" id="f_conta_destino"><option value="">Selecione…</option></select>
+      </label>
+    </div>
+
+    <div class="row-2">
+      <label class="field">
+        <span class="field-label">Data de Vencimento</span>
+        <input class="input" type="date" id="f_vencimento">
+      </label>
+      <label class="field">
+        <span class="field-label">Data de Pagamento</span>
+        <input class="input" type="date" id="f_pagamento">
+      </label>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Observações</span>
+      <input class="input" type="text" id="f_obs">
+    </label>
+
+    <div class="modal-actions" style="margin-top:10px;">
+      <a href="lancamentos.html" class="btn ghost">Cancelar</a>
+      <button class="btn primary" type="submit" id="btn-salvar">Salvar lançamento</button>
+    </div>
+  </form>
+</main>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
+});
+
+const TENANT_ID = usuario?.tenant_id;
+
+// Edição: /pages/lancamento-novo.html?id=UUID
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+let planosCache = [];
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg;
+  box.style.display = 'block';
+}
+
+async function carregarSelect(id, tabela, campoNome = 'nome', extraFiltro = null) {
+  let query = supabase.from(tabela).select(`id, ${campoNome}`).eq('ativo', true).order(campoNome);
+  const { data, error } = await query;
+  const select = document.getElementById(id);
+  if (error) { mostrarErro('Erro ao carregar ' + tabela + ': ' + error.message); return []; }
+  select.innerHTML = '<option value="">Selecione…</option>' + (data || []).map(r => `<option value="${r.id}">${r[campoNome]}</option>`).join('');
+  return data || [];
+}
+
+async function carregarPlanoContas() {
+  const { data, error } = await supabase.from('plano_contas').select('id, tipo, codigo_conta, nome_conta').eq('ativo', true).order('codigo_conta');
+  if (error) { mostrarErro('Erro ao carregar plano de contas: ' + error.message); return; }
+  planosCache = data || [];
+  const grupos = { entrada: [], saida: [], transferencia: [] };
+  planosCache.forEach(p => grupos[p.tipo]?.push(p));
+  const rotulos = { entrada: 'Entradas', saida: 'Saídas', transferencia: 'Transferências' };
+  const select = document.getElementById('f_plano');
+  select.innerHTML = '<option value="">Selecione…</option>' + Object.entries(grupos).map(([tipo, itens]) =>
+    itens.length ? `<optgroup label="${rotulos[tipo]}">${itens.map(p => `<option value="${p.id}" data-tipo="${tipo}">${p.codigo_conta} — ${p.nome_conta}</option>`).join('')}</optgroup>` : ''
+  ).join('');
+}
+
+function alternarBlocoConta() {
+  const opt = document.getElementById('f_plano').selectedOptions[0];
+  const tipo = opt?.dataset.tipo;
+  const ehTransferencia = tipo === 'transferencia';
+  document.getElementById('bloco-conta-unica').style.display = ehTransferencia ? 'none' : 'block';
+  document.getElementById('bloco-transferencia').style.display = ehTransferencia ? 'grid' : 'none';
+  document.getElementById('f_conta').required = !ehTransferencia;
+  document.getElementById('f_conta_origem').required = ehTransferencia;
+  document.getElementById('f_conta_destino').required = ehTransferencia;
+}
+
+document.getElementById('f_plano').addEventListener('change', alternarBlocoConta);
+
+document.getElementById('f_status').addEventListener('change', e => {
+  if (e.target.value === 'pago' && !document.getElementById('f_pagamento').value) {
+    document.getElementById('f_pagamento').value = document.getElementById('f_data').value || new Date().toISOString().slice(0,10);
+  }
+});
+
+async function preencherParaEdicao() {
+  if (!idEdicao) {
+    document.getElementById('f_data').value = new Date().toISOString().slice(0,10);
+    return;
+  }
+  document.getElementById('titulo-pagina').textContent = 'Editar Lançamento';
+  document.getElementById('eyebrow').textContent = 'Movimentação · edição';
+  const { data: l, error } = await supabase.from('lancamentos').select('*').eq('id', idEdicao).single();
+  if (error || !l) { mostrarErro('Lançamento não encontrado.'); return; }
+
+  document.getElementById('f_data').value = l.data;
+  document.getElementById('f_grupo').value = l.grupo_empresarial_id ?? '';
+  document.getElementById('f_plano').value = l.plano_conta_id;
+  alternarBlocoConta();
+  document.getElementById('f_descricao').value = l.descricao ?? '';
+  document.getElementById('f_favorecido').value = l.favorecido_id ?? '';
+  document.getElementById('f_centro_custo').value = l.centro_custo_id ?? '';
+  document.getElementById('f_status').value = l.status;
+  document.getElementById('f_valor').value = Math.abs(l.valor);
+  document.getElementById('f_conta').value = l.conta_destino_id ? '' : (l.conta_bancaria_id ?? '');
+  document.getElementById('f_conta_origem').value = l.conta_bancaria_id ?? '';
+  document.getElementById('f_conta_destino').value = l.conta_destino_id ?? '';
+  document.getElementById('f_vencimento').value = l.data_vencimento ?? '';
+  document.getElementById('f_pagamento').value = l.data_pagamento ?? '';
+  document.getElementById('f_obs').value = l.observacoes ?? '';
+}
+
+async function iniciar() {
+  await Promise.all([
+    carregarSelect('f_grupo', 'grupos_empresariais'),
+    carregarSelect('f_favorecido', 'favorecidos'),
+    carregarSelect('f_centro_custo', 'centros_custo'),
+    carregarSelect('f_conta', 'contas_bancarias'),
+    carregarSelect('f_conta_origem', 'contas_bancarias'),
+    carregarSelect('f_conta_destino', 'contas_bancarias'),
+    carregarPlanoContas(),
+  ]);
+  await preencherParaEdicao();
+}
+await iniciar();
+
+document.getElementById('form-lancamento').addEventListener('submit', async e => {
+  e.preventDefault();
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  const planoOpt = document.getElementById('f_plano').selectedOptions[0];
+  const tipo = planoOpt?.dataset.tipo;
+  if (!tipo) { mostrarErro('Selecione um plano de contas.'); return; }
+
+  const valorAbs = Number(document.getElementById('f_valor').value || 0);
+  let valor = valorAbs;
+  if (tipo === 'saida') valor = -valorAbs;
+
+  const payload = {
+    tenant_id: TENANT_ID,
+    grupo_empresarial_id: document.getElementById('f_grupo').value,
+    data: document.getElementById('f_data').value,
+    plano_conta_id: planoOpt.value,
+    descricao: document.getElementById('f_descricao').value || null,
+    favorecido_id: document.getElementById('f_favorecido').value || null,
+    centro_custo_id: document.getElementById('f_centro_custo').value || null,
+    status: document.getElementById('f_status').value,
+    valor: valor,
+    data_vencimento: document.getElementById('f_vencimento').value || null,
+    data_pagamento: document.getElementById('f_pagamento').value || null,
+    observacoes: document.getElementById('f_obs').value || null,
+    criado_por: usuario?.id || null,
+  };
+
+  if (tipo === 'transferencia') {
+    payload.conta_bancaria_id = document.getElementById('f_conta_origem').value;
+    payload.conta_destino_id = document.getElementById('f_conta_destino').value;
+    if (!payload.conta_bancaria_id || !payload.conta_destino_id) { mostrarErro('Selecione a conta de origem e a de destino.'); return; }
+    if (payload.conta_bancaria_id === payload.conta_destino_id) { mostrarErro('A conta de origem e destino não podem ser a mesma.'); return; }
+  } else {
+    payload.conta_bancaria_id = document.getElementById('f_conta').value;
+    payload.conta_destino_id = null;
+    if (!payload.conta_bancaria_id) { mostrarErro('Selecione a conta bancária.'); return; }
+  }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const query = idEdicao
+    ? supabase.from('lancamentos').update(payload).eq('id', idEdicao)
+    : supabase.from('lancamentos').insert(payload);
+  const { error } = await query;
+
+  btn.disabled = false; btn.textContent = 'Salvar lançamento';
+
+  if (error) { mostrarErro('Erro ao salvar: ' + error.message); return; }
+  window.location.href = 'lancamentos.html';
+});
+</script>
+</body>
+</html>

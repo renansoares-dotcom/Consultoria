@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lançamentos — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item active">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Movimentação</span>
+      <h1>Lançamentos</h1>
+    </div>
+    <a href="lancamento-novo.html" class="btn primary">＋ Novo lançamento</a>
+  </div>
+
+  <div class="toolbar" style="flex-wrap:wrap;">
+    <input class="input" id="busca" placeholder="Buscar por descrição, favorecido..." style="max-width:240px;">
+    <select class="input" id="f_status" style="max-width:160px;">
+      <option value="">Status: todos</option>
+      <option value="pago">Pago</option>
+      <option value="em_aberto">Em aberto</option>
+      <option value="inadimplente">Inadimplente</option>
+    </select>
+    <input class="input" type="month" id="f_mes" style="max-width:170px;">
+    <span class="count-pill" id="contador">0 lançamentos</span>
+    <div class="spacer"></div>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Plano de Contas</th><th>Descrição</th><th>Favorecido</th><th>Status</th><th class="num">Valor</th><th class="num">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="7" class="empty-state">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
+});
+
+// Filtro de status pode vir por querystring (?status=em_aberto) a partir de outros menus
+const params = new URLSearchParams(location.search);
+if (params.get('status')) document.getElementById('f_status').value = params.get('status');
+
+let lancamentos = [];
+
+async function carregar() {
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+  let query = supabase
+    .from('lancamentos')
+    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome)')
+    .order('data', { ascending: false })
+    .limit(300);
+
+  const status = document.getElementById('f_status').value;
+  if (status) query = query.eq('status', status);
+
+  const mes = document.getElementById('f_mes').value; // yyyy-mm
+  if (mes) {
+    const [ano, m] = mes.split('-');
+    const inicio = `${ano}-${m}-01`;
+    const fim = new Date(Number(ano), Number(m), 0).toISOString().slice(0,10);
+    query = query.gte('data', inicio).lte('data', fim);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    return;
+  }
+  lancamentos = data || [];
+  desenhar();
+}
+
+function desenhar() {
+  const busca = document.getElementById('busca').value.trim().toLowerCase();
+  const filtrados = busca
+    ? lancamentos.filter(l => JSON.stringify(l).toLowerCase().includes(busca))
+    : lancamentos;
+
+  document.getElementById('contador').textContent = `${filtrados.length} lançamento${filtrados.length===1?'':'s'}`;
+
+  if (!filtrados.length) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum lançamento encontrado.</td></tr>`;
+    return;
+  }
+
+  document.getElementById('tbody').innerHTML = filtrados.map(l => {
+    const badgeClasse = l.status.replace('_','');
+    const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente'}[l.status];
+    const contaTxt = l.conta_destino_id ? `${l.contas_bancarias?.nome ?? '-'} → transf.` : (l.contas_bancarias?.nome ?? '-');
+    return `
+      <tr>
+        <td>${new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+        <td>${l.plano_contas ? l.plano_contas.codigo_conta + ' — ' + l.plano_contas.nome_conta : '-'}</td>
+        <td>${l.descricao ?? '-'}<br><span style="color:var(--ink-soft); font-size:11px;">${contaTxt}</span></td>
+        <td>${l.favorecidos?.nome ?? '-'}</td>
+        <td><span class="badge ${badgeClasse}">${badgeTexto}</span></td>
+        <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${Math.abs(l.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+        <td class="num">
+          <div class="row-actions">
+            ${l.status !== 'pago' ? `<button class="icon-btn" data-pagar="${l.id}">Marcar Pago</button>` : ''}
+            <button class="icon-btn" data-editar="${l.id}">Editar</button>
+            <button class="icon-btn danger" data-excluir="${l.id}">Excluir</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+document.getElementById('busca').addEventListener('input', desenhar);
+document.getElementById('f_status').addEventListener('change', carregar);
+document.getElementById('f_mes').addEventListener('change', carregar);
+
+document.getElementById('tbody').addEventListener('click', async e => {
+  const editar = e.target.dataset?.editar;
+  const excluir = e.target.dataset?.excluir;
+  const pagar = e.target.dataset?.pagar;
+
+  if (editar) window.location.href = `lancamento-novo.html?id=${editar}`;
+
+  if (excluir) {
+    if (!confirm('Excluir este lançamento? Essa ação não pode ser desfeita.')) return;
+    const { error } = await supabase.from('lancamentos').delete().eq('id', excluir);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+    await carregar();
+  }
+
+  if (pagar) {
+    const hoje = new Date().toISOString().slice(0,10);
+    const { error } = await supabase.from('lancamentos').update({ status: 'pago', data_pagamento: hoje }).eq('id', pagar);
+    if (error) { alert('Erro ao atualizar: ' + error.message); return; }
+    await carregar();
+  }
+});
+
+await carregar();
+</script>
+</body>
+</html>
