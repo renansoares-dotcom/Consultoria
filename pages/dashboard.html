@@ -32,8 +32,8 @@
       <button>Fluxo de Caixa</button>
       <div class="nav-panel">
         <span class="group-label">Realizado</span>
-        <a href="#"><span class="code">4.1</span> Fluxo Diário</a>
-        <a href="#"><span class="code">4.3</span> Fluxo Mensal</a>
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
         <span class="group-label">Pagamentos por Plano de Contas</span>
         <a href="#"><span class="code">4.5</span> Entradas Pagas</a>
         <a href="#"><span class="code">4.6</span> Saídas Pagas</a>
@@ -142,6 +142,8 @@
 
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+import { initNav } from '../js/nav.js';
+initNav();
 
   const sessao = await exigirSessao();
   if (sessao) {
