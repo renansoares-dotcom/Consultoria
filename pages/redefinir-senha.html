@@ -40,6 +40,8 @@
 
 <script type="module">
   import { supabase } from '../js/supabase-client.js';
+  import { initTheme } from '../js/theme.js';
+  initTheme();
 
   const aviso = document.getElementById('aviso');
   function mostrar(msg, tipo) {
