@@ -10,6 +10,7 @@
 <style>
   .transf-linha { display: grid; grid-template-columns: 1fr 160px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -199,12 +200,17 @@
 
     <!-- ============================== ABA TÍTULOS ANTECIPADOS ============================== -->
     <div id="tab-titulos" style="display:none;">
-      <div class="toolbar" style="margin-bottom:10px;">
+      <div class="toolbar" style="margin-bottom:10px; flex-wrap:wrap;">
         <input class="input" id="busca-titulos" placeholder="Buscar por favorecido ou descrição..." style="max-width:280px;">
         <span class="count-pill" id="contador-titulos">0 selecionado(s)</span>
         <div class="spacer"></div>
         <span style="font-size:12px; color:var(--ink-soft);">Soma selecionada: <strong id="soma-titulos" class="mono">R$ 0,00</strong></span>
+        <button type="button" class="btn ghost" id="btn-importar-xmls-lote">📥 Importar XMLs (lote)</button>
+        <button type="button" class="btn ghost" id="btn-importar-planilha">📊 Importar Planilha</button>
       </div>
+      <p style="color:var(--ink-soft); font-size:11.5px; margin:-4px 0 12px;">
+        Títulos que ainda não existem no sistema são criados automaticamente como Contas a Receber e já entram selecionados aqui.
+      </p>
       <div class="lista-selecao" id="lista-titulos">
         <div class="lista-selecao-linha"><span class="col-desc">Carregando contas a receber em aberto…</span></div>
       </div>
@@ -229,6 +235,29 @@
 </main>
 
 <input type="file" id="input-xml" accept=".xml" style="display:none;">
+<input type="file" id="input-xmls-lote" accept=".xml" multiple style="display:none;">
+<input type="file" id="input-planilha" accept=".csv,.xlsx,.xls" style="display:none;">
+
+<!-- Modal: prévia da importação em lote -->
+<div class="modal-overlay" id="modal-importacao">
+  <div class="modal" style="max-width:760px;">
+    <h2>Conferir importação em lote</h2>
+    <div class="modal-sub" id="previa-contador">Revise os títulos identificados antes de confirmar.</div>
+    <div style="max-height:380px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:6px;">
+      <table style="font-size:12px;">
+        <thead><tr><th>Origem</th><th>Favorecido</th><th>Documento</th><th class="num">Valor</th><th>Vencimento</th><th>Situação</th></tr></thead>
+        <tbody id="tbody-previa"></tbody>
+      </table>
+    </div>
+    <p style="color:var(--ink-soft); font-size:11.5px; margin:6px 0 0;">
+      Favorecidos marcados como <span class="badge aberto">novo</span> serão cadastrados automaticamente (tipo Cliente).
+    </p>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="cancelar-importacao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-importacao">Confirmar e importar</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
@@ -344,7 +373,7 @@ const titulosSelecionados = new Set();
 async function carregarTitulos() {
   const { data, error } = await supabase
     .from('lancamentos')
-    .select('id, data_vencimento, descricao, valor, favorecidos(nome), plano_contas!inner(tipo)')
+    .select('id, data_vencimento, descricao, valor, chave_acesso_nfe, numero_documento, favorecidos(nome), plano_contas!inner(tipo)')
     .eq('plano_contas.tipo', 'entrada')
     .eq('status', 'em_aberto')
     .order('data_vencimento', { ascending: true });
@@ -412,6 +441,225 @@ function atualizarResumoTitulos() {
 }
 
 await carregarTitulos();
+
+// ============================================================================
+// IMPORTAÇÃO EM LOTE (XMLs múltiplos ou planilha CSV/Excel)
+// ============================================================================
+let favorecidosCache = [];
+{
+  const { data } = await supabase.from('favorecidos').select('id, nome, cnpj_cpf').eq('ativo', true);
+  favorecidosCache = data || [];
+}
+
+function encontrarFavorecido(nome, cnpj) {
+  const nomeNorm = (nome || '').trim().toLowerCase();
+  const cnpjNorm = (cnpj || '').replace(/\D/g, '');
+  let match = cnpjNorm ? favorecidosCache.find(f => (f.cnpj_cpf||'').replace(/\D/g,'') === cnpjNorm) : null;
+  if (!match && nomeNorm) match = favorecidosCache.find(f => f.nome.trim().toLowerCase() === nomeNorm);
+  return match;
+}
+
+function contaRecebimentoValida() {
+  const v = document.getElementById('f_conta_recebimento').value;
+  if (!v) {
+    document.querySelectorAll('.subnav button')[0].click();
+    mostrarErro('Selecione a Conta de Recebimento na aba Dados antes de importar títulos.');
+  }
+  return v;
+}
+
+let previaImportacao = [];
+
+function abrirPreviaModal(linhas) {
+  previaImportacao = linhas;
+  const tbody = document.getElementById('tbody-previa');
+  tbody.innerHTML = linhas.map(l => `
+    <tr>
+      <td>${l.origem}</td>
+      <td>${l.favorecidoNome}${l.favorecidoNovo ? ' <span class="badge aberto">novo</span>' : ''}</td>
+      <td>${l.numero_documento ?? '-'}</td>
+      <td class="num mono">${fmt(l.valor)}</td>
+      <td>${l.data_vencimento ? new Date(l.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+      <td style="font-size:11px; color:${l.statusImportacao==='Novo título'?'var(--accent)':'var(--ink-soft)'};">${l.statusImportacao}</td>
+    </tr>`).join('');
+  const novos = linhas.filter(l => l.statusImportacao === 'Novo título').length;
+  document.getElementById('previa-contador').textContent = `${linhas.length} identificado(s): ${novos} novo(s), ${linhas.length-novos} já existente(s) ou com erro.`;
+  document.getElementById('modal-importacao').classList.add('open');
+}
+document.getElementById('cancelar-importacao').addEventListener('click', () => document.getElementById('modal-importacao').classList.remove('open'));
+
+// ---------- Importar múltiplos XMLs de NFe ----------
+document.getElementById('btn-importar-xmls-lote').addEventListener('click', () => {
+  if (!contaRecebimentoValida()) return;
+  document.getElementById('input-xmls-lote').click();
+});
+document.getElementById('input-xmls-lote').addEventListener('change', async e => {
+  const arquivos = [...e.target.files];
+  if (!arquivos.length) return;
+
+  const linhas = [];
+  for (const arquivo of arquivos) {
+    try {
+      const texto = await arquivo.text();
+      const xml = new DOMParser().parseFromString(texto, 'application/xml');
+      if (xml.querySelector('parsererror')) { linhas.push({ origem: arquivo.name, valor: 0, statusImportacao: 'Erro ao ler XML' }); continue; }
+
+      const infNFe = xml.getElementsByTagName('infNFe')[0];
+      const chave = infNFe ? (infNFe.getAttribute('Id') || '').replace('NFe', '').trim() : null;
+      const vNF = xml.getElementsByTagName('vNF')[0]?.textContent;
+      const nNF = xml.getElementsByTagName('nNF')[0]?.textContent;
+      const dhEmi = (xml.getElementsByTagName('dhEmi')[0] || xml.getElementsByTagName('dEmi')[0])?.textContent;
+      const destEl = xml.getElementsByTagName('dest')[0];
+      const destNome = destEl?.getElementsByTagName('xNome')[0]?.textContent;
+      const destCnpj = (destEl?.getElementsByTagName('CNPJ')[0] || destEl?.getElementsByTagName('CPF')[0])?.textContent;
+      const favorecidoMatch = encontrarFavorecido(destNome, destCnpj);
+
+      linhas.push({
+        origem: arquivo.name,
+        chave_acesso_nfe: chave,
+        numero_documento: nNF ? `NF ${nNF}` : null,
+        valor: vNF ? parseFloat(vNF) : 0,
+        data_emissao: dhEmi ? dhEmi.slice(0,10) : null,
+        data_vencimento: dhEmi ? dhEmi.slice(0,10) : null,
+        favorecidoId: favorecidoMatch?.id || null,
+        favorecidoNome: favorecidoMatch?.nome || destNome || 'Sem identificação',
+        favorecidoNovo: !favorecidoMatch && !!destNome,
+        favorecidoCnpj: destCnpj,
+        statusImportacao: 'Novo título',
+      });
+    } catch (err) {
+      linhas.push({ origem: arquivo.name, valor: 0, statusImportacao: 'Erro ao processar' });
+    }
+  }
+
+  const chaves = linhas.filter(l => l.chave_acesso_nfe).map(l => l.chave_acesso_nfe);
+  if (chaves.length) {
+    const { data: existentes } = await supabase.from('lancamentos').select('chave_acesso_nfe, status').in('chave_acesso_nfe', chaves);
+    (existentes || []).forEach(ex => {
+      const l = linhas.find(x => x.chave_acesso_nfe === ex.chave_acesso_nfe);
+      if (l) l.statusImportacao = (ex.status === 'em_aberto' || ex.status === 'parcial') ? 'Já existe (será selecionado)' : `Já existe — status ${ex.status}, ignorado`;
+    });
+  }
+
+  abrirPreviaModal(linhas);
+  e.target.value = '';
+});
+
+// ---------- Importar planilha (CSV/Excel) ----------
+document.getElementById('btn-importar-planilha').addEventListener('click', () => {
+  if (!contaRecebimentoValida()) return;
+  document.getElementById('input-planilha').click();
+});
+document.getElementById('input-planilha').addEventListener('change', async e => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+
+  const buffer = await arquivo.arrayBuffer();
+  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+  const linhasBrutas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+
+  const acharCampo = (row, padroes) => {
+    const chave = Object.keys(row).find(k => padroes.some(p => k.toLowerCase().includes(p)));
+    return chave ? row[chave] : null;
+  };
+
+  const linhas = linhasBrutas.map(row => {
+    const nomeFav = acharCampo(row, ['favorecido','sacado','cliente','devedor','nome']);
+    const valorBruto = acharCampo(row, ['valor']);
+    const vencBruto = acharCampo(row, ['vencimento','data']);
+    const docBruto = acharCampo(row, ['documento','nota','nf','numero','título','titulo']);
+
+    let dataVenc = null;
+    if (vencBruto instanceof Date) dataVenc = vencBruto.toISOString().slice(0,10);
+    else if (typeof vencBruto === 'string' && vencBruto.trim()) {
+      const partes = vencBruto.trim().split(/[\/\-]/);
+      if (partes.length === 3) dataVenc = partes[2].length === 4 ? `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}` : vencBruto;
+    }
+
+    let valor = 0;
+    if (typeof valorBruto === 'number') valor = valorBruto;
+    else if (typeof valorBruto === 'string') {
+      const limpo = valorBruto.replace(/[^\d,.-]/g,'');
+      valor = limpo.includes(',') ? parseFloat(limpo.replace(/\./g,'').replace(',','.')) : parseFloat(limpo);
+    }
+
+    const favorecidoMatch = encontrarFavorecido(nomeFav, null);
+    return {
+      origem: 'Planilha',
+      numero_documento: docBruto ? String(docBruto) : null,
+      valor: valor || 0,
+      data_vencimento: dataVenc,
+      favorecidoId: favorecidoMatch?.id || null,
+      favorecidoNome: favorecidoMatch?.nome || nomeFav || 'Sem identificação',
+      favorecidoNovo: !favorecidoMatch && !!nomeFav,
+      statusImportacao: 'Novo título',
+    };
+  }).filter(l => l.valor > 0);
+
+  if (!linhas.length) { mostrarErro('Não foi possível identificar linhas válidas na planilha. Confira se há colunas de Favorecido e Valor.'); e.target.value = ''; return; }
+
+  abrirPreviaModal(linhas);
+  e.target.value = '';
+});
+
+// ---------- Confirmar importação (cria favorecidos/títulos e já seleciona) ----------
+document.getElementById('btn-confirmar-importacao').addEventListener('click', async () => {
+  const grupoId = document.getElementById('f_grupo').value;
+  const contaRecebimento = document.getElementById('f_conta_recebimento').value;
+  if (!grupoId || !contaRecebimento) { alert('Preencha Grupo Empresarial e Conta de Recebimento na aba Dados antes de importar.'); return; }
+  if (!planosEntrada.length) { alert('Cadastre ao menos uma conta de Entrada no Plano de Contas antes de importar.'); return; }
+
+  const btn = document.getElementById('btn-confirmar-importacao');
+  btn.disabled = true; btn.textContent = 'Importando…';
+
+  const planoPadrao = planosEntrada[0].id;
+  const validas = previaImportacao.filter(l => l.statusImportacao === 'Novo título' && l.valor > 0);
+
+  for (const l of validas) {
+    let favorecidoId = l.favorecidoId;
+    if (!favorecidoId && l.favorecidoNovo) {
+      const { data: novoFav } = await supabase.from('favorecidos').insert({
+        tenant_id: TENANT_ID, tipo: 'clientes', nome: l.favorecidoNome, cnpj_cpf: l.favorecidoCnpj || null,
+      }).select('id').single();
+      if (novoFav) { favorecidoId = novoFav.id; favorecidosCache.push(novoFav); }
+    }
+
+    await supabase.from('lancamentos').insert({
+      tenant_id: TENANT_ID,
+      grupo_empresarial_id: grupoId,
+      data: l.data_emissao || new Date().toISOString().slice(0,10),
+      data_emissao: l.data_emissao || null,
+      plano_conta_id: planoPadrao,
+      descricao: `Título antecipado — ${l.origem}`,
+      favorecido_id: favorecidoId || null,
+      status: 'em_aberto',
+      conta_bancaria_id: contaRecebimento,
+      valor: l.valor,
+      data_vencimento: l.data_vencimento || null,
+      numero_documento: l.numero_documento || null,
+      chave_acesso_nfe: l.chave_acesso_nfe || null,
+      criado_por: usuario?.id || null,
+    });
+  }
+
+  document.getElementById('modal-importacao').classList.remove('open');
+  await carregarTitulos();
+
+  // auto-seleciona os títulos recém-importados (ou já existentes identificados)
+  titulosDisponiveis.forEach(t => {
+    const bateu = previaImportacao.find(l =>
+      (l.chave_acesso_nfe && l.chave_acesso_nfe === t.chave_acesso_nfe) ||
+      (l.numero_documento && l.numero_documento === t.numero_documento && Math.abs(l.valor - Math.abs(t.valor)) < 0.01)
+    );
+    if (bateu) titulosSelecionados.add(t.id);
+  });
+  desenharTitulos();
+  atualizarResumoTitulos();
+
+  btn.disabled = false; btn.textContent = 'Confirmar e importar';
+  document.getElementById('aviso-ok').style.display = 'block';
+  document.getElementById('aviso-ok').textContent = `${validas.length} título(s) importado(s) e selecionado(s) com sucesso.`;
+});
 
 // ============================================================================
 // TRANSFERÊNCIAS
