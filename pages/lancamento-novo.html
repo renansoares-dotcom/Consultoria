@@ -40,6 +40,51 @@
   .saldo-card { display: flex; gap: 20px; flex-wrap: wrap; }
   .saldo-card .item { flex: 1; min-width: 140px; }
   .saldo-card .item .num { font-family: var(--font-mono); font-size: 20px; font-weight: 600; }
+
+  /* ---------- Janela retangular (estilo tela de manutenção de títulos) ---------- */
+  .janela {
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 18px 44px rgba(16,35,28,.12);
+    background: var(--paper-raised);
+    margin-bottom: 40px;
+  }
+  .janela-titulo {
+    background: var(--ledger);
+    color: #eef3f0;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .janela-titulo-texto {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-size: 14.5px; font-weight: 600; color: #fff;
+  }
+  .janela-titulo-icone { opacity: .6; font-size: 14px; }
+  .janela-titulo-acoes { display: flex; align-items: center; gap: 4px; }
+  .janela-btn {
+    all: unset; cursor: pointer; color: #cfd8d2;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: 15px;
+  }
+  .janela-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+  .janela-abas {
+    margin: 0; padding: 0 14px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .janela-abas button { padding: 10px 14px; font-size: 12.5px; }
+
+  .janela-corpo { padding: 20px 22px 24px; }
+  .janela-corpo label.field { margin-bottom: 12px; }
+  .janela-corpo .field-label { font-size: 11px; margin-bottom: 3px; }
+  .janela-corpo .input { padding: 8px 10px; font-size: 13px; }
+
+  .janela-secao { padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .janela-secao:first-child { padding-top: 0; }
 </style>
 </head>
 <body>
@@ -109,38 +154,42 @@
   </div>
 </header>
 
-<main class="page" style="max-width:900px;">
-  <div class="page-header">
-    <div>
-      <span class="eyebrow" id="eyebrow">Movimentação</span>
-      <h1 id="titulo-pagina">Novo Compromisso</h1>
-    </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <a href="lancamentos.html" class="btn ghost no-print">← Voltar</a>
-      <div class="menu-acoes no-print" id="menu-acoes">
-        <button class="menu-acoes-btn" id="menu-acoes-btn" type="button">⋮</button>
-        <div class="menu-acoes-lista">
-          <button type="button" id="acao-anexar">📎 Anexar arquivo</button>
-          <button type="button" id="acao-baixar">💲 Baixar compromisso</button>
-          <button type="button" id="acao-imprimir">🖨 Imprimir</button>
-          <hr>
-          <button type="button" id="acao-excluir" class="perigo">🗑 Excluir</button>
+<main class="page" style="max-width:960px; padding-top:24px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">▤</span>
+        <span id="titulo-pagina">Novo Compromisso</span>
+      </div>
+      <div class="janela-titulo-acoes no-print">
+        <a href="lancamentos.html" class="janela-btn" title="Voltar">←</a>
+        <div class="menu-acoes" id="menu-acoes">
+          <button class="janela-btn" id="menu-acoes-btn" type="button" title="Mais ações">⋮</button>
+          <div class="menu-acoes-lista">
+            <button type="button" id="acao-anexar">📎 Anexar arquivo</button>
+            <button type="button" id="acao-baixar">💲 Baixar compromisso</button>
+            <button type="button" id="acao-imprimir">🖨 Imprimir</button>
+            <hr>
+            <button type="button" id="acao-excluir" class="perigo">🗑 Excluir</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="dados">Dados</button>
+      <button data-tab="distribuicao">Distribuição</button>
+      <button data-tab="historico">Histórico</button>
+    </nav>
 
-  <nav class="subnav">
-    <button class="active" data-tab="dados">Dados</button>
-    <button data-tab="distribuicao">Distribuição</button>
-    <button data-tab="historico">Histórico</button>
-  </nav>
+    <div class="janela-corpo">
+
+    <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
 
   <!-- ============================== ABA DADOS ============================== -->
   <div id="tab-dados">
-    <form id="form-dados" class="card">
+    <form id="form-dados">
 
       <div class="row-2">
         <label class="field">
@@ -283,14 +332,14 @@
 
   <!-- ============================== ABA DISTRIBUIÇÃO ============================== -->
   <div id="tab-distribuicao" style="display:none;">
-    <div class="card" style="margin-bottom:16px;">
+    <div class="janela-secao">
       <div class="label" style="margin-bottom:10px;">Distribuição por Conta (Plano de Contas)</div>
       <div id="dist-conta-linhas"></div>
       <button type="button" class="btn ghost" id="btn-add-conta">＋ Adicionar conta</button>
       <div class="dist-total" id="dist-conta-total">Total: 0,00% <span></span></div>
     </div>
 
-    <div class="card">
+    <div class="janela-secao" style="border-bottom:none;">
       <div class="label" style="margin-bottom:10px;">Distribuição por Centro de Custo <span style="font-weight:400; color:var(--ink-soft); font-size:11.5px;">(opcional)</span></div>
       <div id="dist-cc-linhas"></div>
       <button type="button" class="btn ghost" id="btn-add-cc">＋ Adicionar centro de custo</button>
@@ -304,13 +353,14 @@
 
   <!-- ============================== ABA HISTÓRICO ============================== -->
   <div id="tab-historico" style="display:none;">
-    <section class="card" style="padding:0; overflow:hidden;">
-      <table>
-        <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead>
-        <tbody id="tbody-historico"><tr><td colspan="4" class="empty-state">Salve o compromisso para ver o histórico.</td></tr></tbody>
-      </table>
-    </section>
+    <table>
+      <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhes</th></tr></thead>
+      <tbody id="tbody-historico"><tr><td colspan="4" class="empty-state">Salve o compromisso para ver o histórico.</td></tr></tbody>
+    </table>
   </div>
+
+    </div> <!-- /janela-corpo -->
+  </div> <!-- /janela -->
 </main>
 
 <!-- Modal: registrar baixa -->
@@ -724,7 +774,6 @@ async function carregarDadosExistentes() {
   if (!idEdicao) { document.getElementById('f_data').value = new Date().toISOString().slice(0,10); return; }
 
   document.getElementById('titulo-pagina').textContent = 'Editar Compromisso';
-  document.getElementById('eyebrow').textContent = 'Movimentação · edição';
 
   const { data: l, error } = await supabase.from('lancamentos').select('*, plano_contas(tipo)').eq('id', idEdicao).single();
   if (error || !l) { mostrarErro('Compromisso não encontrado.'); return; }
