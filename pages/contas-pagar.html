@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lançamentos — Fluxo de Caixa</title>
+<title>Contas a Pagar — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
@@ -14,10 +14,9 @@
   <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
   <nav class="nav-cascade">
     <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
-    <div class="nav-item active">
+    <div class="nav-item">
       <button>Lançamentos</button>
       <div class="nav-panel">
-        <span class="group-label">Movimentação</span>
         <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
         <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
       </div>
@@ -29,7 +28,7 @@
         <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
       </div>
     </div>
-    <div class="nav-item">
+    <div class="nav-item active">
       <button>Contas a Receber/Pagar</button>
       <div class="nav-panel">
         <span class="group-label">Em aberto</span>
@@ -60,22 +59,26 @@
 <main class="page">
   <div class="page-header">
     <div>
-      <span class="eyebrow">Movimentação</span>
-      <h1>Lançamentos</h1>
+      <span class="eyebrow">Em aberto · 5.3</span>
+      <h1>Contas a Pagar</h1>
     </div>
     <a href="lancamento-novo.html" class="btn primary">＋ Novo lançamento</a>
   </div>
 
+  <section class="grid grid-3" style="margin-bottom:16px;">
+    <div class="card"><div class="label">Total em Aberto</div><div class="big valor aberto" id="resumo-aberto">R$ 0,00</div></div>
+    <div class="card"><div class="label">Vencido / Inadimplente</div><div class="big valor negativo" id="resumo-vencido">R$ 0,00</div></div>
+    <div class="card"><div class="label">A vencer (próx. 30 dias)</div><div class="big valor positivo" id="resumo-a-vencer">R$ 0,00</div></div>
+  </section>
+
   <div class="toolbar" style="flex-wrap:wrap;">
     <input class="input" id="busca" placeholder="Buscar por descrição, favorecido..." style="max-width:240px;">
-    <select class="input" id="f_status" style="max-width:160px;">
-      <option value="">Status: todos</option>
-      <option value="pago">Pago</option>
-      <option value="em_aberto">Em aberto</option>
-      <option value="inadimplente">Inadimplente</option>
+    <select class="input" id="f_status" style="max-width:180px;">
+      <option value="">Status: em aberto + inadimplente</option>
+      <option value="em_aberto">Somente em aberto</option>
+      <option value="inadimplente">Somente inadimplente</option>
     </select>
-    <input class="input" type="month" id="f_mes" style="max-width:170px;">
-    <span class="count-pill" id="contador">0 lançamentos</span>
+    <span class="count-pill" id="contador">0 registros</span>
     <div class="spacer"></div>
   </div>
 
@@ -83,12 +86,10 @@
     <table>
       <thead>
         <tr>
-          <th>Data</th><th>Plano de Contas</th><th>Descrição</th><th>Favorecido</th><th>Status</th><th class="num">Valor</th><th class="num">Ações</th>
+          <th>Vencimento</th><th>Situação</th><th>Plano de Contas</th><th>Favorecido</th><th>Status</th><th class="num">Valor</th><th class="num">Ações</th>
         </tr>
       </thead>
-      <tbody id="tbody">
-        <tr><td colspan="7" class="empty-state">Carregando…</td></tr>
-      </tbody>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
     </table>
   </section>
 </main>
@@ -108,99 +109,116 @@ document.getElementById('user-chip').addEventListener('click', async () => {
   if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
 });
 
-// Filtro de status pode vir por querystring (?status=em_aberto) a partir de outros menus
-const params = new URLSearchParams(location.search);
-if (params.get('status')) document.getElementById('f_status').value = params.get('status');
-
-let lancamentos = [];
+const TIPO_PLANO = 'saida';
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+let registros = [];
 
 async function carregar() {
   document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
 
   let query = supabase
     .from('lancamentos')
-    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome)')
-    .order('data', { ascending: false })
-    .limit(300);
+    .select('id, data, data_vencimento, descricao, status, valor, plano_contas!inner(tipo, codigo_conta, nome_conta), favorecidos(nome)')
+    .eq('plano_contas.tipo', TIPO_PLANO)
+    .in('status', ['em_aberto','inadimplente'])
+    .order('data_vencimento', { ascending: true, nullsFirst: false });
 
   const status = document.getElementById('f_status').value;
   if (status) query = query.eq('status', status);
-
-  const mes = document.getElementById('f_mes').value; // yyyy-mm
-  if (mes) {
-    const [ano, m] = mes.split('-');
-    const inicio = `${ano}-${m}-01`;
-    const fim = new Date(Number(ano), Number(m), 0).toISOString().slice(0,10);
-    query = query.gte('data', inicio).lte('data', fim);
-  }
 
   const { data, error } = await query;
   if (error) {
     document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
     return;
   }
-  lancamentos = data || [];
+  registros = data || [];
   desenhar();
+  atualizarResumo();
+}
+
+function situacao(l) {
+  if (!l.data_vencimento) return { texto: 'Sem vencimento', cor: 'var(--ink-soft)' };
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const venc = new Date(l.data_vencimento + 'T00:00:00');
+  const dias = Math.round((venc - hoje) / 86400000);
+  if (dias < 0) return { texto: `${Math.abs(dias)} dia(s) em atraso`, cor: 'var(--red)' };
+  if (dias === 0) return { texto: 'Vence hoje', cor: 'var(--amber)' };
+  if (dias <= 30) return { texto: `Vence em ${dias} dia(s)`, cor: 'var(--amber)' };
+  return { texto: `Vence em ${dias} dia(s)`, cor: 'var(--ink-soft)' };
 }
 
 function desenhar() {
   const busca = document.getElementById('busca').value.trim().toLowerCase();
-  const filtrados = busca
-    ? lancamentos.filter(l => JSON.stringify(l).toLowerCase().includes(busca))
-    : lancamentos;
-
-  document.getElementById('contador').textContent = `${filtrados.length} lançamento${filtrados.length===1?'':'s'}`;
+  const filtrados = busca ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca)) : registros;
+  document.getElementById('contador').textContent = `${filtrados.length} registro${filtrados.length===1?'':'s'}`;
 
   if (!filtrados.length) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum lançamento encontrado.</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum registro em aberto.</td></tr>`;
     return;
   }
 
   document.getElementById('tbody').innerHTML = filtrados.map(l => {
-    const badgeClasse = l.status.replace('_','');
+    const sit = situacao(l);
     const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente'}[l.status];
-    const contaTxt = l.conta_destino_id ? `${l.contas_bancarias?.nome ?? '-'} → transf.` : (l.contas_bancarias?.nome ?? '-');
     return `
       <tr>
-        <td>${new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-        <td>${l.plano_contas ? l.plano_contas.codigo_conta + ' — ' + l.plano_contas.nome_conta : '-'}</td>
-        <td>${l.descricao ?? '-'}<br><span style="color:var(--ink-soft); font-size:11px;">${contaTxt}</span></td>
+        <td>${l.data_vencimento ? new Date(l.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+        <td style="color:${sit.cor}; font-size:12px;">${sit.texto}</td>
+        <td>${l.plano_contas.codigo_conta} — ${l.plano_contas.nome_conta}<br><span style="color:var(--ink-soft); font-size:11px;">${l.descricao ?? ''}</span></td>
         <td>${l.favorecidos?.nome ?? '-'}</td>
-        <td><span class="badge ${badgeClasse}">${badgeTexto}</span></td>
-        <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${Math.abs(l.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+        <td><span class="badge ${l.status.replace('_','')}">${badgeTexto}</span></td>
+        <td class="num valor negativo">${fmt(Math.abs(l.valor))}</td>
         <td class="num">
           <div class="row-actions">
-            ${l.status !== 'pago' ? `<button class="icon-btn" data-pagar="${l.id}">Marcar Pago</button>` : ''}
+            <button class="icon-btn" data-pagar="${l.id}">Marcar Pago</button>
+            ${l.status !== 'inadimplente' ? `<button class="icon-btn danger" data-inadimplente="${l.id}">Inadimplente</button>` : ''}
             <button class="icon-btn" data-editar="${l.id}">Editar</button>
-            <button class="icon-btn danger" data-excluir="${l.id}">Excluir</button>
           </div>
         </td>
       </tr>`;
   }).join('');
 }
 
+function atualizarResumo() {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  let totalAberto = 0, totalVencido = 0, totalAVencer = 0;
+  registros.forEach(l => {
+    const v = Math.abs(l.valor);
+    totalAberto += v;
+    if (l.status === 'inadimplente') { totalVencido += v; return; }
+    if (l.data_vencimento) {
+      const venc = new Date(l.data_vencimento + 'T00:00:00');
+      const dias = Math.round((venc - hoje) / 86400000);
+      if (dias < 0) totalVencido += v;
+      else if (dias <= 30) totalAVencer += v;
+    }
+  });
+  document.getElementById('resumo-aberto').textContent = fmt(totalAberto);
+  document.getElementById('resumo-vencido').textContent = fmt(totalVencido);
+  document.getElementById('resumo-a-vencer').textContent = fmt(totalAVencer);
+}
+
 document.getElementById('busca').addEventListener('input', desenhar);
 document.getElementById('f_status').addEventListener('change', carregar);
-document.getElementById('f_mes').addEventListener('change', carregar);
 
 document.getElementById('tbody').addEventListener('click', async e => {
   const editar = e.target.dataset?.editar;
-  const excluir = e.target.dataset?.excluir;
   const pagar = e.target.dataset?.pagar;
+  const inadimplente = e.target.dataset?.inadimplente;
 
   if (editar) window.location.href = `lancamento-novo.html?id=${editar}`;
-
-  if (excluir) {
-    if (!confirm('Excluir este lançamento? Essa ação não pode ser desfeita.')) return;
-    const { error } = await supabase.from('lancamentos').delete().eq('id', excluir);
-    if (error) { alert('Erro ao excluir: ' + error.message); return; }
-    await carregar();
-  }
 
   if (pagar) {
     const hoje = new Date().toISOString().slice(0,10);
     const { error } = await supabase.from('lancamentos').update({ status: 'pago', data_pagamento: hoje }).eq('id', pagar);
-    if (error) { alert('Erro ao atualizar: ' + error.message); return; }
+    if (error) { alert('Erro: ' + error.message); return; }
+    await carregar();
+  }
+
+  if (inadimplente) {
+    if (!confirm('Marcar este lançamento como inadimplente?')) return;
+    const { error } = await supabase.from('lancamentos').update({ status: 'inadimplente' }).eq('id', inadimplente);
+    if (error) { alert('Erro: ' + error.message); return; }
     await carregar();
   }
 });
