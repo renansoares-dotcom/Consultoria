@@ -305,6 +305,8 @@ td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-
   background: #fff;
   color: var(--ink);
 }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
 .input:focus, .btn:focus, .nav-item button:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -407,5 +409,44 @@ label.field .field-label { display: block; font-size: 12px; font-weight: 600; ma
 
 @media (max-width: 900px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-  .nav-cascade { display: none; } /* menu vira drawer — ver .mobile-menu-btn no dashboard.html */
+
+  .menu-toggle {
+    display: flex; align-items: center; justify-content: center;
+    all: unset; cursor: pointer; color: #fff; font-size: 20px;
+    padding: 6px 10px; margin-right: 6px;
+  }
+  .saldo-ticker { display: none; }
+
+  .nav-cascade {
+    display: none;
+    position: fixed;
+    top: 56px; left: 0; right: 0; bottom: 0;
+    background: var(--ledger);
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 150;
+    padding: 8px;
+  }
+  .nav-cascade.mobile-open { display: flex; }
+  .nav-item { height: auto; width: 100%; }
+  .nav-item > button, .nav-item > a {
+    width: 100%; justify-content: space-between; padding: 14px 10px !important;
+  }
+  .nav-panel {
+    display: none;
+    position: static;
+    box-shadow: none;
+    border: none;
+    background: rgba(255,255,255,.05);
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .nav-item.open .nav-panel { display: block; }
+  .nav-panel a { color: #eef3f0; }
+  .nav-panel a:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav-panel .group-label { color: rgba(255,255,255,.5); }
+}
+
+@media (min-width: 901px) {
+  .menu-toggle { display: none; }
 }
