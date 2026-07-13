@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Relatório por Favorecido — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 </head>
 <body>
@@ -99,6 +99,7 @@
       <option value="clientes">Clientes</option>
       <option value="funcionarios">Funcionários</option>
       <option value="socios">Sócios</option>
+      <option value="fidc_factoring">FIDC/Factoring</option>
       <option value="outros">Outros</option>
     </select>
     <span class="count-pill" id="contador">0 favorecidos</span>
@@ -138,7 +139,7 @@ document.getElementById('user-chip').addEventListener('click', async () => {
 });
 
 const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
-const ROTULO_TIPO = { fornecedores:'Fornecedor', clientes:'Cliente', funcionarios:'Funcionário', socios:'Sócio', outros:'Outro' };
+const ROTULO_TIPO = { fornecedores:'Fornecedor', clientes:'Cliente', funcionarios:'Funcionário', socios:'Sócio', fidc_factoring:'FIDC/Factoring', outros:'Outro' };
 
 const anoAtual = new Date().getFullYear();
 const selAno = document.getElementById('f_ano');

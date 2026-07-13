@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastros — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 </head>
 <body>
@@ -222,14 +222,14 @@ const ENTIDADES = {
     tabela: 'favorecidos',
     ordem: 'nome',
     colunas: [
-      { chave: 'tipo', titulo: 'Tipo', render: v => ({fornecedores:'Fornecedor', clientes:'Cliente', funcionarios:'Funcionário', socios:'Sócio', outros:'Outro'}[v] || v) },
+      { chave: 'tipo', titulo: 'Tipo', render: v => ({fornecedores:'Fornecedor', clientes:'Cliente', funcionarios:'Funcionário', socios:'Sócio', fidc_factoring:'FIDC/Factoring', outros:'Outro'}[v] || v) },
       { chave: 'nome', titulo: 'Nome' },
       { chave: 'segmento', titulo: 'Segmento' },
       { chave: 'cnpj_cpf', titulo: 'CNPJ/CPF' },
       { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
     ],
     campos: [
-      { nome: 'tipo', label: 'Tipo', tipo: 'select', opcoes: [['fornecedores','Fornecedor'],['clientes','Cliente'],['funcionarios','Funcionário'],['socios','Sócio'],['outros','Outro']], obrigatorio: true },
+      { nome: 'tipo', label: 'Tipo', tipo: 'select', opcoes: [['fornecedores','Fornecedor'],['clientes','Cliente'],['funcionarios','Funcionário'],['socios','Sócio'],['fidc_factoring','FIDC/Factoring'],['outros','Outro']], obrigatorio: true },
       { nome: 'nome', label: 'Nome do Favorecido', tipo: 'text', obrigatorio: true },
       { nome: 'segmento', label: 'Segmento', tipo: 'text' },
       { nome: 'cnpj_cpf', label: 'CNPJ / CPF', tipo: 'text' },
