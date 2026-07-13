@@ -151,34 +151,45 @@ async function carregar() {
   if (selGrupo.value) query = query.eq('grupo_empresarial_id', selGrupo.value);
   const { data: lanc, error } = await query;
 
-  if (error) {
-    document.querySelector('#tabela-nc thead').innerHTML = `<tr><td colspan="13" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+  let queryRealizado = supabase.from('vw_realizado').select('data_baixa, valor_desembolsado, tipo, grupo_empresarial_id').lte('data_baixa', `${ano}-12-31`);
+  if (selGrupo.value) queryRealizado = queryRealizado.eq('grupo_empresarial_id', selGrupo.value);
+  const { data: realizados, error: erroRealizado } = await queryRealizado;
+
+  if (error || erroRealizado) {
+    document.querySelector('#tabela-nc thead').innerHTML = `<tr><td colspan="13" class="empty-state" style="color:var(--red)">Erro: ${(error||erroRealizado).message}</td></tr>`;
     return;
   }
 
-  let saldoRealAntesAno = saldoInicialContas; // só pagos, antes do ano
+  let saldoRealAntesAno = saldoInicialContas; // só o que foi de fato baixado, antes do ano
   const porMes = Array.from({length:12}, () => ({ entradasTodas: 0, saidasTodas: 0, entradasPagas: 0, saidasPagas: 0 }));
 
   (lanc || []).forEach(l => {
     const tipo = l.plano_contas?.tipo;
     if (tipo === 'transferencia' || !tipo) return;
     const data = new Date(l.data + 'T00:00:00');
+    if (data.getFullYear() !== ano) return;
     const valorAbs = Math.abs(Number(l.valor));
 
+    const m = data.getMonth();
+    if (tipo === 'entrada') porMes[m].entradasTodas += valorAbs;
+    else porMes[m].saidasTodas += valorAbs;
+  });
+
+  (realizados || []).forEach(r => {
+    const tipo = r.tipo;
+    if (tipo === 'transferencia' || !tipo) return;
+    const data = new Date(r.data_baixa + 'T00:00:00');
+    const valorAbs = Number(r.valor_desembolsado);
+
     if (data.getFullYear() < ano) {
-      if (l.status === 'pago') saldoRealAntesAno += tipo === 'entrada' ? valorAbs : -valorAbs;
+      saldoRealAntesAno += tipo === 'entrada' ? valorAbs : -valorAbs;
       return;
     }
     if (data.getFullYear() !== ano) return;
 
     const m = data.getMonth();
-    if (tipo === 'entrada') {
-      porMes[m].entradasTodas += valorAbs;
-      if (l.status === 'pago') porMes[m].entradasPagas += valorAbs;
-    } else {
-      porMes[m].saidasTodas += valorAbs;
-      if (l.status === 'pago') porMes[m].saidasPagas += valorAbs;
-    }
+    if (tipo === 'entrada') porMes[m].entradasPagas += valorAbs;
+    else porMes[m].saidasPagas += valorAbs;
   });
 
   const necessidade = porMes.map(m => m.entradasTodas - m.saidasTodas);

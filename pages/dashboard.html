@@ -187,25 +187,31 @@ initNav();
     const { data: contas } = await queryContas;
     const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
 
-    let queryLanc = supabase.from('lancamentos').select('status, valor, plano_contas(tipo)');
-    if (grupoId) queryLanc = queryLanc.eq('grupo_empresarial_id', grupoId);
-    const { data: lanc, error: erroLanc } = await queryLanc;
+    // Realizado: soma o que já foi de fato baixado (mesmo que parcialmente), pela vw_realizado
+    let queryRealizado = supabase.from('vw_realizado').select('valor_desembolsado, tipo');
+    if (grupoId) queryRealizado = queryRealizado.eq('grupo_empresarial_id', grupoId);
+    const { data: realizados, error: erroRealizado } = await queryRealizado;
 
-    if (erroLanc) { console.error(erroLanc); return; }
+    // Em aberto / inadimplência: saldo que ainda falta pagar, por status
+    let querySaldo = supabase.from('vw_saldo_lancamento').select('saldo_aberto, status, lancamento_id, lancamentos!inner(grupo_empresarial_id, plano_contas(tipo))');
+    if (grupoId) querySaldo = querySaldo.eq('lancamentos.grupo_empresarial_id', grupoId);
+    const { data: saldos, error: erroSaldo } = await querySaldo;
+
+    if (erroRealizado || erroSaldo) { console.error(erroRealizado || erroSaldo); return; }
 
     let realizado = saldoInicialContas;
-    let aberto = 0;
-    let inadimplencia = 0;
+    (realizados || []).forEach(r => {
+      if (r.tipo === 'transferencia' || !r.tipo) return; // não altera o caixa total da empresa
+      realizado += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+    });
 
-    (lanc || []).forEach(l => {
-      const tipo = l.plano_contas?.tipo;
-      if (tipo === 'transferencia' || !tipo) return; // não altera o caixa total da empresa
-      const valorAbs = Math.abs(Number(l.valor));
+    let aberto = 0, inadimplencia = 0;
+    (saldos || []).forEach(s => {
+      const tipo = s.lancamentos?.plano_contas?.tipo;
+      if (tipo === 'transferencia' || !tipo) return;
       const sinal = tipo === 'entrada' ? 1 : -1;
-
-      if (l.status === 'pago') realizado += valorAbs * sinal;
-      else if (l.status === 'em_aberto') aberto += valorAbs * sinal;
-      else if (l.status === 'inadimplente') inadimplencia += valorAbs; // exibido como valor em risco
+      if (s.status === 'em_aberto' || s.status === 'parcial') aberto += Number(s.saldo_aberto) * sinal;
+      else if (s.status === 'inadimplente') inadimplencia += Number(s.saldo_aberto);
     });
 
     const projetado = realizado + aberto;

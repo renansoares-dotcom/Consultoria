@@ -158,32 +158,37 @@ async function carregar() {
 
   if (!contas?.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Nenhuma conta bancária cadastrada.</td></tr>`; return; }
 
-  let queryLanc = supabase.from('lancamentos').select('status, valor, data, conta_bancaria_id, conta_destino_id, plano_contas(tipo)');
-  if (grupoId) queryLanc = queryLanc.eq('grupo_empresarial_id', grupoId);
-  const { data: lanc, error } = await queryLanc;
+  let queryRealizado = supabase.from('vw_realizado').select('data_baixa, valor_desembolsado, tipo, conta_bancaria_id, conta_destino_id, grupo_empresarial_id');
+  if (grupoId) queryRealizado = queryRealizado.eq('grupo_empresarial_id', grupoId);
+  const { data: realizados, error } = await queryRealizado;
   if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+
+  let queryAberto = supabase.from('lancamentos').select('id, conta_bancaria_id, conta_destino_id, status, plano_contas(tipo)').in('status', ['em_aberto','parcial']);
+  if (grupoId) queryAberto = queryAberto.eq('grupo_empresarial_id', grupoId);
+  const { data: lancAberto } = await queryAberto;
+  const idsAberto = (lancAberto || []).map(l => l.id);
+  let saldosPorId = {};
+  if (idsAberto.length) {
+    const { data: saldos } = await supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto').in('lancamento_id', idsAberto);
+    (saldos || []).forEach(s => { saldosPorId[s.lancamento_id] = Number(s.saldo_aberto); });
+  }
 
   const porConta = {};
   contas.forEach(c => { porConta[c.id] = { entradasAno: 0, saidasAno: 0, transfAno: 0, saldoAtual: c.saldo_inicial, emAberto: 0 }; });
 
-  (lanc || []).forEach(l => {
-    const tipo = l.plano_contas?.tipo;
-    const valorAbs = Math.abs(Number(l.valor));
-    const anoLanc = new Date(l.data + 'T00:00:00').getFullYear();
+  (realizados || []).forEach(l => {
+    const tipo = l.tipo;
+    const valorAbs = Number(l.valor_desembolsado);
+    const anoLanc = new Date(l.data_baixa + 'T00:00:00').getFullYear();
 
     if (tipo === 'transferencia') {
       const origem = porConta[l.conta_bancaria_id];
       const destino = porConta[l.conta_destino_id];
-      if (l.status === 'pago') {
-        if (origem) origem.saldoAtual -= valorAbs;
-        if (destino) destino.saldoAtual += valorAbs;
-        if (anoLanc === ano) {
-          if (origem) origem.transfAno -= valorAbs;
-          if (destino) destino.transfAno += valorAbs;
-        }
-      } else if (l.status === 'em_aberto') {
-        if (origem) origem.emAberto -= valorAbs;
-        if (destino) destino.emAberto += valorAbs;
+      if (origem) origem.saldoAtual -= valorAbs;
+      if (destino) destino.saldoAtual += valorAbs;
+      if (anoLanc === ano) {
+        if (origem) origem.transfAno -= valorAbs;
+        if (destino) destino.transfAno += valorAbs;
       }
       return;
     }
@@ -191,15 +196,25 @@ async function carregar() {
     const conta = porConta[l.conta_bancaria_id];
     if (!conta) return;
     const sinal = tipo === 'entrada' ? 1 : -1;
-
-    if (l.status === 'pago') {
-      conta.saldoAtual += valorAbs * sinal;
-      if (anoLanc === ano) {
-        if (tipo === 'entrada') conta.entradasAno += valorAbs; else conta.saidasAno += valorAbs;
-      }
-    } else if (l.status === 'em_aberto') {
-      conta.emAberto += valorAbs * sinal;
+    conta.saldoAtual += valorAbs * sinal;
+    if (anoLanc === ano) {
+      if (tipo === 'entrada') conta.entradasAno += valorAbs; else conta.saidasAno += valorAbs;
     }
+  });
+
+  (lancAberto || []).forEach(l => {
+    const tipo = l.plano_contas?.tipo;
+    const saldo = saldosPorId[l.id] ?? 0;
+    if (tipo === 'transferencia') {
+      const origem = porConta[l.conta_bancaria_id];
+      const destino = porConta[l.conta_destino_id];
+      if (origem) origem.emAberto -= saldo;
+      if (destino) destino.emAberto += saldo;
+      return;
+    }
+    const conta = porConta[l.conta_bancaria_id];
+    if (!conta) return;
+    conta.emAberto += saldo * (tipo === 'entrada' ? 1 : -1);
   });
 
   let totais = { entradasAno: 0, saidasAno: 0, transfAno: 0, saldoAtual: 0, emAberto: 0, projetado: 0 };

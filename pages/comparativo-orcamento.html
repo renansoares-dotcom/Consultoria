@@ -164,7 +164,7 @@ async function carregar() {
   const [{ data: orcBudget }, { data: orcForecast }, { data: lanc }] = await Promise.all([
     supabase.from('orcamentos').select('mes, valor_previsto, plano_contas(tipo, codigo_grupo, nome_grupo)').eq('tipo','budget').eq('ano', ano).eq('grupo_empresarial_id', grupoId),
     supabase.from('orcamentos').select('mes, valor_previsto, plano_contas(tipo, codigo_grupo, nome_grupo)').eq('tipo','forecast').eq('ano', ano).eq('grupo_empresarial_id', grupoId),
-    supabase.from('lancamentos').select('data, valor, plano_contas(tipo, codigo_grupo, nome_grupo)').eq('status','pago').eq('grupo_empresarial_id', grupoId).gte('data', `${ano}-01-01`).lte('data', `${ano}-12-31`),
+    supabase.from('vw_realizado').select('data_baixa, valor_desembolsado, tipo, codigo_grupo, nome_grupo').eq('grupo_empresarial_id', grupoId).gte('data_baixa', `${ano}-01-01`).lte('data_baixa', `${ano}-12-31`),
   ]);
 
   const budgetMes = Array(12).fill(0), forecastMes = Array(12).fill(0), realMes = Array(12).fill(0);
@@ -189,12 +189,12 @@ async function carregar() {
     porGrupo[chave].forecast += valor;
   });
   (lanc || []).forEach(l => {
-    const tipo = l.plano_contas?.tipo; if (tipo === 'transferencia' || !tipo) return;
+    const tipo = l.tipo; if (tipo === 'transferencia' || !tipo) return;
     const sinal = tipo === 'entrada' ? 1 : -1;
-    const valor = Math.abs(Number(l.valor)) * sinal;
-    const mes = new Date(l.data + 'T00:00:00').getMonth();
+    const valor = Number(l.valor_desembolsado) * sinal;
+    const mes = new Date(l.data_baixa + 'T00:00:00').getMonth();
     realMes[mes] += valor;
-    const chave = `${l.plano_contas.codigo_grupo} — ${l.plano_contas.nome_grupo}`;
+    const chave = `${l.codigo_grupo} — ${l.nome_grupo}`;
     porGrupo[chave] = porGrupo[chave] || { budget: 0, forecast: 0, real: 0 };
     porGrupo[chave].real += valor;
   });

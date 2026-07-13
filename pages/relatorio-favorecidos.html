@@ -152,22 +152,37 @@ async function carregar() {
   const { data: favorecidos, error: erroFav } = await queryFav;
   if (erroFav) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${erroFav.message}</td></tr>`; return; }
 
-  let queryLanc = supabase.from('lancamentos').select('favorecido_id, status, valor, data').not('favorecido_id', 'is', null);
+  let queryLanc = supabase.from('lancamentos').select('id, favorecido_id, status, valor, data').not('favorecido_id', 'is', null);
   const ano = selAno.value;
   if (ano) queryLanc = queryLanc.gte('data', `${ano}-01-01`).lte('data', `${ano}-12-31`);
   const { data: lanc, error } = await queryLanc;
   if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
 
+  const ids = (lanc || []).map(l => l.id);
+  let saldosPorId = {};
+  if (ids.length) {
+    const { data: saldos } = await supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto').in('lancamento_id', ids);
+    (saldos || []).forEach(s => { saldosPorId[s.lancamento_id] = Number(s.saldo_aberto); });
+  }
+
+  let queryRealizado = supabase.from('vw_realizado').select('favorecido_id, valor_desembolsado, data_baixa').not('favorecido_id', 'is', null);
+  if (ano) queryRealizado = queryRealizado.gte('data_baixa', `${ano}-01-01`).lte('data_baixa', `${ano}-12-31`);
+  const { data: realizados } = await queryRealizado;
+
   const porFav = {};
   (lanc || []).forEach(l => {
     porFav[l.favorecido_id] = porFav[l.favorecido_id] || { pago: 0, aberto: 0, inadimplente: 0, qtd: 0, ultima: null };
     const d = porFav[l.favorecido_id];
-    const valorAbs = Math.abs(Number(l.valor));
+    const saldo = saldosPorId[l.id] ?? Math.abs(Number(l.valor));
     d.qtd++;
-    if (l.status === 'pago') d.pago += valorAbs;
-    else if (l.status === 'em_aberto') d.aberto += valorAbs;
-    else if (l.status === 'inadimplente') d.inadimplente += valorAbs;
+    if (l.status === 'em_aberto' || l.status === 'parcial') d.aberto += saldo;
+    else if (l.status === 'inadimplente') d.inadimplente += saldo;
     if (!d.ultima || l.data > d.ultima) d.ultima = l.data;
+  });
+  (realizados || []).forEach(r => {
+    porFav[r.favorecido_id] = porFav[r.favorecido_id] || { pago: 0, aberto: 0, inadimplente: 0, qtd: 0, ultima: null };
+    porFav[r.favorecido_id].pago += Number(r.valor_desembolsado);
+    if (!porFav[r.favorecido_id].ultima || r.data_baixa > porFav[r.favorecido_id].ultima) porFav[r.favorecido_id].ultima = r.data_baixa;
   });
 
   linhasDados = favorecidos.map(f => {

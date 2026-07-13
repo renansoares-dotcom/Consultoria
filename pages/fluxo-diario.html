@@ -159,8 +159,8 @@ async function carregar() {
   const { data: contas } = await queryContas;
   const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
 
-  let queryAnteriores = supabase.from('lancamentos').select('valor, plano_contas(tipo)').eq('status', 'pago').lt('data', inicioMes);
-  let queryDoMes = supabase.from('lancamentos').select('data, valor, conta_destino_id, plano_contas(tipo)').eq('status', 'pago').gte('data', inicioMes).lte('data', fimMes);
+  let queryAnteriores = supabase.from('vw_realizado').select('valor_desembolsado, tipo, grupo_empresarial_id').lt('data_baixa', inicioMes);
+  let queryDoMes = supabase.from('vw_realizado').select('data_baixa, valor_desembolsado, tipo, grupo_empresarial_id').gte('data_baixa', inicioMes).lte('data_baixa', fimMes);
   if (selGrupo.value) {
     queryAnteriores = queryAnteriores.eq('grupo_empresarial_id', selGrupo.value);
     queryDoMes = queryDoMes.eq('grupo_empresarial_id', selGrupo.value);
@@ -175,16 +175,16 @@ async function carregar() {
 
   let saldoAnterior = saldoInicialContas;
   (anteriores || []).forEach(l => {
-    const tipo = l.plano_contas?.tipo;
-    if (tipo === 'entrada') saldoAnterior += Math.abs(Number(l.valor));
-    else if (tipo === 'saida') saldoAnterior -= Math.abs(Number(l.valor));
+    const tipo = l.tipo;
+    if (tipo === 'entrada') saldoAnterior += Number(l.valor_desembolsado);
+    else if (tipo === 'saida') saldoAnterior -= Number(l.valor_desembolsado);
   });
 
   const dias = Array.from({length: diasNoMes}, () => ({ entradas: 0, saidas: 0, transfCred: 0, transfDeb: 0 }));
   (doMes || []).forEach(l => {
-    const dia = Number(l.data.slice(8,10)) - 1;
-    const tipo = l.plano_contas?.tipo;
-    const valorAbs = Math.abs(Number(l.valor));
+    const dia = Number(l.data_baixa.slice(8,10)) - 1;
+    const tipo = l.tipo;
+    const valorAbs = Number(l.valor_desembolsado);
     if (tipo === 'entrada') dias[dia].entradas += valorAbs;
     else if (tipo === 'saida') dias[dia].saidas += valorAbs;
     else if (tipo === 'transferencia') { dias[dia].transfCred += valorAbs; dias[dia].transfDeb += valorAbs; }

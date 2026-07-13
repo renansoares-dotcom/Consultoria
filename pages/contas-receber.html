@@ -95,8 +95,9 @@
   <div class="toolbar" style="flex-wrap:wrap;">
     <input class="input" id="busca" placeholder="Buscar por descrição, favorecido..." style="max-width:240px;">
     <select class="input" id="f_status" style="max-width:180px;">
-      <option value="">Status: em aberto + inadimplente</option>
+      <option value="">Status: todos em aberto</option>
       <option value="em_aberto">Somente em aberto</option>
+      <option value="parcial">Somente parcial</option>
       <option value="inadimplente">Somente inadimplente</option>
     </select>
     <span class="count-pill" id="contador">0 registros</span>
@@ -144,7 +145,7 @@ async function carregar() {
     .from('lancamentos')
     .select('id, data, data_vencimento, descricao, status, valor, plano_contas!inner(tipo, codigo_conta, nome_conta), favorecidos(nome)')
     .eq('plano_contas.tipo', TIPO_PLANO)
-    .in('status', ['em_aberto','inadimplente'])
+    .in('status', ['em_aberto','inadimplente','parcial'])
     .order('data_vencimento', { ascending: true, nullsFirst: false });
 
   const status = document.getElementById('f_status').value;
@@ -155,7 +156,15 @@ async function carregar() {
     document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
     return;
   }
-  registros = data || [];
+
+  // Busca o saldo que realmente falta pagar (considera baixas parciais já feitas)
+  const ids = (data || []).map(l => l.id);
+  let saldosPorId = {};
+  if (ids.length) {
+    const { data: saldos } = await supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto').in('lancamento_id', ids);
+    (saldos || []).forEach(s => { saldosPorId[s.lancamento_id] = Number(s.saldo_aberto); });
+  }
+  registros = (data || []).map(l => ({ ...l, saldo_aberto: saldosPorId[l.id] ?? Math.abs(l.valor) }));
   desenhar();
   atualizarResumo();
 }
@@ -183,15 +192,15 @@ function desenhar() {
 
   document.getElementById('tbody').innerHTML = filtrados.map(l => {
     const sit = situacao(l);
-    const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente'}[l.status];
+    const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente', parcial:'Parcial'}[l.status];
     return `
       <tr>
         <td>${l.data_vencimento ? new Date(l.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
         <td style="color:${sit.cor}; font-size:12px;">${sit.texto}</td>
         <td>${l.plano_contas.codigo_conta} — ${l.plano_contas.nome_conta}<br><span style="color:var(--ink-soft); font-size:11px;">${l.descricao ?? ''}</span></td>
         <td>${l.favorecidos?.nome ?? '-'}</td>
-        <td><span class="badge ${l.status.replace('_','')}">${badgeTexto}</span></td>
-        <td class="num valor positivo">${fmt(Math.abs(l.valor))}</td>
+        <td><span class="badge ${l.status.replace('_','')}">${badgeTexto}</span>${l.status==='parcial'?`<br><span style="font-size:10.5px; color:var(--ink-soft);">de ${fmt(Math.abs(l.valor))}</span>`:''}</td>
+        <td class="num valor positivo">${fmt(l.saldo_aberto)}</td>
         <td class="num">
           <div class="row-actions">
             <button class="icon-btn" data-pagar="${l.id}">Marcar Pago</button>
@@ -207,7 +216,7 @@ function atualizarResumo() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   let totalAberto = 0, totalVencido = 0, totalAVencer = 0;
   registros.forEach(l => {
-    const v = Math.abs(l.valor);
+    const v = l.saldo_aberto;
     totalAberto += v;
     if (l.status === 'inadimplente') { totalVencido += v; return; }
     if (l.data_vencimento) {

@@ -156,10 +156,9 @@ async function carregar() {
   const saldoInicialContas = (contasFiltradas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
 
   let query = supabase
-    .from('lancamentos')
-    .select('data, valor, plano_contas(tipo, codigo_grupo, nome_grupo)')
-    .eq('status', 'pago')
-    .lte('data', `${ano}-12-31`);
+    .from('vw_realizado')
+    .select('data_baixa, valor_desembolsado, tipo, codigo_grupo, nome_grupo, grupo_empresarial_id')
+    .lte('data_baixa', `${ano}-12-31`);
   if (grupoId) query = query.eq('grupo_empresarial_id', grupoId);
   const { data: lanc, error } = await query;
 
@@ -173,10 +172,10 @@ async function carregar() {
   const porMes = Array.from({length:12}, () => ({ entradas: 0, saidas: 0, grupoEntrada: {}, grupoSaida: {} }));
 
   (lanc || []).forEach(l => {
-    const tipo = l.plano_contas?.tipo;
+    const tipo = l.tipo;
     if (tipo === 'transferencia' || !tipo) return;
-    const data = new Date(l.data + 'T00:00:00');
-    const valorAbs = Math.abs(Number(l.valor));
+    const data = new Date(l.data_baixa + 'T00:00:00');
+    const valorAbs = Number(l.valor_desembolsado);
 
     if (data.getFullYear() < ano) {
       saldoAntesAno += tipo === 'entrada' ? valorAbs : -valorAbs;
@@ -185,7 +184,7 @@ async function carregar() {
     if (data.getFullYear() !== ano) return;
 
     const m = data.getMonth();
-    const chaveGrupo = `${l.plano_contas.codigo_grupo} - ${l.plano_contas.nome_grupo}`;
+    const chaveGrupo = `${l.codigo_grupo} - ${l.nome_grupo}`;
     if (tipo === 'entrada') {
       porMes[m].entradas += valorAbs;
       porMes[m].grupoEntrada[chaveGrupo] = (porMes[m].grupoEntrada[chaveGrupo] || 0) + valorAbs;
