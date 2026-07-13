@@ -172,7 +172,7 @@ async function carregar() {
 
   let query = supabase
     .from('lancamentos')
-    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome)', { count: 'exact' })
+    .select('id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)', { count: 'exact' })
     .order('data', { ascending: false })
     .range(inicio, fim);
 
@@ -214,8 +214,11 @@ function desenhar() {
 
   document.getElementById('tbody').innerHTML = filtrados.map(l => {
     const badgeClasse = l.status.replace('_','');
-    const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente'}[l.status];
-    const contaTxt = l.conta_destino_id ? `${l.contas_bancarias?.nome ?? '-'} → transf.` : (l.contas_bancarias?.nome ?? '-');
+    const badgeTexto = {pago:'Pago', em_aberto:'Em aberto', inadimplente:'Inadimplente', parcial:'Parcial'}[l.status];
+    const ehTransferencia = !!l.conta_destino_id;
+    const contaTxt = ehTransferencia
+      ? `Débito: ${l.contas_bancarias?.nome ?? '-'} → Crédito: ${l.contas_destino?.nome ?? '-'}`
+      : (l.contas_bancarias?.nome ?? '-');
     return `
       <tr>
         <td>${new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
