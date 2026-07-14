@@ -9,6 +9,7 @@ import { initTheme } from './theme.js';
 
 export function initNav() {
   initTheme();
+  document.body.dataset.impressoEm = new Date().toLocaleString('pt-BR');
 
   const nav = document.querySelector('.nav-cascade');
   const topbar = document.querySelector('.topbar');
