@@ -29,7 +29,7 @@
   /* Tipografia */
   --font-display: "IBM Plex Sans", "Inter", -apple-system, Segoe UI, sans-serif;
   --font-body:    "Inter", -apple-system, Segoe UI, sans-serif;
-  --font-mono:    "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+  --font-mono:    "Roboto Mono", "SFMono-Regular", Menlo, monospace;
 
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -442,12 +442,34 @@ label.field .field-label { display: block; font-size: 12px; font-weight: 600; ma
 
 /* ---------- Impressão / Exportar PDF ---------- */
 @media print {
-  .topbar, .toolbar, .page-header .btn, .no-print, .modal-overlay { display: none !important; }
-  body { background: #fff; }
+  .topbar, .toolbar, .page-header .btn, .no-print, .modal-overlay, .menu-acoes { display: none !important; }
+  body { background: #fff; color: #000; }
   .page { max-width: 100%; padding: 0; }
-  .card { box-shadow: none; border: 1px solid #ccc; }
-  table { font-size: 11px; }
+
+  /* A impressão usa a mesma largura "estreita" de tela de celular — sem isso,
+     os cards de KPI (grid-4/3/2) empilhavam um embaixo do outro na hora de imprimir. */
+  .grid-4 { grid-template-columns: repeat(4, 1fr) !important; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr) !important; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid { gap: 10px !important; }
+
+  .card { box-shadow: none !important; border: 1px solid #ccc; break-inside: avoid; page-break-inside: avoid; }
+  .card .big { font-size: 18px !important; }
+
+  h1 { font-size: 18px; }
+  .eyebrow { color: #555 !important; }
+
+  table { font-size: 10.5px; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
   a[href]::after { content: ""; }
+
+  /* cabeçalho de impressão: nome do sistema + data de geração, no topo de cada página */
+  @page { margin: 16mm 14mm; }
+  body::before {
+    content: "LivroCaixa Consultoria — Relatório gerado em " attr(data-impresso-em);
+    display: block; font-size: 9px; color: #888; margin-bottom: 10px;
+  }
 }
 
 /* ============================================================================
@@ -531,8 +553,9 @@ label.field .field-label { display: block; font-size: 12px; font-weight: 600; ma
 .janela-secao:first-child { padding-top: 0; }
 
 /* Campos com largura própria (não esticam 100%) */
-.linha-flex { display: flex; flex-wrap: wrap; gap: 12px 14px; margin-bottom: 12px; }
-.linha-flex .field { margin-bottom: 0; }
+.linha-flex { display: flex; flex-wrap: wrap; gap: 12px 14px; margin-bottom: 12px; align-items: flex-end; }
+.linha-flex .field { margin-bottom: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.linha-flex .field-label { min-height: 28px; display: flex; align-items: flex-end; line-height: 1.2; }
 .f-70  { width: 70px !important; }
 .f-100 { width: 100px !important; }
 .f-130 { width: 130px !important; }
