@@ -9,6 +9,11 @@
 <link rel="stylesheet" href="../css/design-system.css">
 <style>
   .transf-linha { display: grid; grid-template-columns: 1fr 160px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+
+  /* Alinha os campos do bloco de Custos da Antecipação mesmo com rótulos de tamanhos diferentes */
+  #bloco-custos-titulos .linha-flex { align-items: flex-end; }
+  #bloco-custos-titulos .linha-flex .field { display: flex; flex-direction: column; justify-content: flex-end; }
+  #bloco-custos-titulos .field-label { min-height: 28px; display: flex; align-items: flex-end; line-height: 1.2; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -348,6 +353,7 @@
     </div>
 
     <div class="modal-actions" style="margin-top:18px;">
+      <button class="btn ghost" type="button" id="btn-pular-transferencias" style="display:none;">Pular e ir para Borderôs →</button>
       <button class="btn primary" type="button" id="btn-salvar">Salvar Borderô</button>
     </div>
 
@@ -1011,7 +1017,22 @@ renderTransferencias();
 // ============================================================================
 // SALVAR
 // ============================================================================
+let borderoIdSalvo = null;
+let estadoSalvo = {};
+
 document.getElementById('btn-salvar').addEventListener('click', async () => {
+  if (borderoIdSalvo) {
+    await salvarTransferenciasEConcluir();
+  } else {
+    await salvarBorderoPrincipal();
+  }
+});
+
+document.getElementById('btn-pular-transferencias').addEventListener('click', () => {
+  window.location.href = 'borderos.html';
+});
+
+async function salvarBorderoPrincipal() {
   document.getElementById('aviso-erro').style.display = 'none';
   document.getElementById('aviso-ok').style.display = 'none';
 
@@ -1033,9 +1054,6 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
     mostrarErro('Nenhum título foi vinculado — selecione um Plano de Contas na aba Dados para registrar o valor recebido.');
     return;
   }
-  const somaTransferencias = transferencias.reduce((s,t) => s + Number(t.valor||0), 0);
-  if (somaTransferencias > valorPagoCedente + 0.01) { mostrarErro('A soma das transferências não pode ultrapassar o Valor Pago ao Cedente (o dinheiro que efetivamente entrou na conta).'); return; }
-  if (transferencias.some(t => !t.conta_destino_id || !t.valor)) { mostrarErro('Preencha conta e valor em todas as linhas de transferência (ou remova as vazias).'); return; }
 
   const btn = document.getElementById('btn-salvar');
   btn.disabled = true; btn.textContent = 'Salvando…';
@@ -1166,9 +1184,40 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
       }
     }
 
-    // 4) Transferências de distribuição do valor recebido
-    if (transferencias.length) {
-      if (!planoTransferenciaId) throw new Error('Não há nenhuma conta do tipo "Transferência" cadastrada no Plano de Contas — cadastre uma antes de distribuir o valor recebido.');
+    // Guarda o estado pra usar na etapa 2 (Transferências)
+    borderoIdSalvo = borderoId;
+    estadoSalvo = { grupoId, contaRecebimento, dataOperacao, refTexto };
+
+    document.getElementById('aviso-ok').style.display = 'block';
+    document.getElementById('aviso-ok').textContent = `Borderô salvo com sucesso! Agora informe como o valor de ${fmt(valorPagoCedente)} foi transferido entre suas contas (ou pule esta etapa).`;
+
+    // Abre automaticamente a aba de Transferências
+    document.querySelectorAll('.subnav button').forEach(b => b.classList.remove('active'));
+    document.querySelector('.subnav button[data-tab="transferencias"]').classList.add('active');
+    ['dados','titulos','transferencias'].forEach(t => document.getElementById('tab-'+t).style.display = (t === 'transferencias' ? 'block' : 'none'));
+
+    btn.disabled = false;
+    btn.textContent = 'Salvar Transferências e Concluir';
+    document.getElementById('btn-pular-transferencias').style.display = 'inline-flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Salvar Borderô';
+    mostrarErro('Erro ao salvar: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+async function salvarTransferenciasEConcluir() {
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  if (transferencias.length) {
+    if (transferencias.some(t => !t.conta_destino_id || !t.valor)) { mostrarErro('Preencha conta e valor em todas as linhas de transferência (ou remova as vazias).'); return; }
+    if (!planoTransferenciaId) { mostrarErro('Não há nenhuma conta do tipo "Transferência" cadastrada no Plano de Contas — cadastre uma antes de distribuir o valor recebido.'); return; }
+
+    const btn = document.getElementById('btn-salvar');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    const { grupoId, contaRecebimento, dataOperacao, refTexto } = estadoSalvo;
+
+    try {
       for (const t of transferencias) {
         const { data: novaTransf, error: erroTransf } = await supabase.from('lancamentos').insert({
           tenant_id: TENANT_ID,
@@ -1180,7 +1229,7 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
           conta_bancaria_id: contaRecebimento,
           conta_destino_id: t.conta_destino_id,
           valor: t.valor,
-          bordero_id: borderoId,
+          bordero_id: borderoIdSalvo,
           criado_por: usuario?.id || null,
         }).select('id').single();
         if (erroTransf) throw erroTransf;
@@ -1188,7 +1237,7 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
         const { error: erroBaixaTransf } = await supabase.from('baixas').insert({
           tenant_id: TENANT_ID,
           lancamento_id: novaTransf.id,
-          bordero_id: borderoId,
+          bordero_id: borderoIdSalvo,
           data: dataOperacao,
           valor_pago: t.valor,
           conta_bancaria_id: contaRecebimento,
@@ -1196,14 +1245,16 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
         });
         if (erroBaixaTransf) throw erroBaixaTransf;
       }
+    } catch (err) {
+      const btn = document.getElementById('btn-salvar');
+      btn.disabled = false; btn.textContent = 'Salvar Transferências e Concluir';
+      mostrarErro('Erro ao salvar transferências: ' + (err.message || JSON.stringify(err)));
+      return;
     }
-
-    window.location.href = 'borderos.html';
-  } catch (err) {
-    btn.disabled = false; btn.textContent = 'Salvar Borderô';
-    mostrarErro('Erro ao salvar: ' + (err.message || JSON.stringify(err)));
   }
-});
+
+  window.location.href = 'borderos.html';
+}
 </script>
 </body>
 </html>
