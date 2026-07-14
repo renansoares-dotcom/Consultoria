@@ -119,35 +119,63 @@
     <div id="area-exportar" style="display:flex; gap:8px;"></div>
   </div>
 
+  <div class="toolbar" id="barra-selecao" style="display:none; background:var(--ledger); color:#fff; border-radius:var(--radius-md); padding:10px 14px; margin-bottom:10px;">
+    <span id="contador-selecao" style="font-size:13px; font-weight:600;">0 selecionado(s)</span>
+    <div class="spacer"></div>
+    <button class="btn" id="btn-liquidar-selecionados" style="background:var(--accent); padding:8px 14px;">✓ Marcar Liquidados</button>
+    <button class="btn" id="btn-recomprar-selecionados" style="background:var(--red); padding:8px 14px;">Recomprar Selecionados</button>
+    <button class="btn ghost" id="btn-limpar-selecao-fidc" style="border-color:rgba(255,255,255,.3); color:#fff; padding:8px 14px;">Cancelar</button>
+  </div>
+
   <section class="card" style="padding:0; overflow:hidden;">
     <table id="tabela-relatorio">
       <thead>
         <tr>
+          <th style="width:36px;"><input type="checkbox" id="chk-selecionar-todos-fidc"></th>
           <th>Vencimento</th><th>Sacado</th><th>Descrição</th><th>Borderô</th><th>FIDC/Factoring</th>
           <th class="num">Valor de Face</th><th>Situação</th><th class="num">Ações</th>
         </tr>
       </thead>
-      <tbody id="tbody"><tr><td colspan="8" class="empty-state">Carregando…</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="9" class="empty-state">Carregando…</td></tr></tbody>
     </table>
   </section>
 </main>
 
-<!-- Modal: marcar recompra -->
+<!-- Modal: marcar recompra (suporta vários títulos de uma vez) -->
 <div class="modal-overlay" id="modal-recompra">
-  <div class="modal">
-    <h2>Marcar como Recomprado</h2>
-    <div class="modal-sub">O sacado não pagou o FIDC — isso vai gerar uma saída de recompra no seu fluxo de caixa.</div>
+  <div class="modal" style="max-width:640px;">
+    <h2>Registrar Recompra</h2>
+    <div class="modal-sub">O(s) sacado(s) abaixo não pagaram o FIDC dentro do prazo — cada título vira uma saída no seu fluxo de caixa.</div>
+
+    <div class="label" style="margin:12px 0 6px;">Títulos sendo recomprados</div>
+    <div class="baixas-tabela-wrap" style="margin-bottom:14px;">
+      <table style="font-size:12px;">
+        <thead><tr><th>Sacado</th><th>Vencimento</th><th class="num">Valor a Recomprar (R$)</th></tr></thead>
+        <tbody id="tbody-titulos-recompra"></tbody>
+      </table>
+    </div>
+
     <form id="form-recompra">
-      <label class="field"><span class="field-label">Valor da Recompra (R$) *</span><input class="input mono" type="number" step="0.01" min="0.01" id="r_valor" required></label>
+      <label class="field"><span class="field-label">Motivo da Recompra *</span>
+        <select class="input" id="r_motivo" required>
+          <option value="">Selecione…</option>
+          <option>Sacado inadimplente</option>
+          <option>Sacado não localizado</option>
+          <option>Contestação/Divergência comercial</option>
+          <option>Título cancelado/estornado</option>
+          <option>Outro</option>
+        </select>
+      </label>
       <div class="row-2">
         <label class="field"><span class="field-label">Data da Recompra *</span><input class="input" type="date" id="r_data" required></label>
         <label class="field"><span class="field-label">Conta Bancária de Pagamento *</span><select class="input" id="r_conta" required></select></label>
       </div>
-      <label class="field"><span class="field-label">Observações</span><input class="input" type="text" id="r_obs"></label>
+      <label class="field"><span class="field-label">Observações adicionais</span><input class="input" type="text" id="r_obs"></label>
     </form>
     <div class="modal-actions">
       <button class="btn ghost" type="button" id="cancelar-recompra">Cancelar</button>
       <button class="btn primary" type="submit" form="form-recompra">Confirmar recompra</button>
+
     </div>
   </div>
 </div>
@@ -183,11 +211,11 @@ document.getElementById('r_conta').innerHTML = (contasBancarias||[]).map(c => `<
 let registros = [];
 
 async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Carregando…</td></tr>`;
 
   let query = supabase
     .from('lancamentos')
-    .select('id, data_vencimento, descricao, valor, favorecidos(nome), operacoes_antecipacao:bordero_id(numero_bordero, favorecido_id, favorecidos:favorecido_id(nome)), situacao_fidc')
+    .select('id, data_vencimento, descricao, valor, grupo_empresarial_id, favorecido_id, favorecidos(nome), operacoes_antecipacao:bordero_id(numero_bordero, favorecido_id, favorecidos:favorecido_id(nome)), situacao_fidc')
     .not('situacao_fidc', 'is', null)
     .order('data_vencimento', { ascending: true });
 
@@ -196,7 +224,7 @@ async function carregar() {
 
   const { data, error } = await query;
   if (error) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
     return;
   }
 
@@ -230,7 +258,7 @@ function desenhar() {
   document.getElementById('contador').textContent = `${filtrados.length} título${filtrados.length===1?'':'s'}`;
 
   if (!filtrados.length) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state">Nenhum título encontrado para os filtros aplicados.</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Nenhum título encontrado para os filtros aplicados.</td></tr>`;
     return;
   }
 
@@ -239,6 +267,7 @@ function desenhar() {
     const vencido = r.situacao_fidc === 'pendente' && r.data_vencimento && r.data_vencimento < hoje;
     return `
     <tr>
+      <td>${r.situacao_fidc === 'pendente' ? `<input type="checkbox" class="chk-titulo-fidc" value="${r.id}">` : ''}</td>
       <td style="${vencido?'color:var(--red); font-weight:600;':''}">${r.data_vencimento ? new Date(r.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}${vencido?' ⚠':''}</td>
       <td>${r.favorecidos?.nome ?? '-'}</td>
       <td>${r.descricao ?? '-'}</td>
@@ -250,7 +279,7 @@ function desenhar() {
         ${r.situacao_fidc === 'pendente' ? `
           <div class="row-actions">
             <button class="icon-btn" data-liquidar="${r.id}">Liquidado</button>
-            <button class="icon-btn danger" data-recomprar="${r.id}" data-valor="${Math.abs(r.valor)}">Recomprado</button>
+            <button class="icon-btn danger" data-recomprar="${r.id}">Recomprado</button>
           </div>` : '-'}
       </td>
     </tr>`;
@@ -261,8 +290,51 @@ document.getElementById('busca').addEventListener('input', desenhar);
 document.getElementById('f_situacao').addEventListener('change', carregar);
 document.getElementById('f_fidc').addEventListener('change', carregar);
 
-let tituloRecompraId = null;
+// ---------- Seleção em lote ----------
+function atualizarBarraSelecaoFidc() {
+  const marcados = [...document.querySelectorAll('.chk-titulo-fidc:checked')];
+  const barra = document.getElementById('barra-selecao');
+  barra.style.display = marcados.length ? 'flex' : 'none';
+  document.getElementById('contador-selecao').textContent = `${marcados.length} selecionado(s)`;
 
+  const total = document.querySelectorAll('.chk-titulo-fidc').length;
+  const chkTodos = document.getElementById('chk-selecionar-todos-fidc');
+  chkTodos.checked = total > 0 && marcados.length === total;
+  chkTodos.indeterminate = marcados.length > 0 && marcados.length < total;
+}
+
+document.getElementById('tbody').addEventListener('change', e => {
+  if (e.target.classList.contains('chk-titulo-fidc')) atualizarBarraSelecaoFidc();
+});
+document.getElementById('chk-selecionar-todos-fidc').addEventListener('change', e => {
+  document.querySelectorAll('.chk-titulo-fidc').forEach(chk => { chk.checked = e.target.checked; });
+  atualizarBarraSelecaoFidc();
+});
+document.getElementById('btn-limpar-selecao-fidc').addEventListener('click', () => {
+  document.querySelectorAll('.chk-titulo-fidc').forEach(chk => { chk.checked = false; });
+  atualizarBarraSelecaoFidc();
+});
+
+document.getElementById('btn-liquidar-selecionados').addEventListener('click', async () => {
+  const ids = [...document.querySelectorAll('.chk-titulo-fidc:checked')].map(chk => chk.value);
+  if (!ids.length) return;
+  if (!confirm(`Confirmar que o sacado pagou o FIDC nos ${ids.length} título(s) selecionado(s)?`)) return;
+  const { error } = await supabase.from('lancamentos').update({
+    situacao_fidc: 'liquidado',
+    data_situacao_fidc: new Date().toISOString().slice(0,10),
+  }).in('id', ids);
+  if (error) { alert('Erro: ' + error.message); return; }
+  document.getElementById('barra-selecao').style.display = 'none';
+  await carregar();
+});
+
+document.getElementById('btn-recomprar-selecionados').addEventListener('click', () => {
+  const ids = [...document.querySelectorAll('.chk-titulo-fidc:checked')].map(chk => chk.value);
+  if (!ids.length) return;
+  abrirModalRecompra(ids);
+});
+
+// ---------- Ações individuais (linha) ----------
 document.getElementById('tbody').addEventListener('click', async e => {
   const idLiquidar = e.target.dataset?.liquidar;
   const idRecomprar = e.target.dataset?.recomprar;
@@ -277,56 +349,82 @@ document.getElementById('tbody').addEventListener('click', async e => {
     await carregar();
   }
 
-  if (idRecomprar) {
-    tituloRecompraId = idRecomprar;
-    document.getElementById('r_valor').value = e.target.dataset.valor;
-    document.getElementById('r_data').value = new Date().toISOString().slice(0,10);
-    document.getElementById('r_obs').value = '';
-    document.getElementById('modal-recompra').classList.add('open');
-  }
+  if (idRecomprar) abrirModalRecompra([idRecomprar]);
 });
+
+// ---------- Modal de recompra (1 ou vários títulos) ----------
+let titulosRecompraSelecionados = [];
+
+function abrirModalRecompra(ids) {
+  titulosRecompraSelecionados = registros.filter(r => ids.includes(r.id));
+  if (!titulosRecompraSelecionados.length) return;
+
+  document.getElementById('tbody-titulos-recompra').innerHTML = titulosRecompraSelecionados.map(t => `
+    <tr>
+      <td>${t.favorecidos?.nome ?? '-'} <span style="color:var(--ink-soft); font-size:10.5px;">— ${t.descricao ?? ''}</span></td>
+      <td>${t.data_vencimento ? new Date(t.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+      <td class="num"><input class="input mono valor-recompra-titulo" data-id="${t.id}" type="number" step="0.01" min="0.01" value="${Math.abs(t.valor).toFixed(2)}" style="width:130px; text-align:right;"></td>
+    </tr>`).join('');
+
+  document.getElementById('form-recompra').reset();
+  document.getElementById('r_data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('modal-recompra').classList.add('open');
+}
 
 document.getElementById('cancelar-recompra').addEventListener('click', () => document.getElementById('modal-recompra').classList.remove('open'));
 document.getElementById('modal-recompra').addEventListener('click', e => { if (e.target.id === 'modal-recompra') e.target.classList.remove('open'); });
 
 document.getElementById('form-recompra').addEventListener('submit', async e => {
   e.preventDefault();
-  if (!tituloRecompraId) return;
-
-  const { data: titulo } = await supabase.from('lancamentos').select('descricao, favorecido_id, grupo_empresarial_id, operacoes_antecipacao:bordero_id(numero_bordero, favorecido_id)').eq('id', tituloRecompraId).single();
+  if (!titulosRecompraSelecionados.length) return;
 
   const { data: planos } = await supabase.from('plano_contas').select('id, tipo').eq('ativo', true).eq('tipo', 'saida').limit(1);
   if (!planos?.length) { alert('Cadastre ao menos uma conta de Saída no Plano de Contas antes de registrar uma recompra.'); return; }
 
+  const motivo = document.getElementById('r_motivo').value;
+  const dataRecompra = document.getElementById('r_data').value;
+  const contaRecompra = document.getElementById('r_conta').value;
+  const obsExtra = document.getElementById('r_obs').value;
+
   const btn = e.submitter;
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
 
-  const { error: erroLanc } = await supabase.from('lancamentos').insert({
-    tenant_id: TENANT_ID,
-    grupo_empresarial_id: titulo.grupo_empresarial_id,
-    data: document.getElementById('r_data').value,
-    plano_conta_id: planos[0].id,
-    descricao: `Recompra de título — ${titulo.descricao ?? ''} (Borderô ${titulo.operacoes_antecipacao?.numero_bordero ?? ''})`,
-    favorecido_id: titulo.operacoes_antecipacao?.favorecido_id ?? titulo.favorecido_id,
-    status: 'em_aberto',
-    conta_bancaria_id: document.getElementById('r_conta').value,
-    valor: -Math.abs(Number(document.getElementById('r_valor').value || 0)),
-    data_vencimento: document.getElementById('r_data').value,
-    observacoes: document.getElementById('r_obs').value || null,
-    criado_por: usuario?.id || null,
-  });
+  try {
+    for (const titulo of titulosRecompraSelecionados) {
+      const valorInput = document.querySelector(`.valor-recompra-titulo[data-id="${titulo.id}"]`);
+      const valorRecompra = Math.abs(Number(valorInput?.value || titulo.valor));
 
-  if (erroLanc) { alert('Erro ao gerar a saída de recompra: ' + erroLanc.message); if (btn) { btn.disabled = false; btn.textContent = 'Confirmar recompra'; } return; }
+      const { error: erroLanc } = await supabase.from('lancamentos').insert({
+        tenant_id: TENANT_ID,
+        grupo_empresarial_id: titulo.grupo_empresarial_id ?? null,
+        data: dataRecompra,
+        plano_conta_id: planos[0].id,
+        descricao: `Recompra de título — ${titulo.descricao ?? ''} (Borderô ${titulo.operacoes_antecipacao?.numero_bordero ?? ''})`,
+        favorecido_id: titulo.operacoes_antecipacao?.favorecido_id ?? titulo.favorecido_id ?? null,
+        status: 'em_aberto',
+        conta_bancaria_id: contaRecompra,
+        valor: -valorRecompra,
+        data_vencimento: dataRecompra,
+        observacoes: `Motivo: ${motivo}${obsExtra ? ' — ' + obsExtra : ''}`,
+        criado_por: usuario?.id || null,
+      });
+      if (erroLanc) throw erroLanc;
 
-  const { error: erroUpdate } = await supabase.from('lancamentos').update({
-    situacao_fidc: 'recomprado',
-    data_situacao_fidc: document.getElementById('r_data').value,
-  }).eq('id', tituloRecompraId);
-  if (erroUpdate) { alert('A saída de recompra foi criada, mas houve erro ao atualizar a situação: ' + erroUpdate.message); }
+      const { error: erroUpdate } = await supabase.from('lancamentos').update({
+        situacao_fidc: 'recomprado',
+        data_situacao_fidc: dataRecompra,
+      }).eq('id', titulo.id);
+      if (erroUpdate) throw erroUpdate;
+    }
 
-  document.getElementById('modal-recompra').classList.remove('open');
-  if (btn) { btn.disabled = false; btn.textContent = 'Confirmar recompra'; }
-  await carregar();
+    document.getElementById('modal-recompra').classList.remove('open');
+    document.getElementById('barra-selecao').style.display = 'none';
+    await carregar();
+  } catch (err) {
+    alert('Erro ao registrar recompra: ' + (err.message || JSON.stringify(err)));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar recompra'; }
+  }
 });
 
 await carregar();
