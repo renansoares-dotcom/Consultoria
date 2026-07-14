@@ -188,6 +188,17 @@
               <span class="field-label">Despesas Bancárias / Boletos (R$)</span>
               <input class="input mono" type="number" step="0.01" min="0" id="f_outras_taxas" value="0">
             </label>
+            <label class="field f-160">
+              <span class="field-label">Assinatura Eletrônica (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_assinatura" value="0">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Outras Despesas (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_outras_despesas" value="0">
+            </label>
+          </div>
+
+          <div class="linha-flex">
             <label class="field f-200">
               <span class="field-label">Líquido da Operação (R$)</span>
               <input class="input mono" type="number" step="0.01" min="0" id="f_valor_liquido" placeholder="0,00" required>
@@ -202,6 +213,10 @@
             <label class="field f-160">
               <span class="field-label">Retenção / Recompra (R$)</span>
               <input class="input mono" type="number" step="0.01" min="0" id="f_valor_retencao" placeholder="0,00">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Ajuste de Centavos (R$)</span>
+              <input class="input mono" type="number" step="0.01" id="f_ajuste" value="0" title="Correção manual pra reconciliar com o valor realmente transferido.">
             </label>
             <label class="field f-200">
               <span class="field-label">Valor Pago ao Cedente (R$) *</span>
@@ -249,7 +264,7 @@
       <div class="janela-secao" id="bloco-custos-titulos" style="display:none; border-bottom:none;">
         <div class="label" style="margin-bottom:4px;">Custos da Antecipação</div>
         <p style="color:var(--ink-soft); font-size:11.5px; margin:0 0 12px;">
-          Informe o <strong>Valor Total do Deságio</strong> cobrado pelo FIDC (o "Fator de Compra" do borderô, normalmente é só isso que vem informado — sem taxa). O sistema distribui esse valor entre os títulos <strong>proporcionalmente ao valor × prazo de cada um</strong> (pro-rata dia) — quem tem prazo mais longo paga mais. Comissão e IOF são rateados proporcionalmente ao valor. O boleto é um valor fixo por título. A <strong>Retenção/Recompra não é custo</strong> — reduz o valor pago agora, mas gera um "a receber" automático (é devolvida depois pelo FIDC).
+          Informe os valores <strong>totais</strong> cobrados pelo FIDC (como aparecem no borderô — normalmente vêm prontos, sem taxa). O sistema calcula os dias de cada título e distribui cada valor proporcionalmente: o <strong>Deságio</strong> por valor × prazo (pro-rata dia — quem tem prazo mais longo paga mais); Comissão, Despesas Bancárias, Assinatura Eletrônica, Outras Despesas e IOF proporcionais ao valor de cada título. A <strong>Retenção/Recompra não é custo</strong> — reduz o valor pago agora, mas gera um "a receber" automático (é devolvida depois pelo FIDC).
         </p>
         <div class="linha-flex">
           <label class="field f-160">
@@ -265,16 +280,30 @@
             <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_comissao" placeholder="0,000">
           </label>
           <label class="field f-160">
-            <span class="field-label">Custo de Boleto (R$/título)</span>
-            <input class="input mono" type="number" step="0.01" min="0" id="c_custo_boleto" value="0">
+            <span class="field-label">Despesas Bancárias/Boletos (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_despesas_bancarias" value="0" title="Valor TOTAL da operação (não por título) — rateado proporcionalmente entre os títulos.">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Assinatura Eletrônica (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_assinatura_eletronica" value="0">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Outras Despesas (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_outras_despesas" value="0">
           </label>
           <label class="field f-160">
             <span class="field-label">IOF Total da Operação (R$)</span>
             <input class="input mono" type="number" step="0.01" min="0" id="c_iof_total" value="0">
           </label>
-          <label class="field f-130">
-            <span class="field-label">Retenção/Recompra (%)</span>
-            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_retencao" placeholder="0,000" title="Valor retido como garantia — não é custo, volta depois. Gera um 'a receber' automático.">
+          <label class="field f-160">
+            <span class="field-label">Retenção/Recompra (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_valor_retencao_total" placeholder="0,00" title="Valor total retido como garantia (ex: 'Recompra' do borderô). Não é custo — volta depois. Rateado proporcionalmente ao valor de cada título.">
+          </label>
+          <label class="field f-100">
+            <span class="field-label">ou Retenção (%)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_retencao" placeholder="0,000" title="Alternativa ao valor total: % sobre o líquido de cada título.">
           </label>
           <button type="button" class="btn primary" id="btn-calcular-custos" style="align-self:flex-end;">↻ Calcular</button>
         </div>
@@ -283,12 +312,27 @@
             <thead>
               <tr>
                 <th>Título</th><th class="num">Parcela</th><th>Vencimento</th><th class="num">Dias</th><th class="num">Valor</th>
-                <th class="num">Deságio</th><th class="num">Comissão</th><th class="num">Boleto</th><th class="num">IOF</th>
-                <th class="num">Retenção</th><th class="num">Líquido Pago</th>
+                <th class="num">Deságio</th><th class="num">Comissão</th><th class="num">Desp.Banc.</th><th class="num">Assinatura</th>
+                <th class="num">Outras</th><th class="num">IOF</th><th class="num">Retenção</th><th class="num">Líquido Pago</th>
               </tr>
             </thead>
             <tbody id="tbody-custos-titulos"></tbody>
           </table>
+        </div>
+
+        <div class="linha-flex" style="margin-top:16px; align-items:flex-end; border-top:1px solid var(--line-strong); padding-top:14px;">
+          <div class="field f-200">
+            <span class="field-label">Valor Calculado (R$)</span>
+            <div class="mono" id="valor-calculado-display" style="font-size:16px; font-weight:600; padding:8px 0;">R$ 0,00</div>
+          </div>
+          <label class="field f-160">
+            <span class="field-label">Ajuste (R$)</span>
+            <input class="input mono" type="number" step="0.01" id="c_ajuste" value="0" title="Corrige pequenas diferenças de centavos entre o valor calculado e o valor realmente transferido pelo FIDC. Pode ser positivo ou negativo.">
+          </label>
+          <div class="field f-260">
+            <span class="field-label">Valor Final a Receber (R$) — o que efetivamente cai na conta</span>
+            <div class="mono valor positivo" id="valor-final-display" style="font-size:19px; font-weight:700; padding:8px 0;">R$ 0,00</div>
+          </div>
         </div>
       </div>
     </div>
@@ -440,18 +484,21 @@ function recalcular() {
   const comissao = Number(document.getElementById('f_valor_comissao').value || 0);
 
   const iof = Number(document.getElementById('f_iof').value || 0);
-  const outras = Number(document.getElementById('f_outras_taxas').value || 0);
+  const despesasBancarias = Number(document.getElementById('f_outras_taxas').value || 0);
+  const assinatura = Number(document.getElementById('f_valor_assinatura').value || 0);
+  const outrasDespesas = Number(document.getElementById('f_valor_outras_despesas').value || 0);
 
-  const liquidoOperacao = Math.max(0, face - desagio - comissao - iof - outras);
+  const liquidoOperacao = Math.max(0, face - desagio - comissao - iof - despesasBancarias - assinatura - outrasDespesas);
   document.getElementById('f_valor_liquido').value = liquidoOperacao.toFixed(2);
 
   const taxaRetencao = Number(document.getElementById('f_taxa_retencao').value || 0);
   if (taxaRetencao > 0) document.getElementById('f_valor_retencao').value = (liquidoOperacao * taxaRetencao / 100).toFixed(2);
   const retencao = Number(document.getElementById('f_valor_retencao').value || 0);
 
-  document.getElementById('f_valor_pago_cedente').value = Math.max(0, liquidoOperacao - retencao).toFixed(2);
+  const ajuste = Number(document.getElementById('f_ajuste').value || 0);
+  document.getElementById('f_valor_pago_cedente').value = Math.max(0, liquidoOperacao - retencao + ajuste).toFixed(2);
 }
-['f_valor_face','f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_taxa_retencao','f_valor_retencao'].forEach(id => {
+['f_valor_face','f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_valor_assinatura','f_valor_outras_despesas','f_taxa_retencao','f_valor_retencao','f_ajuste'].forEach(id => {
   document.getElementById(id).addEventListener('change', recalcular);
 });
 document.getElementById('btn-recalcular').addEventListener('click', recalcular);
@@ -527,7 +574,7 @@ function atualizarResumoTitulos() {
   document.getElementById('bloco-plano-conta').style.display = selecionados.length ? 'none' : 'block';
   document.getElementById('bloco-custos-titulos').style.display = selecionados.length ? 'block' : 'none';
 
-  ['f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_valor_liquido','f_taxa_retencao','f_valor_retencao','f_valor_pago_cedente'].forEach(id => {
+  ['f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_valor_assinatura','f_valor_outras_despesas','f_valor_liquido','f_taxa_retencao','f_valor_retencao','f_valor_pago_cedente'].forEach(id => {
     document.getElementById(id).readOnly = selecionados.length > 0;
   });
 
@@ -550,8 +597,11 @@ function calcularCustosPorPrazo() {
   const valorDesagioInformado = Number(document.getElementById('c_valor_desagio_total').value || 0);
   const taxaMensal = Number(document.getElementById('c_taxa_mensal').value || 0) / 100;
   const taxaComissao = Number(document.getElementById('c_taxa_comissao').value || 0) / 100;
-  const custoBoleto = Number(document.getElementById('c_custo_boleto').value || 0);
+  const despesasBancariasTotal = Number(document.getElementById('c_despesas_bancarias').value || 0);
+  const assinaturaTotal = Number(document.getElementById('c_assinatura_eletronica').value || 0);
+  const outrasDespesasTotal = Number(document.getElementById('c_outras_despesas').value || 0);
   const iofTotal = Number(document.getElementById('c_iof_total').value || 0);
+  const valorRetencaoInformado = Number(document.getElementById('c_valor_retencao_total').value || 0);
   const taxaRetencao = Number(document.getElementById('c_taxa_retencao').value || 0) / 100;
   const somaFace = selecionados.reduce((s,t) => s + t.saldo_aberto, 0) || 1;
 
@@ -565,11 +615,16 @@ function calcularCustosPorPrazo() {
     pesoTotal += t.saldo_aberto * dias;
   });
 
+  // 2ª passada: desconta tudo que é proporcional ao VALOR (comissão, despesas bancárias,
+  // assinatura, outras despesas, IOF) — todos os "valores totais" informados são rateados
+  // pela participação de cada título no valor de face total.
   detalheCustosPorTitulo = {};
-  let somaDesagio = 0, somaComissao = 0, somaBoletos = 0;
+  let somaDesagio = 0, somaComissao = 0, somaLiquidoOp = 0;
 
   selecionados.forEach(t => {
     const dias = diasPorTitulo[t.id];
+    const participacao = t.saldo_aberto / somaFace;
+
     let desagioTitulo;
     if (valorDesagioInformado > 0) {
       // rateia o valor TOTAL informado, proporcional a valor×prazo (se todos os prazos forem 0, cai pra proporcional só ao valor)
@@ -581,36 +636,62 @@ function calcularCustosPorPrazo() {
     }
 
     const comissaoTitulo = t.saldo_aberto * taxaComissao;
-    const iofTitulo = iofTotal * (t.saldo_aberto / somaFace);
-    const liquidoOpTitulo = t.saldo_aberto - desagioTitulo - comissaoTitulo - custoBoleto - iofTitulo;
-    const retencaoTitulo = liquidoOpTitulo * taxaRetencao;
-    const liquidoPagoTitulo = liquidoOpTitulo - retencaoTitulo;
+    const despesasBancariasTitulo = despesasBancariasTotal * participacao;
+    const assinaturaTitulo = assinaturaTotal * participacao;
+    const outrasDespesasTitulo = outrasDespesasTotal * participacao;
+    const iofTitulo = iofTotal * participacao;
+
+    const liquidoOpTitulo = t.saldo_aberto - desagioTitulo - comissaoTitulo - despesasBancariasTitulo - assinaturaTitulo - outrasDespesasTitulo - iofTitulo;
 
     detalheCustosPorTitulo[t.id] = {
-      dias, desagio: desagioTitulo, comissao: comissaoTitulo, boleto: custoBoleto, iof: iofTitulo,
-      retencao: retencaoTitulo, liquido: liquidoPagoTitulo,
+      dias, desagio: desagioTitulo, comissao: comissaoTitulo, despesasBancarias: despesasBancariasTitulo,
+      assinatura: assinaturaTitulo, outrasDespesas: outrasDespesasTitulo, iof: iofTitulo,
+      liquidoOp: liquidoOpTitulo, participacao,
     };
     somaDesagio += desagioTitulo;
     somaComissao += comissaoTitulo;
-    somaBoletos += custoBoleto;
+    somaLiquidoOp += liquidoOpTitulo;
   });
 
-  const somaIof = iofTotal;
-  const liquidoOperacao = Math.max(0, somaFace - somaDesagio - somaComissao - somaBoletos - somaIof);
-  const somaRetencao = Object.values(detalheCustosPorTitulo).reduce((s,d) => s + d.retencao, 0);
-  const valorPagoCedente = Math.max(0, liquidoOperacao - somaRetencao);
+  // 3ª passada: retenção — proporcional ao líquido da operação de cada título
+  let somaRetencao = 0;
+  selecionados.forEach(t => {
+    const d = detalheCustosPorTitulo[t.id];
+    let retencaoTitulo;
+    if (valorRetencaoInformado > 0) {
+      const peso = somaLiquidoOp > 0 ? d.liquidoOp : d.participacao;
+      const refPeso = somaLiquidoOp > 0 ? somaLiquidoOp : 1;
+      retencaoTitulo = valorRetencaoInformado * (peso / refPeso);
+    } else {
+      retencaoTitulo = d.liquidoOp * taxaRetencao;
+    }
+    d.retencao = retencaoTitulo;
+    d.liquido = d.liquidoOp - retencaoTitulo;
+    somaRetencao += retencaoTitulo;
+  });
+
+  const liquidoOperacao = Math.max(0, somaLiquidoOp);
+  const valorPagoCedenteCalculado = Math.max(0, liquidoOperacao - somaRetencao);
 
   document.getElementById('f_valor_desagio').value = somaDesagio.toFixed(2);
   document.getElementById('f_valor_comissao').value = somaComissao.toFixed(2);
-  document.getElementById('f_outras_taxas').value = somaBoletos.toFixed(2);
-  document.getElementById('f_iof').value = somaIof.toFixed(2);
+  document.getElementById('f_outras_taxas').value = despesasBancariasTotal.toFixed(2);
+  document.getElementById('f_valor_assinatura').value = assinaturaTotal.toFixed(2);
+  document.getElementById('f_valor_outras_despesas').value = outrasDespesasTotal.toFixed(2);
+  document.getElementById('f_iof').value = iofTotal.toFixed(2);
   document.getElementById('f_valor_liquido').value = liquidoOperacao.toFixed(2);
   document.getElementById('f_valor_retencao').value = somaRetencao.toFixed(2);
-  document.getElementById('f_valor_pago_cedente').value = valorPagoCedente.toFixed(2);
   // taxas efetivas (%), só informativo — calculadas de trás pra frente a partir do valor total
   document.getElementById('f_taxa_desagio').value = somaFace ? (somaDesagio / somaFace * 100).toFixed(3) : '';
   document.getElementById('f_taxa_comissao').value = somaFace ? (somaComissao / somaFace * 100).toFixed(3) : '';
   document.getElementById('f_taxa_retencao').value = liquidoOperacao ? (somaRetencao / liquidoOperacao * 100).toFixed(3) : '';
+
+  const ajuste = Number(document.getElementById('c_ajuste').value || 0);
+  document.getElementById('f_ajuste').value = ajuste.toFixed(2);
+  const valorFinal = Math.max(0, valorPagoCedenteCalculado + ajuste);
+  document.getElementById('valor-calculado-display').textContent = fmt(valorPagoCedenteCalculado);
+  document.getElementById('valor-final-display').textContent = fmt(valorFinal);
+  document.getElementById('f_valor_pago_cedente').value = valorFinal.toFixed(2);
 
   document.getElementById('tbody-custos-titulos').innerHTML = selecionados.map(t => {
     const d = detalheCustosPorTitulo[t.id];
@@ -624,7 +705,9 @@ function calcularCustosPorPrazo() {
         <td class="num mono">${fmt(t.saldo_aberto)}</td>
         <td class="num mono valor negativo">${fmt(d.desagio)}</td>
         <td class="num mono valor negativo">${fmt(d.comissao)}</td>
-        <td class="num mono valor negativo">${fmt(d.boleto)}</td>
+        <td class="num mono valor negativo">${fmt(d.despesasBancarias)}</td>
+        <td class="num mono valor negativo">${fmt(d.assinatura)}</td>
+        <td class="num mono valor negativo">${fmt(d.outrasDespesas)}</td>
         <td class="num mono valor negativo">${fmt(d.iof)}</td>
         <td class="num mono valor aberto">${fmt(d.retencao)}</td>
         <td class="num mono valor positivo">${fmt(d.liquido)}</td>
@@ -633,7 +716,7 @@ function calcularCustosPorPrazo() {
 }
 
 document.getElementById('btn-calcular-custos').addEventListener('click', calcularCustosPorPrazo);
-['c_valor_desagio_total','c_taxa_mensal','c_taxa_comissao','c_custo_boleto','c_iof_total','c_taxa_retencao'].forEach(id => {
+['c_valor_desagio_total','c_taxa_mensal','c_taxa_comissao','c_despesas_bancarias','c_assinatura_eletronica','c_outras_despesas','c_iof_total','c_valor_retencao_total','c_taxa_retencao','c_ajuste'].forEach(id => {
   document.getElementById(id).addEventListener('change', calcularCustosPorPrazo);
 });
 
@@ -975,9 +1058,12 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
       valor_comissao: Number(document.getElementById('f_valor_comissao').value || 0),
       iof: Number(document.getElementById('f_iof').value || 0),
       outras_taxas: Number(document.getElementById('f_outras_taxas').value || 0),
+      valor_assinatura_eletronica: Number(document.getElementById('f_valor_assinatura').value || 0),
+      valor_outras_despesas: Number(document.getElementById('f_valor_outras_despesas').value || 0),
       valor_liquido: valorLiquido,
       taxa_retencao: Number(document.getElementById('f_taxa_retencao').value || 0) || null,
       valor_retencao: valorRetencao,
+      ajuste_valor_final: Number(document.getElementById('f_ajuste').value || 0),
       valor_pago_cedente: valorPagoCedente,
       conta_bancaria_id: contaRecebimento,
       observacoes: document.getElementById('f_obs').value || null,
@@ -1003,7 +1089,7 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
     if (selecionados.length) {
       for (const t of selecionados) {
         const d = detalheCustosPorTitulo[t.id];
-        const custoTitulo = d ? (d.desagio + d.comissao + d.boleto + d.iof + d.retencao) : (t.saldo_aberto - (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1))));
+        const custoTitulo = d ? (d.desagio + d.comissao + d.despesasBancarias + d.assinatura + d.outrasDespesas + d.iof + d.retencao) : (t.saldo_aberto - (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1))));
         const valorPagoTitulo = d ? d.liquido : (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1)));
         const { error: erroBaixa } = await supabase.from('baixas').insert({
           tenant_id: TENANT_ID,
