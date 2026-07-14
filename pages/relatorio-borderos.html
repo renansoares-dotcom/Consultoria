@@ -21,6 +21,11 @@
   .mini-tabela th { text-align: left; color: var(--ink-soft); font-weight: 600; padding: 3px 8px; }
   .mini-tabela td { padding: 3px 8px; }
   .btn-expandir { all: unset; cursor: pointer; color: var(--accent); font-size: 12px; font-weight: 600; }
+
+  @media print {
+    tr[id^="detalhe-"] { display: table-row !important; }
+    .btn-expandir { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -150,7 +155,7 @@
     <div class="card"><div class="label">Custo Total (Deságio+Comissão+IOF+Taxas)</div><div class="big valor negativo" id="kpi-custo">R$ 0,00</div></div>
   </section>
 
-  <section class="grid grid-2" style="margin-bottom:16px; align-items:stretch;">
+  <section class="grid grid-2 no-print" style="margin-bottom:16px; align-items:stretch;">
     <div class="card">
       <div class="label" style="margin-bottom:14px;">Custo Médio por FIDC/Factoring <span style="font-weight:400; color:var(--ink-soft); font-size:11px;">(% sobre o valor de face — menor é melhor)</span></div>
       <div id="grafico-fidc"><p style="color:var(--ink-soft); font-size:12px;">Sem dados no período.</p></div>
@@ -354,7 +359,7 @@ function desenharTabela(lista) {
       <td class="num mono valor negativo">${fmt(r.custoTotal)}</td>
       <td class="num mono valor aberto">${fmt(r.valor_retencao||0)}</td>
       <td class="num mono valor positivo">${fmt(r.valorPagoCedente)}</td>
-      <td class="num"><button type="button" class="btn-expandir" data-ver="${r.id}">Ver detalhes ▾</button></td>
+      <td class="num"><button type="button" class="btn-expandir" data-ver="${r.id}">Ver detalhes ▾</button> · <a href="bordero-detalhe.html?id=${r.id}" class="btn-expandir" target="_blank">📄 PDF</a></td>
     </tr>
     <tr id="detalhe-${r.id}" style="display:none;"><td colspan="10" class="linha-expandida"><div id="conteudo-detalhe-${r.id}">Carregando…</div></td></tr>
   `).join('');
@@ -420,6 +425,21 @@ function renderDetalhe(borderoId) {
 }
 
 await carregar();
+
+// O botão PDF (injetado por adicionarBotoesExportacao) precisa pré-carregar
+// os detalhes de cada borderô antes de abrir a impressão — beforeprint não
+// espera código assíncrono de forma confiável entre navegadores.
+const btnPdfOriginal = [...document.querySelectorAll('#area-exportar button')].find(b => b.textContent.includes('PDF'));
+if (btnPdfOriginal) {
+  const btnPdfNovo = btnPdfOriginal.cloneNode(true);
+  btnPdfOriginal.replaceWith(btnPdfNovo);
+  btnPdfNovo.addEventListener('click', async () => {
+    btnPdfNovo.disabled = true; btnPdfNovo.textContent = 'Preparando…';
+    for (const r of registros) { await carregarDetalhe(r.id); }
+    btnPdfNovo.disabled = false; btnPdfNovo.textContent = '⬇ PDF';
+    window.print();
+  });
+}
 </script>
 </body>
 </html>

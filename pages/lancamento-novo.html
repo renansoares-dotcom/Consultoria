@@ -715,6 +715,11 @@ document.getElementById('acao-imprimir').addEventListener('click', () => { menuA
 document.getElementById('acao-excluir').addEventListener('click', async () => {
   menuAcoes.classList.remove('open');
   if (!idEdicao) return;
+  const { data: atual } = await supabase.from('lancamentos').select('bordero_id').eq('id', idEdicao).single();
+  if (atual?.bordero_id) {
+    alert('Este lançamento faz parte de um Borderô de Antecipação e não pode ser excluído individualmente. Para removê-lo, exclua o borderô inteiro em Lançamentos → Borderôs lançados.');
+    return;
+  }
   if (!confirm('Excluir este compromisso e todas as baixas/distribuições vinculadas? Essa ação não pode ser desfeita.')) return;
   const { error } = await supabase.from('lancamentos').delete().eq('id', idEdicao);
   if (error) { alert('Erro ao excluir: ' + error.message); return; }
@@ -782,7 +787,8 @@ async function carregarDadosExistentes() {
 
   document.getElementById('acao-anexar').disabled = false;
   document.getElementById('acao-baixar').disabled = false;
-  document.getElementById('acao-excluir').disabled = false;
+  document.getElementById('acao-excluir').disabled = !!l.bordero_id;
+  document.getElementById('acao-excluir').title = l.bordero_id ? 'Este lançamento faz parte de um Borderô — exclua o borderô inteiro em Lançamentos → Borderôs lançados.' : '';
 }
 await carregarDadosExistentes();
 

@@ -123,15 +123,23 @@
     <div id="area-exportar" style="display:flex; gap:8px;"></div>
   </div>
 
+  <div class="toolbar" id="barra-selecao" style="display:none; background:var(--ledger); color:#fff; border-radius:var(--radius-md); padding:10px 14px; margin-bottom:10px;">
+    <span id="contador-selecao" style="font-size:13px; font-weight:600;">0 selecionado(s)</span>
+    <div class="spacer"></div>
+    <button class="btn" id="btn-excluir-selecionados" style="background:var(--red); padding:8px 14px;">🗑 Excluir selecionados</button>
+    <button class="btn ghost" id="btn-limpar-selecao" style="border-color:rgba(255,255,255,.3); color:#fff; padding:8px 14px;">Cancelar</button>
+  </div>
+
   <section class="card" style="padding:0; overflow:hidden;">
     <table id="tabela-relatorio">
       <thead>
         <tr>
+          <th style="width:36px;"><input type="checkbox" id="chk-selecionar-todos"></th>
           <th>Data</th><th>Plano de Contas</th><th>Descrição</th><th>Favorecido</th><th>Status</th><th class="num">Valor</th><th class="num">Ações</th>
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="7" class="empty-state">Carregando…</td></tr>
+        <tr><td colspan="8" class="empty-state">Carregando…</td></tr>
       </tbody>
     </table>
   </section>
@@ -181,15 +189,15 @@ document.getElementById('btn-pag-anterior').addEventListener('click', () => { if
 document.getElementById('btn-pag-proxima').addEventListener('click', () => { paginaAtual++; carregar(); });
 
 async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
 
   const inicio = paginaAtual * TAMANHO_PAGINA;
   const fim = inicio + TAMANHO_PAGINA - 1;
 
   const tiposMarcados = [...document.querySelectorAll('.chk-tipo:checked')].map(c => c.value);
   const selectClause = tiposMarcados.length < 3
-    ? 'id, data, descricao, status, valor, conta_destino_id, plano_contas!inner(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)'
-    : 'id, data, descricao, status, valor, conta_destino_id, plano_contas(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)';
+    ? 'id, data, descricao, status, valor, conta_destino_id, bordero_id, plano_contas!inner(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)'
+    : 'id, data, descricao, status, valor, conta_destino_id, bordero_id, plano_contas(codigo_conta, nome_conta, tipo), favorecidos(nome), centros_custo(nome), contas_bancarias:conta_bancaria_id(nome), contas_destino:conta_destino_id(nome)';
 
   let query = supabase
     .from('lancamentos')
@@ -198,7 +206,7 @@ async function carregar() {
     .range(inicio, fim);
 
   if (tiposMarcados.length && tiposMarcados.length < 3) query = query.in('plano_contas.tipo', tiposMarcados);
-  if (!tiposMarcados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Selecione ao menos um tipo no filtro.</td></tr>`; atualizarControlesPagina(0); return; }
+  if (!tiposMarcados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state">Selecione ao menos um tipo no filtro.</td></tr>`; atualizarControlesPagina(0); return; }
 
   const status = document.getElementById('f_status').value;
   if (status) query = query.eq('status', status);
@@ -213,7 +221,7 @@ async function carregar() {
 
   const { data, error, count } = await query;
   if (error) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
     return;
   }
   atualizarControlesPagina(count ?? 0);
@@ -232,7 +240,7 @@ function desenhar() {
     : `${totalRegistros} lançamento${totalRegistros===1?'':'s'} no total`;
 
   if (!filtrados.length) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum lançamento encontrado.</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="8" class="empty-state">Nenhum lançamento encontrado.</td></tr>`;
     return;
   }
 
@@ -247,6 +255,7 @@ function desenhar() {
       : (l.contas_bancarias?.nome ?? '-');
     return `
       <tr>
+        <td><input type="checkbox" class="chk-linha" value="${l.id}" ${l.bordero_id ? 'disabled title="Vinculado a um borderô — exclua o borderô inteiro"' : ''}></td>
         <td>${new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
         <td>${l.plano_contas ? l.plano_contas.codigo_conta + ' — ' + l.plano_contas.nome_conta : '-'}</td>
         <td>${l.descricao ?? '-'}<br><span style="color:var(--ink-soft); font-size:11px;">${contaTxt}</span></td>
@@ -291,6 +300,11 @@ document.getElementById('tbody').addEventListener('click', async e => {
   if (editar) window.location.href = `lancamento-novo.html?id=${editar}`;
 
   if (excluir) {
+    const registro = lancamentos.find(l => l.id === excluir);
+    if (registro?.bordero_id) {
+      alert('Este lançamento faz parte de um Borderô de Antecipação e não pode ser excluído individualmente. Para removê-lo, exclua o borderô inteiro em Lançamentos → Borderôs lançados.');
+      return;
+    }
     if (!confirm('Excluir este lançamento? Essa ação não pode ser desfeita.')) return;
     const { error } = await supabase.from('lancamentos').delete().eq('id', excluir);
     if (error) { alert('Erro ao excluir: ' + error.message); return; }
@@ -313,6 +327,50 @@ document.getElementById('tbody').addEventListener('click', async e => {
     if (error) { alert('Erro ao dar baixa: ' + error.message); return; }
     await carregar();
   }
+});
+
+// ---------- Seleção em lote ----------
+function atualizarBarraSelecao() {
+  const marcados = [...document.querySelectorAll('.chk-linha:checked')];
+  const barra = document.getElementById('barra-selecao');
+  barra.style.display = marcados.length ? 'flex' : 'none';
+  document.getElementById('contador-selecao').textContent = `${marcados.length} selecionado(s)`;
+
+  const total = document.querySelectorAll('.chk-linha').length;
+  const habilitaveis = document.querySelectorAll('.chk-linha:not(:disabled)').length;
+  const chkTodos = document.getElementById('chk-selecionar-todos');
+  chkTodos.checked = habilitaveis > 0 && marcados.length === habilitaveis;
+  chkTodos.indeterminate = marcados.length > 0 && marcados.length < habilitaveis;
+}
+
+document.getElementById('tbody').addEventListener('change', e => {
+  if (e.target.classList.contains('chk-linha')) atualizarBarraSelecao();
+});
+
+document.getElementById('chk-selecionar-todos').addEventListener('change', e => {
+  document.querySelectorAll('.chk-linha:not(:disabled)').forEach(chk => { chk.checked = e.target.checked; });
+  atualizarBarraSelecao();
+});
+
+document.getElementById('btn-limpar-selecao').addEventListener('click', () => {
+  document.querySelectorAll('.chk-linha').forEach(chk => { chk.checked = false; });
+  atualizarBarraSelecao();
+});
+
+document.getElementById('btn-excluir-selecionados').addEventListener('click', async () => {
+  const ids = [...document.querySelectorAll('.chk-linha:checked')].map(chk => chk.value);
+  if (!ids.length) return;
+  if (!confirm(`Excluir ${ids.length} lançamento(s) selecionado(s)? Essa ação não pode ser desfeita.`)) return;
+
+  const btn = document.getElementById('btn-excluir-selecionados');
+  btn.disabled = true; btn.textContent = 'Excluindo…';
+
+  const { error } = await supabase.from('lancamentos').delete().in('id', ids);
+
+  btn.disabled = false; btn.textContent = '🗑 Excluir selecionados';
+  if (error) { alert('Erro ao excluir: ' + error.message); return; }
+  document.getElementById('barra-selecao').style.display = 'none';
+  await carregar();
 });
 
 await carregar();
