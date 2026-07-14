@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Relatório de Borderôs — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 <style>
   .barra-h { background: var(--paper); border-radius: 4px; height: 10px; overflow: hidden; }
@@ -141,8 +141,12 @@
   <section class="grid grid-4" style="margin-bottom:16px;">
     <div class="card"><div class="label">Operações no período</div><div class="big" id="kpi-qtd">0</div></div>
     <div class="card"><div class="label">Valor de Face Total</div><div class="big" id="kpi-face">R$ 0,00</div></div>
-    <div class="card"><div class="label">Valor Líquido Recebido</div><div class="big valor positivo" id="kpi-liquido">R$ 0,00</div></div>
-    <div class="card"><div class="label">Custo Total (Deságio+IOF+Taxas)</div><div class="big valor negativo" id="kpi-custo">R$ 0,00</div></div>
+    <div class="card">
+      <div class="label">Valor Pago ao Cedente</div>
+      <div class="big valor positivo" id="kpi-liquido">R$ 0,00</div>
+      <div style="font-size:11px; color:var(--ink-soft); margin-top:4px;">Retido (Recompra): <span id="kpi-retencao" class="mono">R$ 0,00</span></div>
+    </div>
+    <div class="card"><div class="label">Custo Total (Deságio+Comissão+IOF+Taxas)</div><div class="big valor negativo" id="kpi-custo">R$ 0,00</div></div>
   </section>
 
   <section class="grid grid-2" style="margin-bottom:16px; align-items:stretch;">
@@ -163,11 +167,11 @@
         <tr>
           <th>Data</th><th>Nº Borderô</th><th>FIDC/Factoring</th><th>Conta</th>
           <th class="num">Valor de Face</th><th class="num">Deságio %</th>
-          <th class="num">Custo Total</th><th class="num">Valor Líquido</th>
+          <th class="num">Custo Total</th><th class="num">Retenção</th><th class="num">Valor Pago ao Cedente</th>
           <th class="num">Detalhes</th>
         </tr>
       </thead>
-      <tbody id="tbody"><tr><td colspan="9" class="empty-state">Carregando…</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="10" class="empty-state">Carregando…</td></tr></tbody>
     </table>
   </section>
 </main>
@@ -225,11 +229,11 @@ let registros = [];
 const detalhesCache = {};
 
 async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Carregando…</td></tr>`;
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="10" class="empty-state">Carregando…</td></tr>`;
 
   let query = supabase
     .from('operacoes_antecipacao')
-    .select('id, data_operacao, numero_bordero, chave_acesso_nfe, valor_face, taxa_desagio, valor_desagio, iof, outras_taxas, valor_liquido, favorecidos(id, nome), grupos_empresariais(nome), contas_bancarias(id, nome)')
+    .select('id, data_operacao, numero_bordero, chave_acesso_nfe, valor_face, taxa_desagio, valor_desagio, valor_comissao, iof, outras_taxas, valor_liquido, valor_retencao, valor_pago_cedente, favorecidos(id, nome), grupos_empresariais(nome), contas_bancarias(id, nome)')
     .order('data_operacao', { ascending: false });
 
   const dataIni = document.getElementById('f_data_ini').value;
@@ -245,13 +249,14 @@ async function carregar() {
 
   const { data, error } = await query;
   if (error) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="10" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
     return;
   }
 
   registros = (data || []).map(r => ({
     ...r,
-    custoTotal: Number(r.valor_desagio||0) + Number(r.iof||0) + Number(r.outras_taxas||0),
+    custoTotal: Number(r.valor_desagio||0) + Number(r.valor_comissao||0) + Number(r.iof||0) + Number(r.outras_taxas||0),
+    valorPagoCedente: r.valor_pago_cedente ?? r.valor_liquido,
     custoPct: r.valor_face ? ((Number(r.valor_desagio||0) + Number(r.iof||0) + Number(r.outras_taxas||0)) / Number(r.valor_face) * 100) : 0,
   }));
 
@@ -269,11 +274,13 @@ function registrosFiltrados() {
 
 function atualizarKPIs() {
   const totalFace = registros.reduce((s,r) => s + Number(r.valor_face||0), 0);
-  const totalLiquido = registros.reduce((s,r) => s + Number(r.valor_liquido||0), 0);
+  const totalPagoCedente = registros.reduce((s,r) => s + Number(r.valorPagoCedente||0), 0);
+  const totalRetencao = registros.reduce((s,r) => s + Number(r.valor_retencao||0), 0);
   const totalCusto = registros.reduce((s,r) => s + r.custoTotal, 0);
   document.getElementById('kpi-qtd').textContent = registros.length;
   document.getElementById('kpi-face').textContent = fmt(totalFace);
-  document.getElementById('kpi-liquido').textContent = fmt(totalLiquido);
+  document.getElementById('kpi-liquido').textContent = fmt(totalPagoCedente);
+  document.getElementById('kpi-retencao').textContent = fmt(totalRetencao);
   document.getElementById('kpi-custo').textContent = fmt(totalCusto);
 }
 
@@ -332,7 +339,7 @@ function renderGraficoMensal() {
 function desenharTabela(lista) {
   const tbody = document.getElementById('tbody');
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">Nenhum borderô encontrado para os filtros aplicados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">Nenhum borderô encontrado para os filtros aplicados.</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(r => `
@@ -344,10 +351,11 @@ function desenharTabela(lista) {
       <td class="num mono">${fmt(r.valor_face)}</td>
       <td class="num mono">${fmtPct(r.custoPct)}</td>
       <td class="num mono valor negativo">${fmt(r.custoTotal)}</td>
-      <td class="num mono valor positivo">${fmt(r.valor_liquido)}</td>
+      <td class="num mono valor aberto">${fmt(r.valor_retencao||0)}</td>
+      <td class="num mono valor positivo">${fmt(r.valorPagoCedente)}</td>
       <td class="num"><button type="button" class="btn-expandir" data-ver="${r.id}">Ver detalhes ▾</button></td>
     </tr>
-    <tr id="detalhe-${r.id}" style="display:none;"><td colspan="9" class="linha-expandida"><div id="conteudo-detalhe-${r.id}">Carregando…</div></td></tr>
+    <tr id="detalhe-${r.id}" style="display:none;"><td colspan="10" class="linha-expandida"><div id="conteudo-detalhe-${r.id}">Carregando…</div></td></tr>
   `).join('');
 }
 
@@ -387,7 +395,7 @@ function renderDetalhe(borderoId) {
   if (!titulos.length) {
     html += `<p style="color:var(--ink-soft); font-size:11.5px;">Nenhum título vinculado (operação avulsa).</p>`;
   } else {
-    html += `<table class="mini-tabela"><thead><tr><th>Favorecido</th><th>Descrição</th><th class="num">Recebido</th><th class="num">Deságio</th></tr></thead><tbody>`;
+    html += `<table class="mini-tabela"><thead><tr><th>Favorecido</th><th>Descrição</th><th class="num">Recebido</th><th class="num">Descontado (deságio+taxas+retenção)</th></tr></thead><tbody>`;
     titulos.forEach(t => {
       html += `<tr><td>${t.lancamentos?.favorecidos?.nome ?? '-'}</td><td>${t.lancamentos?.descricao ?? '-'}</td><td class="num mono">${fmt(t.valor_pago)}</td><td class="num mono">${fmt(t.desconto)}</td></tr>`;
     });

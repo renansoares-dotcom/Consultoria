@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Borderô de Antecipação — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 <style>
   .transf-linha { display: grid; grid-template-columns: 1fr 160px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
@@ -124,6 +124,10 @@
               <span class="field-label">Nº do Borderô</span>
               <input class="input" type="text" id="f_numero" placeholder="Ex: BOR-0045">
             </label>
+            <label class="field f-160">
+              <span class="field-label">Nº do Contrato</span>
+              <input class="input" type="text" id="f_contrato" placeholder="Ex: CT-2020-118">
+            </label>
             <label class="field f-130">
               <span class="field-label">Data da Operação *</span>
               <input class="input" type="date" id="f_data" required>
@@ -159,26 +163,49 @@
             </label>
             <label class="field f-100">
               <span class="field-label">Deságio (%)</span>
-              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_desagio" placeholder="0,000">
+              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_desagio" placeholder="0,000" title="Com títulos vinculados na aba Títulos, esse valor é calculado automaticamente (taxa efetiva) a partir do prazo de cada título.">
             </label>
             <label class="field f-160">
-              <span class="field-label">Valor do Deságio (R$)</span>
+              <span class="field-label">Deságio / Fator de Compra (R$)</span>
               <input class="input mono" type="number" step="0.01" min="0" id="f_valor_desagio" placeholder="0,00">
             </label>
-            <label class="field f-130">
-              <span class="field-label">IOF (R$)</span>
-              <input class="input mono" type="number" step="0.01" min="0" id="f_iof" value="0">
+            <label class="field f-100">
+              <span class="field-label">Comissão (%)</span>
+              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_comissao" placeholder="0,000" title="Comissão de prestação de serviço (ad valorem) — % sobre o valor de face.">
             </label>
-            <label class="field f-130">
-              <span class="field-label">Outras Taxas (R$)</span>
-              <input class="input mono" type="number" step="0.01" min="0" id="f_outras_taxas" value="0">
+            <label class="field f-160">
+              <span class="field-label">Comissão (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_comissao" placeholder="0,00">
             </label>
           </div>
 
           <div class="linha-flex">
+            <label class="field f-130">
+              <span class="field-label">IOF (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_iof" value="0">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Despesas Bancárias / Boletos (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_outras_taxas" value="0">
+            </label>
             <label class="field f-200">
-              <span class="field-label">Valor Líquido a Receber (R$) *</span>
-              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_liquido" placeholder="0,00" required style="font-weight:700; color:var(--accent);">
+              <span class="field-label">Líquido da Operação (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_liquido" placeholder="0,00" required>
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-100">
+              <span class="field-label">Retenção / Recompra (%)</span>
+              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_retencao" placeholder="0,000" title="Valor retido como garantia pelo FIDC/Factoring — NÃO é custo, volta depois. Calculado sobre o Líquido da Operação.">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Retenção / Recompra (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_retencao" placeholder="0,00">
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Valor Pago ao Cedente (R$) *</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_pago_cedente" placeholder="0,00" required style="font-weight:700; color:var(--accent);" title="É este valor que efetivamente cai na conta bancária.">
             </label>
             <button type="button" class="btn ghost" id="btn-recalcular" style="align-self:flex-end;">↻ Recalcular</button>
           </div>
@@ -215,6 +242,48 @@
       </p>
       <div class="lista-selecao" id="lista-titulos">
         <div class="lista-selecao-linha"><span class="col-desc">Carregando contas a receber em aberto…</span></div>
+      </div>
+
+      <div class="janela-secao" id="bloco-custos-titulos" style="display:none; border-bottom:none;">
+        <div class="label" style="margin-bottom:4px;">Custos da Antecipação</div>
+        <p style="color:var(--ink-soft); font-size:11.5px; margin:0 0 12px;">
+          O deságio é calculado <strong>por título</strong>, proporcional ao prazo até o vencimento (pro-rata dia) — títulos com vencimento mais distante pagam mais deságio. Comissão e IOF são rateados proporcionalmente ao valor de cada título. O boleto é um valor fixo por título. A <strong>Retenção/Recompra não é custo</strong> — reduz o valor pago agora, mas gera um "a receber" automático (é devolvida depois pelo FIDC).
+        </p>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Taxa de Deságio (% ao mês)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_mensal" placeholder="0,000">
+          </label>
+          <label class="field f-130">
+            <span class="field-label">Comissão (% ad valorem)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_comissao" placeholder="0,000">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Custo de Boleto (R$/título)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_custo_boleto" value="0">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">IOF Total da Operação (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_iof_total" value="0">
+          </label>
+          <label class="field f-130">
+            <span class="field-label">Retenção/Recompra (%)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_retencao" placeholder="0,000" title="Valor retido como garantia — não é custo, volta depois. Gera um 'a receber' automático.">
+          </label>
+          <button type="button" class="btn primary" id="btn-calcular-custos" style="align-self:flex-end;">↻ Calcular</button>
+        </div>
+        <div class="baixas-tabela-wrap" style="margin-top:6px;">
+          <table style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Título</th><th>Vencimento</th><th class="num">Dias</th><th class="num">Valor</th>
+                <th class="num">Deságio</th><th class="num">Comissão</th><th class="num">Boleto</th><th class="num">IOF</th>
+                <th class="num">Retenção</th><th class="num">Líquido Pago</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-custos-titulos"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -353,15 +422,30 @@ document.getElementById('input-xml').addEventListener('change', async e => {
 
 // ---------- Cálculo automático ----------
 function recalcular() {
+  if (typeof titulosSelecionados !== 'undefined' && titulosSelecionados.size > 0) return; // calculado pela aba Títulos (por prazo)
   const face = Number(document.getElementById('f_valor_face').value || 0);
-  const taxa = Number(document.getElementById('f_taxa_desagio').value || 0);
-  if (taxa > 0) document.getElementById('f_valor_desagio').value = (face * taxa / 100).toFixed(2);
+
+  const taxaDesagio = Number(document.getElementById('f_taxa_desagio').value || 0);
+  if (taxaDesagio > 0) document.getElementById('f_valor_desagio').value = (face * taxaDesagio / 100).toFixed(2);
   const desagio = Number(document.getElementById('f_valor_desagio').value || 0);
+
+  const taxaComissao = Number(document.getElementById('f_taxa_comissao').value || 0);
+  if (taxaComissao > 0) document.getElementById('f_valor_comissao').value = (face * taxaComissao / 100).toFixed(2);
+  const comissao = Number(document.getElementById('f_valor_comissao').value || 0);
+
   const iof = Number(document.getElementById('f_iof').value || 0);
   const outras = Number(document.getElementById('f_outras_taxas').value || 0);
-  document.getElementById('f_valor_liquido').value = Math.max(0, face - desagio - iof - outras).toFixed(2);
+
+  const liquidoOperacao = Math.max(0, face - desagio - comissao - iof - outras);
+  document.getElementById('f_valor_liquido').value = liquidoOperacao.toFixed(2);
+
+  const taxaRetencao = Number(document.getElementById('f_taxa_retencao').value || 0);
+  if (taxaRetencao > 0) document.getElementById('f_valor_retencao').value = (liquidoOperacao * taxaRetencao / 100).toFixed(2);
+  const retencao = Number(document.getElementById('f_valor_retencao').value || 0);
+
+  document.getElementById('f_valor_pago_cedente').value = Math.max(0, liquidoOperacao - retencao).toFixed(2);
 }
-['f_valor_face','f_taxa_desagio','f_valor_desagio','f_iof','f_outras_taxas'].forEach(id => {
+['f_valor_face','f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_taxa_retencao','f_valor_retencao'].forEach(id => {
   document.getElementById(id).addEventListener('change', recalcular);
 });
 document.getElementById('btn-recalcular').addEventListener('click', recalcular);
@@ -427,20 +511,104 @@ document.getElementById('lista-titulos').addEventListener('change', e => {
   atualizarResumoTitulos();
 });
 
+let detalheCustosPorTitulo = {}; // tituloId -> { dias, desagio, boleto, iof, liquido }
+
 function atualizarResumoTitulos() {
   const selecionados = titulosDisponiveis.filter(t => titulosSelecionados.has(t.id));
   const soma = selecionados.reduce((s,t) => s + t.saldo_aberto, 0);
   document.getElementById('contador-titulos').textContent = `${selecionados.length} selecionado(s)`;
   document.getElementById('soma-titulos').textContent = fmt(soma);
   document.getElementById('bloco-plano-conta').style.display = selecionados.length ? 'none' : 'block';
+  document.getElementById('bloco-custos-titulos').style.display = selecionados.length ? 'block' : 'none';
+
+  ['f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_valor_liquido','f_taxa_retencao','f_valor_retencao','f_valor_pago_cedente'].forEach(id => {
+    document.getElementById(id).readOnly = selecionados.length > 0;
+  });
+
   if (selecionados.length) {
     document.getElementById('f_valor_face').value = soma.toFixed(2);
     document.getElementById('f_valor_face').readOnly = true;
-    recalcular();
+    calcularCustosPorPrazo();
   } else {
     document.getElementById('f_valor_face').readOnly = false;
+    document.getElementById('tbody-custos-titulos').innerHTML = '';
   }
 }
+
+function calcularCustosPorPrazo() {
+  const selecionados = titulosDisponiveis.filter(t => titulosSelecionados.has(t.id));
+  if (!selecionados.length) return;
+
+  const dataOperacaoStr = document.getElementById('f_data').value || new Date().toISOString().slice(0,10);
+  const dataOperacao = new Date(dataOperacaoStr + 'T00:00:00');
+  const taxaMensal = Number(document.getElementById('c_taxa_mensal').value || 0) / 100;
+  const taxaComissao = Number(document.getElementById('c_taxa_comissao').value || 0) / 100;
+  const custoBoleto = Number(document.getElementById('c_custo_boleto').value || 0);
+  const iofTotal = Number(document.getElementById('c_iof_total').value || 0);
+  const taxaRetencao = Number(document.getElementById('c_taxa_retencao').value || 0) / 100;
+  const somaFace = selecionados.reduce((s,t) => s + t.saldo_aberto, 0) || 1;
+
+  detalheCustosPorTitulo = {};
+  let somaDesagio = 0, somaComissao = 0, somaBoletos = 0;
+
+  selecionados.forEach(t => {
+    const venc = t.data_vencimento ? new Date(t.data_vencimento + 'T00:00:00') : dataOperacao;
+    const dias = Math.max(0, Math.round((venc - dataOperacao) / 86400000));
+    const desagioTitulo = t.saldo_aberto * (taxaMensal / 30) * dias;
+    const comissaoTitulo = t.saldo_aberto * taxaComissao;
+    const iofTitulo = iofTotal * (t.saldo_aberto / somaFace);
+    const liquidoOpTitulo = t.saldo_aberto - desagioTitulo - comissaoTitulo - custoBoleto - iofTitulo;
+    const retencaoTitulo = liquidoOpTitulo * taxaRetencao;
+    const liquidoPagoTitulo = liquidoOpTitulo - retencaoTitulo;
+
+    detalheCustosPorTitulo[t.id] = {
+      dias, desagio: desagioTitulo, comissao: comissaoTitulo, boleto: custoBoleto, iof: iofTitulo,
+      retencao: retencaoTitulo, liquido: liquidoPagoTitulo,
+    };
+    somaDesagio += desagioTitulo;
+    somaComissao += comissaoTitulo;
+    somaBoletos += custoBoleto;
+  });
+
+  const somaIof = iofTotal;
+  const liquidoOperacao = Math.max(0, somaFace - somaDesagio - somaComissao - somaBoletos - somaIof);
+  const somaRetencao = Object.values(detalheCustosPorTitulo).reduce((s,d) => s + d.retencao, 0);
+  const valorPagoCedente = Math.max(0, liquidoOperacao - somaRetencao);
+
+  document.getElementById('f_valor_desagio').value = somaDesagio.toFixed(2);
+  document.getElementById('f_valor_comissao').value = somaComissao.toFixed(2);
+  document.getElementById('f_outras_taxas').value = somaBoletos.toFixed(2);
+  document.getElementById('f_iof').value = somaIof.toFixed(2);
+  document.getElementById('f_valor_liquido').value = liquidoOperacao.toFixed(2);
+  document.getElementById('f_valor_retencao').value = somaRetencao.toFixed(2);
+  document.getElementById('f_valor_pago_cedente').value = valorPagoCedente.toFixed(2);
+  // taxas efetivas (%), só informativo
+  document.getElementById('f_taxa_desagio').value = somaFace ? (somaDesagio / somaFace * 100).toFixed(3) : '';
+  document.getElementById('f_taxa_comissao').value = somaFace ? (somaComissao / somaFace * 100).toFixed(3) : '';
+  document.getElementById('f_taxa_retencao').value = liquidoOperacao ? (somaRetencao / liquidoOperacao * 100).toFixed(3) : '';
+
+  document.getElementById('tbody-custos-titulos').innerHTML = selecionados.map(t => {
+    const d = detalheCustosPorTitulo[t.id];
+    return `
+      <tr>
+        <td>${t.favorecidos?.nome ?? 'Sem favorecido'} — ${t.descricao ?? ''}</td>
+        <td>${t.data_vencimento ? new Date(t.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+        <td class="num mono">${d.dias}</td>
+        <td class="num mono">${fmt(t.saldo_aberto)}</td>
+        <td class="num mono valor negativo">${fmt(d.desagio)}</td>
+        <td class="num mono valor negativo">${fmt(d.comissao)}</td>
+        <td class="num mono valor negativo">${fmt(d.boleto)}</td>
+        <td class="num mono valor negativo">${fmt(d.iof)}</td>
+        <td class="num mono valor aberto">${fmt(d.retencao)}</td>
+        <td class="num mono valor positivo">${fmt(d.liquido)}</td>
+      </tr>`;
+  }).join('');
+}
+
+document.getElementById('btn-calcular-custos').addEventListener('click', calcularCustosPorPrazo);
+['c_taxa_mensal','c_taxa_comissao','c_custo_boleto','c_iof_total','c_taxa_retencao'].forEach(id => {
+  document.getElementById(id).addEventListener('change', calcularCustosPorPrazo);
+});
 
 await carregarTitulos();
 
@@ -684,9 +852,9 @@ function renderTransferencias() {
     </div>`).join('');
 
   const total = transferencias.reduce((s,t) => s + Number(t.valor || 0), 0);
-  const liquido = Number(document.getElementById('f_valor_liquido').value || 0);
+  const liquido = Number(document.getElementById('f_valor_pago_cedente').value || 0);
   const el = document.getElementById('transf-total');
-  el.innerHTML = `Distribuído: ${fmt(total)} de ${fmt(liquido)} <span>${total > liquido ? '— excede o valor líquido' : ''}</span>`;
+  el.innerHTML = `Distribuído: ${fmt(total)} de ${fmt(liquido)} (valor pago ao cedente) <span>${total > liquido ? '— excede o valor disponível' : ''}</span>`;
   el.className = 'dist-total ' + (total > liquido ? 'erro' : (total > 0 ? 'ok' : ''));
 }
 
@@ -715,18 +883,20 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
   const dataOperacao = document.getElementById('f_data').value;
   const valorFace = Number(document.getElementById('f_valor_face').value || 0);
   const valorLiquido = Number(document.getElementById('f_valor_liquido').value || 0);
+  const valorRetencao = Number(document.getElementById('f_valor_retencao').value || 0);
+  const valorPagoCedente = Number(document.getElementById('f_valor_pago_cedente').value || 0);
   const selecionados = titulosDisponiveis.filter(t => titulosSelecionados.has(t.id));
 
   if (!fidcId) { mostrarErro('Selecione o FIDC/Factoring.'); return; }
   if (!grupoId) { mostrarErro('Selecione o Grupo Empresarial.'); return; }
   if (!contaRecebimento) { mostrarErro('Selecione a Conta de Recebimento.'); return; }
-  if (!valorFace || !valorLiquido) { mostrarErro('Preencha o Valor de Face e o Valor Líquido.'); return; }
+  if (!valorFace || !valorPagoCedente) { mostrarErro('Preencha o Valor de Face e confira o Valor Pago ao Cedente (clique em Recalcular se necessário).'); return; }
   if (!selecionados.length && !document.getElementById('f_plano_conta').value) {
     mostrarErro('Nenhum título foi vinculado — selecione um Plano de Contas na aba Dados para registrar o valor recebido.');
     return;
   }
   const somaTransferencias = transferencias.reduce((s,t) => s + Number(t.valor||0), 0);
-  if (somaTransferencias > valorLiquido + 0.01) { mostrarErro('A soma das transferências não pode ultrapassar o Valor Líquido recebido.'); return; }
+  if (somaTransferencias > valorPagoCedente + 0.01) { mostrarErro('A soma das transferências não pode ultrapassar o Valor Pago ao Cedente (o dinheiro que efetivamente entrou na conta).'); return; }
   if (transferencias.some(t => !t.conta_destino_id || !t.valor)) { mostrarErro('Preencha conta e valor em todas as linhas de transferência (ou remova as vazias).'); return; }
 
   const btn = document.getElementById('btn-salvar');
@@ -739,15 +909,21 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
       grupo_empresarial_id: grupoId,
       favorecido_id: fidcId,
       numero_bordero: document.getElementById('f_numero').value || null,
+      numero_contrato: document.getElementById('f_contrato').value || null,
       data_operacao: dataOperacao,
       chave_acesso_nfe: document.getElementById('f_chave').value || null,
       plano_conta_id: selecionados.length ? null : document.getElementById('f_plano_conta').value,
       valor_face: valorFace,
       taxa_desagio: Number(document.getElementById('f_taxa_desagio').value || 0) || null,
       valor_desagio: Number(document.getElementById('f_valor_desagio').value || 0),
+      taxa_comissao: Number(document.getElementById('f_taxa_comissao').value || 0) || null,
+      valor_comissao: Number(document.getElementById('f_valor_comissao').value || 0),
       iof: Number(document.getElementById('f_iof').value || 0),
       outras_taxas: Number(document.getElementById('f_outras_taxas').value || 0),
       valor_liquido: valorLiquido,
+      taxa_retencao: Number(document.getElementById('f_taxa_retencao').value || 0) || null,
+      valor_retencao: valorRetencao,
+      valor_pago_cedente: valorPagoCedente,
       conta_bancaria_id: contaRecebimento,
       observacoes: document.getElementById('f_obs').value || null,
       criado_por: usuario?.id || null,
@@ -768,18 +944,19 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
     const nomeFidc = document.getElementById('f_fidc').selectedOptions[0]?.textContent || 'FIDC/Factoring';
     const refTexto = `Borderô ${document.getElementById('f_numero').value || borderoId.slice(0,8)} — ${nomeFidc}`;
 
-    // 3) Baixa dos títulos vinculados (proporcional) OU cria lançamento avulso
+    // 3) Baixa dos títulos vinculados (por prazo/custo individual) OU cria lançamento avulso
     if (selecionados.length) {
-      const somaFace = selecionados.reduce((s,t) => s + t.saldo_aberto, 0) || 1;
       for (const t of selecionados) {
-        const proporcao = t.saldo_aberto / somaFace;
+        const d = detalheCustosPorTitulo[t.id];
+        const custoTitulo = d ? (d.desagio + d.comissao + d.boleto + d.iof + d.retencao) : (t.saldo_aberto - (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1))));
+        const valorPagoTitulo = d ? d.liquido : (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1)));
         const { error: erroBaixa } = await supabase.from('baixas').insert({
           tenant_id: TENANT_ID,
           lancamento_id: t.id,
           bordero_id: borderoId,
           data: dataOperacao,
-          valor_pago: +(valorLiquido * proporcao).toFixed(2),
-          desconto: +((valorFace - valorLiquido) * proporcao).toFixed(2),
+          valor_pago: +valorPagoTitulo.toFixed(2),
+          desconto: +custoTitulo.toFixed(2),
           forma_pagamento: 'Antecipação FIDC/Factoring',
           conta_bancaria_id: contaRecebimento,
           observacoes: refTexto,
@@ -810,14 +987,35 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
         lancamento_id: novoLanc.id,
         bordero_id: borderoId,
         data: dataOperacao,
-        valor_pago: valorLiquido,
-        desconto: valorFace - valorLiquido,
+        valor_pago: valorPagoCedente,
+        desconto: valorFace - valorPagoCedente,
         forma_pagamento: 'Antecipação FIDC/Factoring',
         conta_bancaria_id: contaRecebimento,
         observacoes: refTexto,
         criado_por: usuario?.id || null,
       });
       if (erroBaixa) throw erroBaixa;
+    }
+
+    // 3.1) Retenção/Recompra não é custo — vira um "a receber" (o FIDC devolve depois)
+    if (valorRetencao > 0.01) {
+      const primeiroPlanoEntrada = planosEntrada[0]?.id;
+      if (primeiroPlanoEntrada) {
+        await supabase.from('lancamentos').insert({
+          tenant_id: TENANT_ID,
+          grupo_empresarial_id: grupoId,
+          data: dataOperacao,
+          plano_conta_id: primeiroPlanoEntrada,
+          descricao: `Retenção/Recompra a receber — ${refTexto}`,
+          favorecido_id: fidcId,
+          status: 'em_aberto',
+          conta_bancaria_id: contaRecebimento,
+          valor: valorRetencao,
+          observacoes: 'Valor retido como garantia pelo FIDC/Factoring — devolvido conforme liquidação dos títulos ou ao final do contrato.',
+          bordero_id: borderoId,
+          criado_por: usuario?.id || null,
+        });
+      }
     }
 
     // 4) Transferências de distribuição do valor recebido

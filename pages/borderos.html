@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Borderôs de Antecipação — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 </head>
 <body>
@@ -100,7 +100,7 @@
       <thead>
         <tr>
           <th>Data</th><th>Nº Borderô</th><th>FIDC/Factoring</th><th>Conta Recebimento</th>
-          <th class="num">Valor de Face</th><th class="num">Deságio+Taxas</th><th class="num">Valor Líquido</th>
+          <th class="num">Valor de Face</th><th class="num">Custos Totais</th><th class="num">Retenção</th><th class="num">Valor Pago ao Cedente</th>
         </tr>
       </thead>
       <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
@@ -130,7 +130,7 @@ async function carregar() {
   document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
   const { data, error } = await supabase
     .from('operacoes_antecipacao')
-    .select('id, data_operacao, numero_bordero, valor_face, valor_desagio, iof, outras_taxas, valor_liquido, favorecidos(nome), contas_bancarias(nome)')
+    .select('id, data_operacao, numero_bordero, valor_face, valor_desagio, valor_comissao, iof, outras_taxas, valor_liquido, valor_retencao, valor_pago_cedente, favorecidos(nome), contas_bancarias(nome)')
     .order('data_operacao', { ascending: false });
 
   if (error) {
@@ -158,8 +158,9 @@ function desenhar() {
       <td>${r.favorecidos?.nome ?? '-'}</td>
       <td>${r.contas_bancarias?.nome ?? '-'}</td>
       <td class="num mono">${fmt(r.valor_face)}</td>
-      <td class="num mono valor negativo">${fmt(Number(r.valor_desagio||0) + Number(r.iof||0) + Number(r.outras_taxas||0))}</td>
-      <td class="num mono valor positivo">${fmt(r.valor_liquido)}</td>
+      <td class="num mono valor negativo">${fmt(Number(r.valor_desagio||0) + Number(r.valor_comissao||0) + Number(r.iof||0) + Number(r.outras_taxas||0))}</td>
+      <td class="num mono valor aberto">${fmt(r.valor_retencao||0)}</td>
+      <td class="num mono valor positivo">${fmt(r.valor_pago_cedente ?? r.valor_liquido)}</td>
     </tr>`).join('');
 }
 
