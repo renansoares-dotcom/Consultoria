@@ -239,6 +239,8 @@
       </div>
       <p style="color:var(--ink-soft); font-size:11.5px; margin:-4px 0 12px;">
         Títulos que ainda não existem no sistema são criados automaticamente como Contas a Receber e já entram selecionados aqui.
+        Ao salvar, cada título é baixado (o dinheiro já entrou pra você) e marcado como <strong>"Pendente junto ao FIDC"</strong> — controle de coobrigação em
+        <a href="controle-fidc.html" target="_blank">Controle FIDC/Factoring</a>, sem afetar seu fluxo de caixa novamente.
       </p>
       <div class="lista-selecao" id="lista-titulos">
         <div class="lista-selecao-linha"><span class="col-desc">Carregando contas a receber em aberto…</span></div>
@@ -963,6 +965,13 @@ document.getElementById('btn-salvar').addEventListener('click', async () => {
           criado_por: usuario?.id || null,
         });
         if (erroBaixa) throw erroBaixa;
+
+        // Controle de coobrigação: para a empresa o título já está pago (baixa acima),
+        // mas para o FIDC ele só quita quando o sacado pagar na data de vencimento.
+        await supabase.from('lancamentos').update({
+          bordero_id: borderoId,
+          situacao_fidc: 'pendente',
+        }).eq('id', t.id);
       }
     } else {
       const { data: novoLanc, error: erroLanc } = await supabase.from('lancamentos').insert({
