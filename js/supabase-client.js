@@ -11,11 +11,16 @@ const SUPABASE_ANON_KEY = 'SUA-ANON-KEY-AQUI';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Garante sessão ativa ou redireciona para login em páginas internas
+// Garante sessão ativa ou redireciona para login em páginas internas.
+// Usa import.meta.url (a localização real deste arquivo, sempre em /js/)
+// pra calcular a raiz do site — funciona não importa a profundidade da
+// página que chamou, e não importa se o site está numa subpasta (como
+// acontece no GitHub Pages de projeto: usuario.github.io/NomeDoRepo/).
 export async function exigirSessao() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    window.location.href = '/index.html';
+    const raizSite = new URL('../', import.meta.url).href;
+    window.location.href = raizSite + 'index.html';
     return null;
   }
   return session;
