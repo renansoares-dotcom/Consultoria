@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conciliação Bancária — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--accent);">Início</a></div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <span class="group-label">Base</span>
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
+        <span class="group-label">Operações especiais</span>
+        <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
+        <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
+        <a href="controle-fidc.html"><span class="code">⚠</span> Controle FIDC/Factoring</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Relatórios</button>
+      <div class="nav-panel">
+        <span class="group-label">Fluxo de Caixa</span>
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
+        <span class="group-label">Detalhamento</span>
+        <a href="relatorio-contas.html"><span class="code">704</span> Por Conta Bancária</a>
+        <a href="relatorio-favorecidos.html"><span class="code">705</span> Por Favorecido</a>
+        <a href="relatorio-borderos.html"><span class="code">706</span> Borderôs (Antecipação)</a>
+        <span class="group-label">Planejamento</span>
+        <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
+        <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
+        <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
+      </div>
+    </div>
+
+    <div class="nav-item active">
+      <button>Contabilidade</button>
+      <div class="nav-panel">
+        <a href="conciliacao-bancaria.html"><span class="code">◆</span> Conciliação Bancária</a>
+        <a href="dre.html"><span class="code">◆</span> DRE</a>
+        <a href="ativo-fixo.html"><span class="code">◆</span> Ativo Fixo</a>
+        <a href="contabilidade.html"><span class="code">◆</span> Contabilidade</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Contabilidade</span>
+      <h1>Conciliação Bancária</h1>
+    </div>
+  </div>
+
+  <section class="card" style="padding:64px 40px; text-align:center;">
+    <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+      <i data-lucide="landmark-check" style="width:26px; height:26px;"></i>
+    </div>
+    <h2 style="font-size:18px; margin-bottom:8px;">Em construção</h2>
+    <p style="color:var(--ink-soft); font-size:13.5px; max-width:460px; margin:0 auto;">Aqui você vai importar o extrato bancário em .OFX e o sistema vai sugerir a conferência automática com os lançamentos já registrados — sempre com sua confirmação antes de baixar.</p>
+  </section>
+</main>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+</script>
+</body>
+</html>

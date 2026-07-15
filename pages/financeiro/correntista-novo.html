@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Correntista — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item active">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <span class="group-label">Base</span>
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Novo Correntista</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="cadastros.html#favorecidos" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="gerais">Dados Gerais</button>
+      <button data-tab="endereco">Endereço</button>
+      <button data-tab="fiscal">Dados Fiscais</button>
+      <button data-tab="comercial">Comercial / CRM</button>
+      <button data-tab="financeiro">Financeiro</button>
+    </nav>
+
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+      <!-- ============================== DADOS GERAIS ============================== -->
+      <div id="tab-gerais">
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">Tipo *</span>
+            <select class="input" id="f_tipo" required>
+              <option value="">Selecione…</option>
+              <option value="clientes">Cliente</option>
+              <option value="fornecedores">Fornecedor</option>
+              <option value="funcionarios">Funcionário</option>
+              <option value="socios">Sócio</option>
+              <option value="fidc_factoring">FIDC/Factoring</option>
+              <option value="outros">Outro</option>
+            </select>
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Nome / Razão Social *</span>
+            <input class="input" type="text" id="f_nome" required>
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Nome Fantasia</span>
+            <input class="input" type="text" id="f_nome_fantasia">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">CNPJ / CPF</span>
+            <input class="input mono" type="text" id="f_cnpj_cpf" placeholder="00.000.000/0000-00">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Telefone</span>
+            <input class="input" type="text" id="f_telefone" placeholder="(00) 00000-0000">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">E-mail</span>
+            <input class="input" type="email" id="f_email">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Site</span>
+            <input class="input" type="text" id="f_site" placeholder="https://">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-260">
+            <span class="field-label">Segmento</span>
+            <input class="input" type="text" id="f_segmento" placeholder="Ex: Indústria de alimentos">
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_ativo" checked>
+              <label for="f_ativo" style="margin:0;">Ativo</label>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ============================== ENDEREÇO ============================== -->
+      <div id="tab-endereco" style="display:none;">
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">CEP</span>
+            <input class="input mono" type="text" id="f_cep" placeholder="00000-000">
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Logradouro</span>
+            <input class="input" type="text" id="f_logradouro">
+          </label>
+          <label class="field f-130">
+            <span class="field-label">Número</span>
+            <input class="input" type="text" id="f_numero">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Complemento</span>
+            <input class="input" type="text" id="f_complemento">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-260">
+            <span class="field-label">Bairro</span>
+            <input class="input" type="text" id="f_bairro">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Cidade</span>
+            <input class="input" type="text" id="f_cidade">
+          </label>
+          <label class="field f-100">
+            <span class="field-label">UF</span>
+            <input class="input" type="text" id="f_uf" maxlength="2" style="text-transform:uppercase;">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">País</span>
+            <input class="input" type="text" id="f_pais" value="Brasil">
+          </label>
+        </div>
+      </div>
+
+      <!-- ============================== DADOS FISCAIS ============================== -->
+      <div id="tab-fiscal" style="display:none;">
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">Inscrição Estadual</span>
+            <input class="input" type="text" id="f_inscricao_estadual">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Inscrição Municipal</span>
+            <input class="input" type="text" id="f_inscricao_municipal">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Indicador de IE</span>
+            <select class="input" id="f_indicador_ie">
+              <option value="">Selecione…</option>
+              <option value="contribuinte">Contribuinte ICMS</option>
+              <option value="isento">Contribuinte isento</option>
+              <option value="nao_contribuinte">Não contribuinte</option>
+            </select>
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Regime Tributário</span>
+            <select class="input" id="f_regime_tributario">
+              <option value="">Selecione…</option>
+              <option value="simples_nacional">Simples Nacional</option>
+              <option value="lucro_presumido">Lucro Presumido</option>
+              <option value="lucro_real">Lucro Real</option>
+            </select>
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">Observações Fiscais</span>
+          <textarea class="input" id="f_observacoes_fiscais" style="min-height:90px; resize:vertical;"></textarea>
+        </label>
+      </div>
+
+      <!-- ============================== COMERCIAL / CRM ============================== -->
+      <div id="tab-comercial" style="display:none;">
+        <div class="linha-flex">
+          <label class="field f-260">
+            <span class="field-label">Contato Responsável</span>
+            <input class="input" type="text" id="f_contato_responsavel">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Telefone do Contato</span>
+            <input class="input" type="text" id="f_telefone_contato">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">E-mail do Contato</span>
+            <input class="input" type="email" id="f_email_contato">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Limite de Crédito (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="f_limite_credito">
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">Observações Comerciais</span>
+          <textarea class="input" id="f_observacoes_comerciais" style="min-height:90px; resize:vertical;"></textarea>
+        </label>
+      </div>
+
+      <!-- ============================== FINANCEIRO ============================== -->
+      <div id="tab-financeiro" style="display:none;">
+        <div class="linha-flex">
+          <label class="field f-260">
+            <span class="field-label">Forma de Pagamento</span>
+            <input class="input" type="text" id="f_forma_pagamento" placeholder="Ex: Boleto, PIX, Transferência">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Periodicidade</span>
+            <input class="input" type="text" id="f_periodicidade" placeholder="Ex: Mensal, Quinzenal">
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">Dados Bancários</span>
+          <textarea class="input" id="f_dados_bancarios" style="min-height:70px; resize:vertical;" placeholder="Banco, agência, conta, chave PIX..."></textarea>
+        </label>
+        <div class="caixa-info" style="margin-bottom:16px;">
+          <strong>Preenchimento automático</strong><br>
+          Os três campos abaixo são usados para preencher sozinhos a Conta Bancária, o Centro de Custo e o Plano de Contas sempre que este correntista for selecionado num lançamento novo.
+        </div>
+        <div class="linha-flex">
+          <label class="field f-260">
+            <span class="field-label">Conta Bancária Padrão</span>
+            <select class="input" id="f_conta_bancaria_padrao_id"><option value="">Nenhuma</option></select>
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Centro de Custo Padrão</span>
+            <select class="input" id="f_centro_custo_padrao_id"><option value="">Nenhum</option></select>
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Plano de Contas Padrão</span>
+            <select class="input" id="f_plano_conta_padrao_id"><option value="">Nenhum</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:18px;">
+        <button class="btn primary" type="button" id="btn-salvar">Salvar Correntista</button>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['gerais','endereco','fiscal','comercial','financeiro'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+}));
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------- Selects de padrões ----------
+async function carregarSelect(id, tabela, campoNome) {
+  const { data } = await supabase.from(tabela).select(`id, ${campoNome}`).eq('ativo', true).order(campoNome);
+  const el = document.getElementById(id);
+  el.innerHTML = el.options[0].outerHTML + (data || []).map(r => `<option value="${r.id}">${r[campoNome]}</option>`).join('');
+}
+await Promise.all([
+  carregarSelect('f_conta_bancaria_padrao_id', 'contas_bancarias', 'nome'),
+  carregarSelect('f_centro_custo_padrao_id', 'centros_custo', 'nome'),
+  carregarSelect('f_plano_conta_padrao_id', 'plano_contas', 'nome_conta'),
+]);
+
+// ---------- Carregar em modo edição ----------
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+
+const CAMPOS_TEXTO = [
+  'nome','nome_fantasia','cnpj_cpf','telefone','email','site','segmento',
+  'cep','logradouro','numero','complemento','bairro','cidade','uf','pais',
+  'inscricao_estadual','inscricao_municipal','indicador_ie','regime_tributario','observacoes_fiscais',
+  'contato_responsavel','telefone_contato','email_contato','limite_credito','observacoes_comerciais',
+  'forma_pagamento','periodicidade','dados_bancarios',
+  'conta_bancaria_padrao_id','centro_custo_padrao_id','plano_conta_padrao_id','tipo',
+];
+
+if (idEdicao) {
+  document.getElementById('titulo-janela').textContent = 'Editar Correntista';
+  const { data: c, error } = await supabase.from('favorecidos').select('*').eq('id', idEdicao).single();
+  if (error || !c) {
+    mostrarErro('Correntista não encontrado.');
+  } else {
+    CAMPOS_TEXTO.forEach(campo => {
+      const el = document.getElementById('f_' + campo);
+      if (el && c[campo] !== null && c[campo] !== undefined) el.value = c[campo];
+    });
+    document.getElementById('f_ativo').checked = c.ativo !== false;
+  }
+}
+
+// ---------- Salvar ----------
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  const nome = document.getElementById('f_nome').value.trim();
+  const tipo = document.getElementById('f_tipo').value;
+  if (!nome) { mostrarErro('Preencha o Nome/Razão Social (aba Dados Gerais).'); return; }
+  if (!tipo) { mostrarErro('Selecione o Tipo (aba Dados Gerais).'); return; }
+
+  const payload = { tenant_id: TENANT_ID, ativo: document.getElementById('f_ativo').checked };
+  CAMPOS_TEXTO.forEach(campo => {
+    const el = document.getElementById('f_' + campo);
+    if (!el) return;
+    const valor = el.value.trim();
+    payload[campo] = valor === '' ? null : (campo === 'limite_credito' ? Number(valor) : valor);
+  });
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const query = idEdicao
+    ? supabase.from('favorecidos').update(payload).eq('id', idEdicao)
+    : supabase.from('favorecidos').insert(payload);
+  const { error } = await query;
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Salvar Correntista';
+    mostrarErro('Erro ao salvar: ' + error.message);
+    return;
+  }
+  window.location.href = 'cadastros.html#favorecidos';
+});
+</script>
+</body>
+</html>

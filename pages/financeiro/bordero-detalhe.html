@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Borderô — Relatório da Operação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  .doc {
+    background: var(--paper-raised); border: 1px solid var(--line-strong); border-radius: 6px;
+    padding: 36px 40px; max-width: 980px; margin: 0 auto;
+  }
+  .doc-cabecalho { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--ink); padding-bottom: 16px; margin-bottom: 20px; }
+  .doc-titulo { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+  .doc-subtitulo { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .doc-numero { text-align: right; font-family: var(--font-mono); font-size: 13px; }
+  .doc-numero .grande { font-size: 18px; font-weight: 700; }
+
+  .doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 24px; margin-bottom: 20px; }
+  .doc-campo .rotulo { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 2px; }
+  .doc-campo .valor { font-size: 13px; font-weight: 600; }
+  .doc-campo .valor.mono { font-family: var(--font-mono); font-weight: 500; }
+
+  .doc-secao-titulo { font-family: var(--font-display); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line-strong); }
+
+  table.doc-tabela { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-bottom: 8px; }
+  table.doc-tabela th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); border-bottom: 1px solid var(--ink); padding: 5px 6px; }
+  table.doc-tabela td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
+  table.doc-tabela td.num, table.doc-tabela th.num { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+  table.doc-tabela tr.total-row td { font-weight: 700; border-top: 1.5px solid var(--ink); border-bottom: none; }
+
+  .demonstrativo { display: grid; grid-template-columns: 1fr auto; gap: 4px 20px; max-width: 460px; margin-left: auto; font-size: 12.5px; }
+  .demonstrativo .rotulo { color: var(--ink-soft); }
+  .demonstrativo .valor { text-align: right; font-family: var(--font-mono); }
+  .demonstrativo .linha-final { grid-column: 1 / -1; border-top: 2px solid var(--ink); margin-top: 6px; padding-top: 8px; display: grid; grid-template-columns: 1fr auto; font-weight: 700; font-size: 15px; }
+  .demonstrativo .linha-final .valor { color: var(--accent); }
+  .demonstrativo .linha-retencao .valor { color: var(--amber); }
+  .demonstrativo .linha-desconto .valor { color: var(--red); }
+
+  .doc-assinatura { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center; font-size: 11px; color: var(--ink-soft); }
+  .doc-assinatura .linha { border-top: 1px solid var(--ink); margin-top: 40px; padding-top: 6px; }
+
+  .doc-rodape { margin-top: 30px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 10px; color: var(--ink-soft); display: flex; justify-content: space-between; }
+
+  @media print {
+    body { background: #fff; }
+    .doc { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar no-print">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1040px;">
+  <div class="page-header no-print">
+    <div>
+      <span class="eyebrow">Operações especiais</span>
+      <h1>Relatório do Borderô</h1>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <a href="borderos.html" class="btn ghost">← Voltar</a>
+      <button class="btn primary" id="btn-imprimir">🖨 Imprimir / Salvar PDF</button>
+    </div>
+  </div>
+
+  <div class="doc" id="conteudo-doc">
+    <p class="empty-state">Carregando dados do borderô…</p>
+  </div>
+</main>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+document.getElementById('btn-imprimir').addEventListener('click', () => window.print());
+
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtData = d => d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '-';
+const fmtDataHora = d => d ? new Date(d).toLocaleString('pt-BR') : '-';
+
+const params = new URLSearchParams(location.search);
+const borderoId = params.get('id');
+const container = document.getElementById('conteudo-doc');
+
+if (!borderoId) {
+  container.innerHTML = '<p class="empty-state" style="color:var(--red)">Nenhum borderô informado na URL.</p>';
+} else {
+  await carregarRelatorio(borderoId);
+}
+
+async function carregarRelatorio(id) {
+  const { data: bordero, error } = await supabase
+    .from('operacoes_antecipacao')
+    .select(`*, favorecidos(nome, cnpj_cpf), grupos_empresariais(nome), contas_bancarias(nome, disponibilidade),
+              criado_por_usuario:criado_por(nome)`)
+    .eq('id', id)
+    .single();
+
+  if (error || !bordero) {
+    container.innerHTML = `<p class="empty-state" style="color:var(--red)">Borderô não encontrado ou sem permissão de acesso.</p>`;
+    return;
+  }
+
+  const { data: configuracoes } = await supabase.from('configuracoes').select('nome_fantasia').eq('tenant_id', bordero.tenant_id).maybeSingle();
+
+  const { data: titulosBaixas } = await supabase
+    .from('baixas')
+    .select(`valor_pago, desconto, lancamentos!inner(descricao, data_vencimento, numero_documento, parcela_numero, parcela_total, valor, favorecidos(nome), plano_contas!inner(tipo))`)
+    .eq('bordero_id', id)
+    .eq('lancamentos.plano_contas.tipo', 'entrada')
+    .order('lancamentos(data_vencimento)', { ascending: true });
+
+  const { data: transferencias } = await supabase
+    .from('lancamentos')
+    .select(`valor, contas_destino:conta_destino_id(nome), plano_contas!inner(tipo)`)
+    .eq('bordero_id', id)
+    .eq('plano_contas.tipo', 'transferencia');
+
+  renderDocumento(bordero, configuracoes, titulosBaixas || [], transferencias || []);
+}
+
+function renderDocumento(b, configuracoes, titulos, transferencias) {
+  const nomeCedente = configuracoes?.nome_fantasia || 'Cedente';
+
+  const somaFaceTitulos = titulos.reduce((s,t) => s + Math.abs(Number(t.lancamentos.valor)), 0);
+  const somaPagoTitulos = titulos.reduce((s,t) => s + Number(t.valor_pago), 0);
+  const somaDescontoTitulos = titulos.reduce((s,t) => s + Number(t.desconto), 0);
+
+  const linhasTitulos = titulos.map(t => {
+    const l = t.lancamentos;
+    const parcelaTxt = l.parcela_numero ? `${l.parcela_numero}${l.parcela_total ? '/'+l.parcela_total : ''}` : '-';
+    return `
+      <tr>
+        <td>${l.numero_documento ?? '-'}</td>
+        <td class="num">${parcelaTxt}</td>
+        <td>${fmtData(l.data_vencimento)}</td>
+        <td>${l.favorecidos?.nome ?? '-'}</td>
+        <td class="num">${fmt(Math.abs(l.valor))}</td>
+        <td class="num" style="color:var(--red);">${fmt(t.desconto)}</td>
+        <td class="num" style="color:var(--accent); font-weight:600;">${fmt(t.valor_pago)}</td>
+      </tr>`;
+  }).join('');
+
+  const linhasTransferencias = transferencias.length ? transferencias.map(t => `
+    <tr>
+      <td>${t.contas_destino?.nome ?? '-'}</td>
+      <td class="num">${fmt(t.valor)}</td>
+    </tr>`).join('') : '';
+
+  container.innerHTML = `
+    <div class="doc-cabecalho">
+      <div>
+        <div class="doc-titulo">Borderô de Antecipação de Recebíveis</div>
+        <div class="doc-subtitulo">${nomeCedente} — Cedente</div>
+      </div>
+      <div class="doc-numero">
+        <div class="grande">Nº ${b.numero_bordero ?? '—'}</div>
+        <div>${fmtData(b.data_operacao)}</div>
+      </div>
+    </div>
+
+    <div class="doc-grid">
+      <div class="doc-campo"><div class="rotulo">FIDC / Factoring</div><div class="valor">${b.favorecidos?.nome ?? '-'}</div></div>
+      <div class="doc-campo"><div class="rotulo">CNPJ do FIDC</div><div class="valor mono">${b.favorecidos?.cnpj_cpf ?? '-'}</div></div>
+      <div class="doc-campo"><div class="rotulo">Nº do Contrato</div><div class="valor">${b.numero_contrato ?? '-'}</div></div>
+      <div class="doc-campo"><div class="rotulo">Grupo Empresarial</div><div class="valor">${b.grupos_empresariais?.nome ?? '-'}</div></div>
+      <div class="doc-campo"><div class="rotulo">Conta de Recebimento</div><div class="valor">${b.contas_bancarias?.nome ?? '-'}</div></div>
+      <div class="doc-campo"><div class="rotulo">Chave de Acesso NFe</div><div class="valor mono" style="font-size:10.5px;">${b.chave_acesso_nfe ?? '-'}</div></div>
+    </div>
+
+    <div class="doc-secao-titulo">Títulos Antecipados (${titulos.length})</div>
+    <table class="doc-tabela">
+      <thead>
+        <tr><th>Documento</th><th class="num">Parcela</th><th>Vencimento</th><th>Sacado</th><th class="num">Valor de Face</th><th class="num">Desconto</th><th class="num">Líquido Pago</th></tr>
+      </thead>
+      <tbody>
+        ${linhasTitulos || '<tr><td colspan="7" style="text-align:center; color:var(--ink-soft);">Operação sem títulos vinculados (lançamento avulso).</td></tr>'}
+        ${titulos.length ? `<tr class="total-row"><td colspan="4">TOTAL</td><td class="num">${fmt(somaFaceTitulos)}</td><td class="num">${fmt(somaDescontoTitulos)}</td><td class="num">${fmt(somaPagoTitulos)}</td></tr>` : ''}
+      </tbody>
+    </table>
+
+    <div class="doc-secao-titulo">Demonstrativo da Operação</div>
+    <div class="demonstrativo">
+      <div class="rotulo">Número de Títulos</div><div class="valor">${titulos.length || '—'}</div>
+      ${b.prazo_medio_dias ? `<div class="rotulo">Prazo Médio (ponderado)</div><div class="valor">${Number(b.prazo_medio_dias).toLocaleString('pt-BR',{maximumFractionDigits:1})} dias</div>` : ''}
+      ${b.taxa_desagio_mensal_efetiva ? `<div class="rotulo">Deságio Efetivo</div><div class="valor">${Number(b.taxa_desagio_mensal_efetiva).toLocaleString('pt-BR',{maximumFractionDigits:3})}% ao mês</div>` : ''}
+      <div class="rotulo">Valor Total dos Títulos (Face)</div><div class="valor">${fmt(b.valor_face)}</div>
+      <div class="rotulo linha-desconto">Deságio / Fator de Compra ${b.taxa_desagio ? `(${Number(b.taxa_desagio).toLocaleString('pt-BR',{maximumFractionDigits:3})}%)` : ''}</div><div class="valor linha-desconto">− ${fmt(b.valor_desagio)}</div>
+      <div class="rotulo linha-desconto">Comissão de Prestação de Serviço ${b.taxa_comissao ? `(${Number(b.taxa_comissao).toLocaleString('pt-BR',{maximumFractionDigits:3})}%)` : ''}</div><div class="valor linha-desconto">− ${fmt(b.valor_comissao)}</div>
+      <div class="rotulo linha-desconto">Despesas Bancárias / Boletos</div><div class="valor linha-desconto">− ${fmt(b.outras_taxas)}</div>
+      <div class="rotulo linha-desconto">Assinatura Eletrônica</div><div class="valor linha-desconto">− ${fmt(b.valor_assinatura_eletronica)}</div>
+      <div class="rotulo linha-desconto">Outras Despesas</div><div class="valor linha-desconto">− ${fmt(b.valor_outras_despesas)}</div>
+      <div class="rotulo linha-desconto">IOF Retido</div><div class="valor linha-desconto">− ${fmt(b.iof)}</div>
+      <div class="rotulo" style="font-weight:700; border-top:1px solid var(--line-strong); padding-top:4px;">Líquido da Operação</div><div class="valor" style="font-weight:700; border-top:1px solid var(--line-strong); padding-top:4px;">${fmt(b.valor_liquido)}</div>
+      <div class="rotulo linha-retencao">Retenção / Recompra ${b.taxa_retencao ? `(${Number(b.taxa_retencao).toLocaleString('pt-BR',{maximumFractionDigits:3})}%)` : ''} <span style="font-size:10px;">(devolvida depois)</span></div><div class="valor linha-retencao">− ${fmt(b.valor_retencao)}</div>
+      ${Number(b.ajuste_valor_final) !== 0 ? `<div class="rotulo">Ajuste de Centavos</div><div class="valor">${Number(b.ajuste_valor_final) >= 0 ? '+' : ''}${fmt(b.ajuste_valor_final)}</div>` : ''}
+      <div class="linha-final"><div>VALOR PAGO AO CEDENTE</div><div class="valor">${fmt(b.valor_pago_cedente ?? b.valor_liquido)}</div></div>
+    </div>
+
+    ${transferencias.length ? `
+    <div class="doc-secao-titulo">Distribuição do Valor Recebido (Transferências)</div>
+    <table class="doc-tabela" style="max-width:460px; margin-left:auto;">
+      <thead><tr><th>Conta de Destino</th><th class="num">Valor</th></tr></thead>
+      <tbody>
+        ${linhasTransferencias}
+        <tr class="total-row"><td>TOTAL DISTRIBUÍDO</td><td class="num">${fmt(transferencias.reduce((s,t)=>s+Number(t.valor),0))}</td></tr>
+      </tbody>
+    </table>` : ''}
+
+    ${b.observacoes ? `<div class="doc-secao-titulo">Observações</div><p style="font-size:12px; color:var(--ink-soft);">${b.observacoes}</p>` : ''}
+
+    <div class="doc-assinatura">
+      <div><div class="linha">Operador</div></div>
+      <div><div class="linha">Direção</div></div>
+    </div>
+
+    <div class="doc-rodape">
+      <span>Gerado por LivroCaixa Consultoria em ${fmtDataHora(new Date().toISOString())}</span>
+      <span>Lançado por ${b.criado_por_usuario?.nome ?? '-'} · Registro criado em ${fmtDataHora(b.criado_em)}</span>
+    </div>
+  `;
+}
+</script>
+  </div>
+</div>
+</body>
+</html>
