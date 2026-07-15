@@ -11,6 +11,36 @@ export function initNav() {
   initTheme();
   document.body.dataset.impressoEm = new Date().toLocaleString('pt-BR');
 
+  // Ícones Lucide (troca automaticamente todo <i data-lucide="..."> por SVG)
+  if (window.lucide) lucide.createIcons();
+
+  // ---------- Sidebar de módulos (menu lateral) ----------
+  const sidebarModulos = document.getElementById('sidebar-modulos');
+  const topbar0 = document.querySelector('.topbar');
+  if (sidebarModulos && topbar0 && !topbar0.querySelector('.sidebar-mobile-toggle')) {
+    const btnSidebar = document.createElement('button');
+    btnSidebar.className = 'sidebar-mobile-toggle';
+    btnSidebar.setAttribute('aria-label', 'Abrir menu de módulos');
+    btnSidebar.innerHTML = '<i data-lucide="layout-grid"></i>';
+    topbar0.insertBefore(btnSidebar, topbar0.firstChild);
+    if (window.lucide) lucide.createIcons();
+    btnSidebar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebarModulos.classList.toggle('mobile-open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!sidebarModulos.contains(e.target) && !e.target.closest('.sidebar-mobile-toggle')) {
+        sidebarModulos.classList.remove('mobile-open');
+      }
+    });
+  }
+  document.getElementById('theme-toggle-sidebar')?.addEventListener('click', () => {
+    const atual = document.documentElement.getAttribute('data-theme');
+    const novo = atual === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', novo);
+    localStorage.setItem('tema', novo);
+  });
+
   const nav = document.querySelector('.nav-cascade');
   const topbar = document.querySelector('.topbar');
   const itens = document.querySelectorAll('.nav-item');
