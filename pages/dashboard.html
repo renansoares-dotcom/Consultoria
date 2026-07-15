@@ -5,102 +5,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — Fluxo de Caixa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
-
-  <nav class="nav-cascade">
-    <div class="nav-item active">
-      <button>Início</button>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>CONSULTORIA</small></div>
     </div>
 
-    <div class="nav-item">
-      <button>Cadastros</button>
-      <div class="nav-panel">
-        <span class="group-label">Base</span>
-        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
-        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
-        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
-        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
-        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="layout-dashboard"></i> Início</a>
+
+        <div class="sidebar-group-label">Cadastros</div>
+        <div class="sidebar-group">
+          <a href="cadastros.html#plano_contas" class="sidebar-link"><i data-lucide="list-tree"></i> Plano de Contas</a>
+          <a href="cadastros.html#grupos_empresariais" class="sidebar-link"><i data-lucide="building-2"></i> Grupos Empresariais</a>
+          <a href="cadastros.html#contas_bancarias" class="sidebar-link"><i data-lucide="landmark"></i> Contas Bancárias</a>
+          <a href="cadastros.html#centros_custo" class="sidebar-link"><i data-lucide="tags"></i> Centros de Custo</a>
+          <a href="cadastros.html#favorecidos" class="sidebar-link"><i data-lucide="users"></i> Favorecidos</a>
+        </div>
+
+        <div class="sidebar-group-label">Lançamentos</div>
+        <div class="sidebar-group">
+          <a href="lancamento-novo.html" class="sidebar-link"><i data-lucide="plus-circle"></i> Novo lançamento</a>
+          <a href="lancamentos.html" class="sidebar-link"><i data-lucide="list"></i> Todos os lançamentos</a>
+          <a href="importar-notas.html" class="sidebar-link"><i data-lucide="file-input"></i> Importar Notas (XML)</a>
+          <a href="bordero-novo.html" class="sidebar-link"><i data-lucide="banknote"></i> Novo Borderô</a>
+          <a href="borderos.html" class="sidebar-link"><i data-lucide="layers"></i> Borderôs lançados</a>
+          <a href="controle-fidc.html" class="sidebar-link"><i data-lucide="shield-alert"></i> Controle FIDC/Factoring</a>
+        </div>
+
+        <div class="sidebar-group-label">Relatórios</div>
+        <div class="sidebar-group">
+          <a href="fluxo-diario.html" class="sidebar-link"><i data-lucide="calendar-days"></i> Fluxo Diário</a>
+          <a href="fluxo-mensal.html" class="sidebar-link"><i data-lucide="calendar-range"></i> Fluxo Mensal</a>
+          <a href="relatorio-contas.html" class="sidebar-link"><i data-lucide="landmark"></i> Por Conta Bancária</a>
+          <a href="relatorio-favorecidos.html" class="sidebar-link"><i data-lucide="users"></i> Por Favorecido</a>
+          <a href="relatorio-borderos.html" class="sidebar-link"><i data-lucide="bar-chart-3"></i> Borderôs (Antecipação)</a>
+          <a href="comparativo-orcamento.html" class="sidebar-link"><i data-lucide="target"></i> Taxa de Realização</a>
+        </div>
+
+        <div class="sidebar-group-label">Contas a Receber/Pagar</div>
+        <div class="sidebar-group">
+          <a href="necessidade-caixa.html" class="sidebar-link"><i data-lucide="wallet"></i> Necessidade de Caixa</a>
+          <a href="contas-receber.html" class="sidebar-link"><i data-lucide="arrow-down-circle"></i> Contas a Receber</a>
+          <a href="contas-pagar.html" class="sidebar-link"><i data-lucide="arrow-up-circle"></i> Contas a Pagar</a>
+        </div>
+
+        <div class="sidebar-group-label">Budget &amp; Forecast</div>
+        <div class="sidebar-group">
+          <a href="budget.html" class="sidebar-link"><i data-lucide="pie-chart"></i> Budget Anual</a>
+          <a href="forecast.html" class="sidebar-link"><i data-lucide="trending-up"></i> Forecast</a>
+        </div>
+
+        <div class="sidebar-group-label">Administração</div>
+        <div class="sidebar-group">
+          <a href="usuarios.html" class="sidebar-link"><i data-lucide="user-cog"></i> Usuários e Acessos</a>
+          <a href="auditoria.html" class="sidebar-link"><i data-lucide="history"></i> Auditoria</a>
+          <a href="configuracoes.html" class="sidebar-link"><i data-lucide="settings"></i> Configurações</a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="sidebar-mobile-toggle" id="sidebar-mobile-toggle"><i data-lucide="menu"></i></button>
+        <div class="breadcrumb"><span class="current">Início</span></div>
       </div>
-    </div>
-
-    <div class="nav-item">
-      <button>Lançamentos</button>
-      <div class="nav-panel">
-        <span class="group-label">Movimentação</span>
-        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
-        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
-        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
-        <a href="lancamentos.html?status=em_aberto"><span class="code">◔</span> Em aberto</a>
-        <span class="group-label">Operações especiais</span>
-        <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
-        <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
-        <a href="controle-fidc.html"><span class="code">⚠</span> Controle FIDC/Factoring</a>
+      <div class="topbar-right">
+        <div class="saldo-ticker">
+          <span>SALDO ATUAL</span>
+          <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
+        </div>
+        <div class="user-chip" id="user-chip">
+          <div class="avatar" id="user-avatar">--</div>
+          <span id="user-nome">Carregando…</span>
+        </div>
       </div>
-    </div>
-
-    <div class="nav-item">
-      <button>Relatórios</button>
-      <div class="nav-panel">
-        <span class="group-label">Fluxo de Caixa</span>
-        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
-        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
-        <span class="group-label">Detalhamento</span>
-        <a href="relatorio-contas.html"><span class="code">704</span> Por Conta Bancária</a>
-        <a href="relatorio-favorecidos.html"><span class="code">705</span> Por Favorecido</a>
-        <a href="relatorio-borderos.html"><span class="code">706</span> Borderôs (Antecipação)</a>
-        <span class="group-label">Planejamento</span>
-        <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
-      </div>
-    </div>
-
-    <div class="nav-item">
-      <button>Contas a Receber/Pagar</button>
-      <div class="nav-panel">
-        <span class="group-label">Em aberto</span>
-        <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
-        <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
-        <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
-      </div>
-    </div>
-
-    <div class="nav-item">
-      <button>Budget &amp; Forecast</button>
-      <div class="nav-panel">
-        <span class="group-label">Planejamento</span>
-        <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
-        <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
-      </div>
-    </div>
-
-    <div class="nav-item">
-      <button>Administração</button>
-      <div class="nav-panel">
-        <span class="group-label">Sistema</span>
-        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
-        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
-        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
-      </div>
-    </div>
-  </nav>
-
-  <div class="topbar-right">
-    <div class="saldo-ticker">
-      <span>SALDO ATUAL</span>
-      <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
-    </div>
-    <div class="user-chip" id="user-chip">
-      <div class="avatar" id="user-avatar">--</div>
-      <span id="user-nome">Carregando…</span>
-    </div>
-  </div>
-</header>
+    </header>
 
 <main class="page">
   <div class="page-header">
@@ -147,11 +141,25 @@
     </table>
   </section>
 </main>
+  </div>
+</div>
 
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
 initNav();
+
+// ---------- Sidebar: ícones Lucide + menu mobile + tema ----------
+if (window.lucide) lucide.createIcons();
+document.getElementById('sidebar-mobile-toggle')?.addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+});
+document.getElementById('theme-toggle-sidebar')?.addEventListener('click', () => {
+  const atual = document.documentElement.getAttribute('data-theme');
+  const novo = atual === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', novo);
+  localStorage.setItem('tema', novo);
+});
 
   const sessao = await exigirSessao();
   if (sessao) {
