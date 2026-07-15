@@ -5,7 +5,7 @@
 // por classe .open via JS: abre no clique, fecha ao clicar fora, fecha com
 // Esc, e fecha o painel anterior ao abrir outro.
 // ============================================================================
-import { initTheme } from './theme.js';
+import { initTheme, salvarTema } from './theme.js';
 
 export function initNav() {
   initTheme();
@@ -36,9 +36,7 @@ export function initNav() {
   }
   document.getElementById('theme-toggle-sidebar')?.addEventListener('click', () => {
     const atual = document.documentElement.getAttribute('data-theme');
-    const novo = atual === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', novo);
-    localStorage.setItem('tema', novo);
+    salvarTema(atual === 'dark' ? 'light' : 'dark');
   });
 
   const nav = document.querySelector('.nav-cascade');

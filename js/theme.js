@@ -15,6 +15,11 @@ export function aplicarTema(tema) {
   document.documentElement.setAttribute('data-theme', tema);
 }
 
+export function salvarTema(tema) {
+  aplicarTema(tema);
+  localStorage.setItem(CHAVE, tema);
+}
+
 export function initTheme() {
   aplicarTema(temaAtual());
 
@@ -30,8 +35,7 @@ export function initTheme() {
 
   btn.addEventListener('click', () => {
     const novo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    aplicarTema(novo);
-    localStorage.setItem(CHAVE, novo);
+    salvarTema(novo);
     btn.textContent = novo === 'dark' ? '☀️ Claro' : '🌙 Escuro';
   });
 }
