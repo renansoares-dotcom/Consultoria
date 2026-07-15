@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Borderô de Antecipação — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  .transf-linha { display: grid; grid-template-columns: 1fr 160px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+    <div class="nav-item active">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
+        <span class="group-label">Operações especiais</span>
+        <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
+        <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Relatórios</button>
+      <div class="nav-panel">
+        <span class="group-label">Fluxo de Caixa</span>
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
+        <span class="group-label">Detalhamento</span>
+        <a href="relatorio-contas.html"><span class="code">704</span> Por Conta Bancária</a>
+        <a href="relatorio-favorecidos.html"><span class="code">705</span> Por Favorecido</a>
+        <a href="relatorio-borderos.html"><span class="code">706</span> Borderôs (Antecipação)</a>
+        <span class="group-label">Planejamento</span>
+        <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
+        <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
+        <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Contabilidade</button>
+      <div class="nav-panel">
+        <a href="conciliacao-bancaria.html"><span class="code">◆</span> Conciliação Bancária</a>
+        <a href="dre.html"><span class="code">◆</span> DRE</a>
+        <a href="ativo-fixo.html"><span class="code">◆</span> Ativo Fixo</a>
+        <a href="contabilidade.html"><span class="code">◆</span> Contabilidade</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1180px; padding-top:24px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">▤</span>
+        <span>Borderô de Antecipação de Recebíveis</span>
+      </div>
+      <div class="janela-titulo-acoes no-print">
+        <a href="borderos.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="dados">Dados</button>
+      <button data-tab="titulos">Títulos Antecipados</button>
+      <button data-tab="transferencias">Transferências</button>
+    </nav>
+
+    <div class="janela-corpo">
+
+    <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+    <div id="aviso-ok" class="card" style="display:none; border-color:var(--accent); background:var(--accent-soft); color:var(--accent); margin-bottom:16px; font-size:13px;"></div>
+
+    <!-- ============================== ABA DADOS ============================== -->
+    <div id="tab-dados">
+      <div class="dados-grid">
+        <div>
+          <div class="linha-flex">
+            <label class="field f-260">
+              <span class="field-label">FIDC / Factoring *</span>
+              <select class="input" id="f_fidc" required></select>
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Grupo Empresarial *</span>
+              <select class="input" id="f_grupo" required></select>
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Nº do Borderô</span>
+              <input class="input" type="text" id="f_numero" placeholder="Ex: BOR-0045">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Nº do Contrato</span>
+              <input class="input" type="text" id="f_contrato" placeholder="Ex: CT-2020-118">
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Data da Operação *</span>
+              <input class="input" type="date" id="f_data" required>
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-grow">
+              <span class="field-label">Chave de Acesso NFe (44 dígitos)</span>
+              <input class="input mono" type="text" id="f_chave" maxlength="44" placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000">
+            </label>
+            <label class="field" style="align-self:flex-end;">
+              <button type="button" class="btn ghost" id="btn-importar-xml">📄 Importar XML da NFe</button>
+            </label>
+            <span id="info-xml" style="align-self:flex-end; padding-bottom:9px; font-size:11.5px; color:var(--ink-soft);"></span>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-260">
+              <span class="field-label">Conta de Recebimento *</span>
+              <select class="input" id="f_conta_recebimento" required></select>
+            </label>
+            <label class="field f-260" id="bloco-plano-conta">
+              <span class="field-label">Plano de Contas <span style="font-weight:400;">(se não vincular títulos)</span></span>
+              <select class="input" id="f_plano_conta"><option value="">Selecione…</option></select>
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-160">
+              <span class="field-label">Valor de Face (R$) *</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_face" placeholder="0,00" required>
+            </label>
+            <label class="field f-100">
+              <span class="field-label">Deságio (%)</span>
+              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_desagio" placeholder="0,000" title="Com títulos vinculados na aba Títulos, esse valor é calculado automaticamente (taxa efetiva) a partir do prazo de cada título.">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Deságio / Fator de Compra (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_desagio" placeholder="0,00">
+            </label>
+            <label class="field f-100">
+              <span class="field-label">Comissão (%)</span>
+              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_comissao" placeholder="0,000" title="Comissão de prestação de serviço (ad valorem) — % sobre o valor de face.">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Comissão (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_comissao" placeholder="0,00">
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-130">
+              <span class="field-label">IOF (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_iof" value="0">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Despesas Bancárias / Boletos (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_outras_taxas" value="0">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Assinatura Eletrônica (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_assinatura" value="0">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Outras Despesas (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_outras_despesas" value="0">
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-200">
+              <span class="field-label">Líquido da Operação (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_liquido" placeholder="0,00" required>
+            </label>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-100">
+              <span class="field-label">Retenção / Recompra (%)</span>
+              <input class="input mono" type="number" step="0.001" min="0" id="f_taxa_retencao" placeholder="0,000" title="Valor retido como garantia pelo FIDC/Factoring — NÃO é custo, volta depois. Calculado sobre o Líquido da Operação.">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Retenção / Recompra (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_retencao" placeholder="0,00">
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Ajuste de Centavos (R$)</span>
+              <input class="input mono" type="number" step="0.01" id="f_ajuste" value="0" title="Correção manual pra reconciliar com o valor realmente transferido.">
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Valor Pago ao Cedente (R$) *</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="f_valor_pago_cedente" placeholder="0,00" required style="font-weight:700; color:var(--accent);" title="É este valor que efetivamente cai na conta bancária.">
+            </label>
+            <button type="button" class="btn ghost" id="btn-recalcular" style="align-self:flex-end;">↻ Recalcular</button>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-160">
+              <span class="field-label">Prazo Médio (dias)</span>
+              <input class="input mono" type="number" step="0.1" id="f_prazo_medio_dias" placeholder="0,0" readonly title="Prazo médio dos títulos, ponderado pelo valor de cada um.">
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Deságio Efetivo (% ao mês)</span>
+              <input class="input mono" type="number" step="0.001" id="f_taxa_desagio_mensal_efetiva" placeholder="0,000" readonly title="Taxa normalizada para % ao mês, considerando o prazo médio — permite comparar operações com prazos diferentes.">
+            </label>
+          </div>
+        </div>
+
+        <div class="painel-lateral">
+          <label class="field" style="margin-bottom:0;">
+            <span class="field-label">Observações</span>
+            <textarea class="input" id="f_obs" placeholder="Anotações internas sobre esta operação…"></textarea>
+          </label>
+          <div class="caixa-info">
+            <strong>Como funciona</strong><br>
+            1. Preencha os dados da operação.<br>
+            2. Na aba <strong>Títulos Antecipados</strong>, marque as Contas a Receber já cadastradas que fazem parte deste borderô (opcional).<br>
+            3. Na aba <strong>Transferências</strong>, distribua o valor líquido entre outras contas, se necessário.<br>
+            4. Salve — o sistema baixa os títulos e cria as transferências automaticamente.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== ABA TÍTULOS ANTECIPADOS ============================== -->
+    <div id="tab-titulos" style="display:none;">
+      <div class="toolbar" style="margin-bottom:10px; flex-wrap:wrap;">
+        <input class="input" id="busca-titulos" placeholder="Buscar por favorecido ou descrição..." style="max-width:280px;">
+        <span class="count-pill" id="contador-titulos">0 selecionado(s)</span>
+        <div class="spacer"></div>
+        <span style="font-size:12px; color:var(--ink-soft);">Soma selecionada: <strong id="soma-titulos" class="mono">R$ 0,00</strong></span>
+        <button type="button" class="btn ghost" id="btn-importar-xmls-lote">📥 Importar XMLs (lote)</button>
+        <button type="button" class="btn ghost" id="btn-importar-planilha">📊 Importar Planilha</button>
+      </div>
+      <p style="color:var(--ink-soft); font-size:11.5px; margin:-4px 0 12px;">
+        Títulos que ainda não existem no sistema são criados automaticamente como Contas a Receber e já entram selecionados aqui.
+        Ao salvar, cada título é baixado (o dinheiro já entrou pra você) e marcado como <strong>"Pendente junto ao FIDC"</strong> — controle de coobrigação em
+        <a href="controle-fidc.html" target="_blank">Controle FIDC/Factoring</a>, sem afetar seu fluxo de caixa novamente.
+      </p>
+      <div class="lista-selecao" id="lista-titulos">
+        <div class="lista-selecao-linha"><span class="col-desc">Carregando contas a receber em aberto…</span></div>
+      </div>
+
+      <div class="janela-secao" id="bloco-custos-titulos" style="display:none; border-bottom:none;">
+        <div class="label" style="margin-bottom:4px;">Custos da Antecipação</div>
+        <p style="color:var(--ink-soft); font-size:11.5px; margin:0 0 12px;">
+          Informe os valores <strong>totais</strong> cobrados pelo FIDC (como aparecem no borderô — normalmente vêm prontos, sem taxa). O sistema calcula os dias de cada título e distribui cada valor proporcionalmente: o <strong>Deságio</strong> por valor × prazo (pro-rata dia — quem tem prazo mais longo paga mais); Comissão, Despesas Bancárias, Assinatura Eletrônica, Outras Despesas e IOF proporcionais ao valor de cada título. A <strong>Retenção/Recompra não é custo</strong> — reduz o valor pago agora, mas gera um "a receber" automático (é devolvida depois pelo FIDC).
+        </p>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Valor Total do Deságio (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_valor_desagio_total" placeholder="0,00" title="Valor total cobrado pelo FIDC (ex: 'Fator de Compra' do borderô). Distribuído proporcionalmente por valor × prazo de cada título.">
+          </label>
+          <label class="field f-130">
+            <span class="field-label">ou Taxa (% ao mês)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_mensal" placeholder="0,000" title="Alternativa: se você souber a taxa mensal em vez do valor total, preencha aqui e deixe o campo de valor total vazio.">
+          </label>
+          <label class="field f-130">
+            <span class="field-label">Comissão (% ad valorem)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_comissao" placeholder="0,000">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Despesas Bancárias/Boletos (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_despesas_bancarias" value="0" title="Valor TOTAL da operação (não por título) — rateado proporcionalmente entre os títulos.">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Assinatura Eletrônica (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_assinatura_eletronica" value="0">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Outras Despesas (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_outras_despesas" value="0">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">IOF Total da Operação (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_iof_total" value="0">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Retenção/Recompra (R$ total)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="c_valor_retencao_total" placeholder="0,00" title="Valor total retido como garantia (ex: 'Recompra' do borderô). Não é custo — volta depois. Rateado proporcionalmente ao valor de cada título.">
+          </label>
+          <label class="field f-100">
+            <span class="field-label">ou Retenção (%)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="c_taxa_retencao" placeholder="0,000" title="Alternativa ao valor total: % sobre o líquido de cada título.">
+          </label>
+          <button type="button" class="btn primary" id="btn-calcular-custos" style="align-self:flex-end;">↻ Calcular</button>
+        </div>
+        <div class="baixas-tabela-wrap" style="margin-top:6px;">
+          <table style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Título</th><th class="num">Parcela</th><th>Vencimento</th><th class="num">Dias</th><th class="num">Valor</th>
+                <th class="num">Deságio</th><th class="num">Comissão</th><th class="num">Desp.Banc.</th><th class="num">Assinatura</th>
+                <th class="num">Outras</th><th class="num">IOF</th><th class="num">Retenção</th><th class="num">Líquido Pago</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-custos-titulos"></tbody>
+          </table>
+        </div>
+
+        <div class="linha-flex" style="margin-top:16px; align-items:flex-end; border-top:1px solid var(--line-strong); padding-top:14px;">
+          <div class="field f-200">
+            <span class="field-label">Valor Calculado (R$)</span>
+            <div class="mono" id="valor-calculado-display" style="font-size:16px; font-weight:600; padding:8px 0;">R$ 0,00</div>
+          </div>
+          <label class="field f-160">
+            <span class="field-label">Ajuste (R$)</span>
+            <input class="input mono" type="number" step="0.01" id="c_ajuste" value="0" title="Corrige pequenas diferenças de centavos entre o valor calculado e o valor realmente transferido pelo FIDC. Pode ser positivo ou negativo.">
+          </label>
+          <div class="field f-260">
+            <span class="field-label">Valor Final a Receber (R$) — o que efetivamente cai na conta</span>
+            <div class="mono valor positivo" id="valor-final-display" style="font-size:19px; font-weight:700; padding:8px 0;">R$ 0,00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== ABA TRANSFERÊNCIAS ============================== -->
+    <div id="tab-transferencias" style="display:none;">
+      <div class="janela-secao" style="border-bottom:none;">
+        <div class="label" style="margin-bottom:10px;">Distribuir o valor líquido recebido entre outras contas (opcional)</div>
+        <div id="transf-linhas"></div>
+        <button type="button" class="btn ghost" id="btn-add-transf">＋ Adicionar transferência</button>
+        <div class="dist-total" id="transf-total">Distribuído: R$ 0,00 <span></span></div>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:18px;">
+      <button class="btn ghost" type="button" id="btn-pular-transferencias" style="display:none;">Pular e ir para Borderôs →</button>
+      <button class="btn primary" type="button" id="btn-salvar">Salvar Borderô</button>
+    </div>
+
+    </div> <!-- /janela-corpo -->
+  </div> <!-- /janela -->
+</main>
+
+<input type="file" id="input-xml" accept=".xml" style="display:none;">
+<input type="file" id="input-xmls-lote" accept=".xml" multiple style="display:none;">
+<input type="file" id="input-planilha" accept=".csv,.xlsx,.xls" style="display:none;">
+
+<!-- Modal: prévia da importação em lote -->
+<div class="modal-overlay" id="modal-importacao">
+  <div class="modal" style="max-width:760px;">
+    <h2>Conferir importação em lote</h2>
+    <div class="modal-sub" id="previa-contador">Revise os títulos identificados antes de confirmar.</div>
+    <div style="max-height:380px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:6px;">
+      <table style="font-size:12px;">
+        <thead><tr><th>Origem</th><th>Favorecido</th><th>Documento</th><th class="num">Valor</th><th>Vencimento</th><th>Situação</th></tr></thead>
+        <tbody id="tbody-previa"></tbody>
+      </table>
+    </div>
+    <p style="color:var(--ink-soft); font-size:11.5px; margin:6px 0 0;">
+      Favorecidos marcados como <span class="badge aberto">novo</span> serão cadastrados automaticamente (tipo Cliente).
+    </p>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="cancelar-importacao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-importacao">Confirmar e importar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+const TENANT_ID = usuario?.tenant_id;
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+function mostrarErro(msg) {
+  document.getElementById('aviso-ok').style.display = 'none';
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg;
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['dados','titulos','transferencias'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+}));
+
+// ---------- Selects básicos ----------
+async function carregarSelect(id, tabela, campoNome = 'nome', filtro = {}) {
+  let q = supabase.from(tabela).select(`id, ${campoNome}`).eq('ativo', true).order(campoNome);
+  Object.entries(filtro).forEach(([k,v]) => { q = q.eq(k, v); });
+  const { data } = await q;
+  document.getElementById(id).innerHTML = '<option value="">Selecione…</option>' + (data || []).map(r => `<option value="${r.id}">${r[campoNome]}</option>`).join('');
+  return data || [];
+}
+
+let planosEntrada = [], planoTransferenciaId = null;
+await Promise.all([
+  carregarSelect('f_fidc', 'favorecidos', 'nome', { tipo: 'fidc_factoring' }),
+  carregarSelect('f_grupo', 'grupos_empresariais'),
+  carregarSelect('f_conta_recebimento', 'contas_bancarias'),
+  (async () => {
+    const { data } = await supabase.from('plano_contas').select('id, tipo, nome_conta').eq('ativo', true).order('codigo_conta');
+    planosEntrada = (data || []).filter(p => p.tipo === 'entrada');
+    document.getElementById('f_plano_conta').innerHTML = '<option value="">Selecione…</option>' + planosEntrada.map(p => `<option value="${p.id}">${p.nome_conta}</option>`).join('');
+    const transf = (data || []).find(p => p.tipo === 'transferencia');
+    planoTransferenciaId = transf?.id || null;
+  })(),
+]);
+
+document.getElementById('f_data').value = new Date().toISOString().slice(0,10);
+
+if (!document.getElementById('f_fidc').options.length || document.getElementById('f_fidc').options.length <= 1) {
+  mostrarErro('Nenhum favorecido do tipo "FIDC/Factoring" foi encontrado. Cadastre um em Cadastros > Favorecidos (tipo "FIDC/Factoring") antes de continuar.');
+}
+
+// ---------- Importar XML ----------
+document.getElementById('btn-importar-xml').addEventListener('click', () => document.getElementById('input-xml').click());
+document.getElementById('input-xml').addEventListener('change', async e => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  try {
+    const texto = await arquivo.text();
+    const xml = new DOMParser().parseFromString(texto, 'application/xml');
+    if (xml.querySelector('parsererror')) throw new Error('XML inválido');
+
+    const infNFe = xml.getElementsByTagName('infNFe')[0];
+    if (infNFe) {
+      const idAttr = infNFe.getAttribute('Id') || '';
+      const chave = idAttr.replace('NFe', '').trim();
+      if (chave) document.getElementById('f_chave').value = chave;
+    }
+    const vNF = xml.getElementsByTagName('vNF')[0];
+    if (vNF && !document.getElementById('f_valor_face').value) {
+      document.getElementById('f_valor_face').value = parseFloat(vNF.textContent).toFixed(2);
+      recalcular();
+    }
+    window._xmlArquivoSelecionado = arquivo;
+    document.getElementById('info-xml').textContent = `Anexado: ${arquivo.name}`;
+  } catch (err) {
+    mostrarErro('Não foi possível ler este arquivo como XML de NFe. Você ainda pode preencher a chave de acesso manualmente.');
+  }
+});
+
+// ---------- Cálculo automático ----------
+function recalcular() {
+  if (typeof titulosSelecionados !== 'undefined' && titulosSelecionados.size > 0) return; // calculado pela aba Títulos (por prazo)
+  const face = Number(document.getElementById('f_valor_face').value || 0);
+
+  const taxaDesagio = Number(document.getElementById('f_taxa_desagio').value || 0);
+  if (taxaDesagio > 0) document.getElementById('f_valor_desagio').value = (face * taxaDesagio / 100).toFixed(2);
+  const desagio = Number(document.getElementById('f_valor_desagio').value || 0);
+
+  const taxaComissao = Number(document.getElementById('f_taxa_comissao').value || 0);
+  if (taxaComissao > 0) document.getElementById('f_valor_comissao').value = (face * taxaComissao / 100).toFixed(2);
+  const comissao = Number(document.getElementById('f_valor_comissao').value || 0);
+
+  const iof = Number(document.getElementById('f_iof').value || 0);
+  const despesasBancarias = Number(document.getElementById('f_outras_taxas').value || 0);
+  const assinatura = Number(document.getElementById('f_valor_assinatura').value || 0);
+  const outrasDespesas = Number(document.getElementById('f_valor_outras_despesas').value || 0);
+
+  const liquidoOperacao = Math.max(0, face - desagio - comissao - iof - despesasBancarias - assinatura - outrasDespesas);
+  document.getElementById('f_valor_liquido').value = liquidoOperacao.toFixed(2);
+
+  const taxaRetencao = Number(document.getElementById('f_taxa_retencao').value || 0);
+  if (taxaRetencao > 0) document.getElementById('f_valor_retencao').value = (liquidoOperacao * taxaRetencao / 100).toFixed(2);
+  const retencao = Number(document.getElementById('f_valor_retencao').value || 0);
+
+  const ajuste = Number(document.getElementById('f_ajuste').value || 0);
+  document.getElementById('f_valor_pago_cedente').value = Math.max(0, liquidoOperacao - retencao + ajuste).toFixed(2);
+}
+['f_valor_face','f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_valor_assinatura','f_valor_outras_despesas','f_taxa_retencao','f_valor_retencao','f_ajuste'].forEach(id => {
+  document.getElementById(id).addEventListener('change', recalcular);
+});
+document.getElementById('btn-recalcular').addEventListener('click', recalcular);
+
+// ============================================================================
+// TÍTULOS ANTECIPADOS
+// ============================================================================
+let titulosDisponiveis = [];
+const titulosSelecionados = new Set();
+
+async function carregarTitulos() {
+  const { data, error } = await supabase
+    .from('lancamentos')
+    .select('id, data_vencimento, descricao, valor, chave_acesso_nfe, numero_documento, parcela_numero, parcela_total, favorecidos(nome), plano_contas!inner(tipo)')
+    .eq('plano_contas.tipo', 'entrada')
+    .eq('status', 'em_aberto')
+    .order('data_vencimento', { ascending: true });
+
+  if (error) {
+    document.getElementById('lista-titulos').innerHTML = `<div class="lista-selecao-linha"><span class="col-desc" style="color:var(--red);">Erro ao carregar: ${error.message}</span></div>`;
+    return;
+  }
+
+  const ids = (data || []).map(l => l.id);
+  let saldosPorId = {};
+  if (ids.length) {
+    const { data: saldos } = await supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto').in('lancamento_id', ids);
+    (saldos || []).forEach(s => { saldosPorId[s.lancamento_id] = Number(s.saldo_aberto); });
+  }
+
+  titulosDisponiveis = (data || []).map(l => ({ ...l, saldo_aberto: saldosPorId[l.id] ?? Math.abs(l.valor) }));
+  desenharTitulos();
+}
+
+function desenharTitulos() {
+  const busca = document.getElementById('busca-titulos').value.trim().toLowerCase();
+  const filtrados = busca
+    ? titulosDisponiveis.filter(t => JSON.stringify(t).toLowerCase().includes(busca))
+    : titulosDisponiveis;
+
+  const cont = document.getElementById('lista-titulos');
+  if (!filtrados.length) {
+    cont.innerHTML = `<div class="lista-selecao-linha"><span class="col-desc" style="color:var(--ink-soft);">Nenhuma conta a receber em aberto encontrada.</span></div>`;
+    return;
+  }
+
+  cont.innerHTML = filtrados.map(t => `
+    <label class="lista-selecao-linha">
+      <input type="checkbox" data-titulo="${t.id}" ${titulosSelecionados.has(t.id) ? 'checked' : ''}>
+      <span class="col-desc">
+        ${t.favorecidos?.nome ?? 'Sem favorecido'} — ${t.numero_documento ?? t.descricao ?? ''}
+        <br><span style="color:var(--ink-soft); font-size:11px;">Vencimento: ${t.data_vencimento ? new Date(t.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}${t.parcela_numero ? ` · Parcela ${t.parcela_numero}${t.parcela_total ? '/'+t.parcela_total : ''}` : ''}</span>
+      </span>
+      <span class="col-valor">${fmt(t.saldo_aberto)}</span>
+    </label>`).join('');
+}
+
+document.getElementById('busca-titulos').addEventListener('input', desenharTitulos);
+document.getElementById('lista-titulos').addEventListener('change', e => {
+  const id = e.target.dataset?.titulo;
+  if (!id) return;
+  if (e.target.checked) titulosSelecionados.add(id); else titulosSelecionados.delete(id);
+  atualizarResumoTitulos();
+});
+
+let detalheCustosPorTitulo = {}; // tituloId -> { dias, desagio, boleto, iof, liquido }
+
+function atualizarResumoTitulos() {
+  const selecionados = titulosDisponiveis.filter(t => titulosSelecionados.has(t.id));
+  const soma = selecionados.reduce((s,t) => s + t.saldo_aberto, 0);
+  document.getElementById('contador-titulos').textContent = `${selecionados.length} selecionado(s)`;
+  document.getElementById('soma-titulos').textContent = fmt(soma);
+  document.getElementById('bloco-plano-conta').style.display = selecionados.length ? 'none' : 'block';
+  document.getElementById('bloco-custos-titulos').style.display = selecionados.length ? 'block' : 'none';
+
+  ['f_taxa_desagio','f_valor_desagio','f_taxa_comissao','f_valor_comissao','f_iof','f_outras_taxas','f_valor_assinatura','f_valor_outras_despesas','f_valor_liquido','f_taxa_retencao','f_valor_retencao','f_valor_pago_cedente'].forEach(id => {
+    document.getElementById(id).readOnly = selecionados.length > 0;
+  });
+
+  if (selecionados.length) {
+    document.getElementById('f_valor_face').value = soma.toFixed(2);
+    document.getElementById('f_valor_face').readOnly = true;
+    calcularCustosPorPrazo();
+  } else {
+    document.getElementById('f_valor_face').readOnly = false;
+    document.getElementById('tbody-custos-titulos').innerHTML = '';
+  }
+}
+
+function calcularCustosPorPrazo() {
+  const selecionados = titulosDisponiveis.filter(t => titulosSelecionados.has(t.id));
+  if (!selecionados.length) return;
+
+  const dataOperacaoStr = document.getElementById('f_data').value || new Date().toISOString().slice(0,10);
+  const dataOperacao = new Date(dataOperacaoStr + 'T00:00:00');
+  const valorDesagioInformado = Number(document.getElementById('c_valor_desagio_total').value || 0);
+  const taxaMensal = Number(document.getElementById('c_taxa_mensal').value || 0) / 100;
+  const taxaComissao = Number(document.getElementById('c_taxa_comissao').value || 0) / 100;
+  const despesasBancariasTotal = Number(document.getElementById('c_despesas_bancarias').value || 0);
+  const assinaturaTotal = Number(document.getElementById('c_assinatura_eletronica').value || 0);
+  const outrasDespesasTotal = Number(document.getElementById('c_outras_despesas').value || 0);
+  const iofTotal = Number(document.getElementById('c_iof_total').value || 0);
+  const valorRetencaoInformado = Number(document.getElementById('c_valor_retencao_total').value || 0);
+  const taxaRetencao = Number(document.getElementById('c_taxa_retencao').value || 0) / 100;
+  const somaFace = selecionados.reduce((s,t) => s + t.saldo_aberto, 0) || 1;
+
+  // 1ª passada: dias de cada título e peso (valor × dias) — usado pra ratear o valor total do deságio
+  const diasPorTitulo = {};
+  let pesoTotal = 0;
+  selecionados.forEach(t => {
+    const venc = t.data_vencimento ? new Date(t.data_vencimento + 'T00:00:00') : dataOperacao;
+    const dias = Math.max(0, Math.round((venc - dataOperacao) / 86400000));
+    diasPorTitulo[t.id] = dias;
+    pesoTotal += t.saldo_aberto * dias;
+  });
+
+  // 2ª passada: desconta tudo que é proporcional ao VALOR (comissão, despesas bancárias,
+  // assinatura, outras despesas, IOF) — todos os "valores totais" informados são rateados
+  // pela participação de cada título no valor de face total.
+  detalheCustosPorTitulo = {};
+  let somaDesagio = 0, somaComissao = 0, somaLiquidoOp = 0;
+
+  selecionados.forEach(t => {
+    const dias = diasPorTitulo[t.id];
+    const participacao = t.saldo_aberto / somaFace;
+
+    let desagioTitulo;
+    if (valorDesagioInformado > 0) {
+      // rateia o valor TOTAL informado, proporcional a valor×prazo (se todos os prazos forem 0, cai pra proporcional só ao valor)
+      const peso = pesoTotal > 0 ? (t.saldo_aberto * dias) : t.saldo_aberto;
+      const refPeso = pesoTotal > 0 ? pesoTotal : somaFace;
+      desagioTitulo = valorDesagioInformado * (peso / refPeso);
+    } else {
+      desagioTitulo = t.saldo_aberto * (taxaMensal / 30) * dias;
+    }
+
+    const comissaoTitulo = t.saldo_aberto * taxaComissao;
+    const despesasBancariasTitulo = despesasBancariasTotal * participacao;
+    const assinaturaTitulo = assinaturaTotal * participacao;
+    const outrasDespesasTitulo = outrasDespesasTotal * participacao;
+    const iofTitulo = iofTotal * participacao;
+
+    const liquidoOpTitulo = t.saldo_aberto - desagioTitulo - comissaoTitulo - despesasBancariasTitulo - assinaturaTitulo - outrasDespesasTitulo - iofTitulo;
+
+    detalheCustosPorTitulo[t.id] = {
+      dias, desagio: desagioTitulo, comissao: comissaoTitulo, despesasBancarias: despesasBancariasTitulo,
+      assinatura: assinaturaTitulo, outrasDespesas: outrasDespesasTitulo, iof: iofTitulo,
+      liquidoOp: liquidoOpTitulo, participacao,
+    };
+    somaDesagio += desagioTitulo;
+    somaComissao += comissaoTitulo;
+    somaLiquidoOp += liquidoOpTitulo;
+  });
+
+  // 3ª passada: retenção — proporcional ao líquido da operação de cada título
+  let somaRetencao = 0;
+  selecionados.forEach(t => {
+    const d = detalheCustosPorTitulo[t.id];
+    let retencaoTitulo;
+    if (valorRetencaoInformado > 0) {
+      const peso = somaLiquidoOp > 0 ? d.liquidoOp : d.participacao;
+      const refPeso = somaLiquidoOp > 0 ? somaLiquidoOp : 1;
+      retencaoTitulo = valorRetencaoInformado * (peso / refPeso);
+    } else {
+      retencaoTitulo = d.liquidoOp * taxaRetencao;
+    }
+    d.retencao = retencaoTitulo;
+    d.liquido = d.liquidoOp - retencaoTitulo;
+    somaRetencao += retencaoTitulo;
+  });
+
+  const liquidoOperacao = Math.max(0, somaLiquidoOp);
+  const valorPagoCedenteCalculado = Math.max(0, liquidoOperacao - somaRetencao);
+
+  document.getElementById('f_valor_desagio').value = somaDesagio.toFixed(2);
+  document.getElementById('f_valor_comissao').value = somaComissao.toFixed(2);
+  document.getElementById('f_outras_taxas').value = despesasBancariasTotal.toFixed(2);
+  document.getElementById('f_valor_assinatura').value = assinaturaTotal.toFixed(2);
+  document.getElementById('f_valor_outras_despesas').value = outrasDespesasTotal.toFixed(2);
+  document.getElementById('f_iof').value = iofTotal.toFixed(2);
+  document.getElementById('f_valor_liquido').value = liquidoOperacao.toFixed(2);
+  document.getElementById('f_valor_retencao').value = somaRetencao.toFixed(2);
+  // taxas efetivas (%), só informativo — calculadas de trás pra frente a partir do valor total
+  document.getElementById('f_taxa_desagio').value = somaFace ? (somaDesagio / somaFace * 100).toFixed(3) : '';
+  document.getElementById('f_taxa_comissao').value = somaFace ? (somaComissao / somaFace * 100).toFixed(3) : '';
+  document.getElementById('f_taxa_retencao').value = liquidoOperacao ? (somaRetencao / liquidoOperacao * 100).toFixed(3) : '';
+
+  // Prazo médio (ponderado pelo valor de cada título) e deságio normalizado a % ao mês —
+  // permite comparar operações com prazos diferentes de forma justa.
+  const somaDiasPonderado = selecionados.reduce((s,t) => s + diasPorTitulo[t.id] * t.saldo_aberto, 0);
+  const prazoMedioDias = somaFace ? somaDiasPonderado / somaFace : 0;
+  const taxaDesagioMensalEfetiva = (prazoMedioDias > 0 && somaFace) ? (somaDesagio / somaFace) / prazoMedioDias * 30 * 100 : 0;
+  document.getElementById('f_prazo_medio_dias').value = prazoMedioDias.toFixed(1);
+  document.getElementById('f_taxa_desagio_mensal_efetiva').value = taxaDesagioMensalEfetiva.toFixed(3);
+
+  const ajuste = Number(document.getElementById('c_ajuste').value || 0);
+  document.getElementById('f_ajuste').value = ajuste.toFixed(2);
+  const valorFinal = Math.max(0, valorPagoCedenteCalculado + ajuste);
+  document.getElementById('valor-calculado-display').textContent = fmt(valorPagoCedenteCalculado);
+  document.getElementById('valor-final-display').textContent = fmt(valorFinal);
+  document.getElementById('f_valor_pago_cedente').value = valorFinal.toFixed(2);
+
+  document.getElementById('tbody-custos-titulos').innerHTML = selecionados.map(t => {
+    const d = detalheCustosPorTitulo[t.id];
+    const parcelaTxt = t.parcela_numero ? `${t.parcela_numero}${t.parcela_total ? '/'+t.parcela_total : ''}` : '-';
+    return `
+      <tr>
+        <td>${t.favorecidos?.nome ?? 'Sem favorecido'} — ${t.descricao ?? ''}</td>
+        <td class="num mono">${parcelaTxt}</td>
+        <td>${t.data_vencimento ? new Date(t.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+        <td class="num mono">${d.dias}</td>
+        <td class="num mono">${fmt(t.saldo_aberto)}</td>
+        <td class="num mono valor negativo">${fmt(d.desagio)}</td>
+        <td class="num mono valor negativo">${fmt(d.comissao)}</td>
+        <td class="num mono valor negativo">${fmt(d.despesasBancarias)}</td>
+        <td class="num mono valor negativo">${fmt(d.assinatura)}</td>
+        <td class="num mono valor negativo">${fmt(d.outrasDespesas)}</td>
+        <td class="num mono valor negativo">${fmt(d.iof)}</td>
+        <td class="num mono valor aberto">${fmt(d.retencao)}</td>
+        <td class="num mono valor positivo">${fmt(d.liquido)}</td>
+      </tr>`;
+  }).join('');
+}
+
+document.getElementById('btn-calcular-custos').addEventListener('click', calcularCustosPorPrazo);
+['c_valor_desagio_total','c_taxa_mensal','c_taxa_comissao','c_despesas_bancarias','c_assinatura_eletronica','c_outras_despesas','c_iof_total','c_valor_retencao_total','c_taxa_retencao','c_ajuste'].forEach(id => {
+  document.getElementById(id).addEventListener('change', calcularCustosPorPrazo);
+});
+
+await carregarTitulos();
+
+// ---------- Pré-seleção vinda de "Todos os Lançamentos" (Criar Borderô com Selecionados) ----------
+{
+  const preSelecionados = sessionStorage.getItem('bordero_titulos_preselecionados');
+  if (preSelecionados) {
+    sessionStorage.removeItem('bordero_titulos_preselecionados');
+    try {
+      const ids = JSON.parse(preSelecionados);
+      ids.forEach(id => { if (titulosDisponiveis.some(t => t.id === id)) titulosSelecionados.add(id); });
+      if (titulosSelecionados.size) {
+        desenharTitulos();
+        atualizarResumoTitulos();
+        document.querySelectorAll('.subnav button').forEach(b => b.classList.remove('active'));
+        document.querySelector('.subnav button[data-tab="titulos"]').classList.add('active');
+        ['dados','titulos','transferencias'].forEach(t => document.getElementById('tab-'+t).style.display = (t === 'titulos' ? 'block' : 'none'));
+      }
+    } catch (err) { /* ignora pré-seleção inválida */ }
+  }
+}
+
+// ============================================================================
+// IMPORTAÇÃO EM LOTE (XMLs múltiplos ou planilha CSV/Excel)
+// ============================================================================
+let favorecidosCache = [];
+{
+  const { data } = await supabase.from('favorecidos').select('id, nome, cnpj_cpf').eq('ativo', true);
+  favorecidosCache = data || [];
+}
+
+function encontrarFavorecido(nome, cnpj) {
+  const nomeNorm = (nome || '').trim().toLowerCase();
+  const cnpjNorm = (cnpj || '').replace(/\D/g, '');
+  let match = cnpjNorm ? favorecidosCache.find(f => (f.cnpj_cpf||'').replace(/\D/g,'') === cnpjNorm) : null;
+  if (!match && nomeNorm) match = favorecidosCache.find(f => f.nome.trim().toLowerCase() === nomeNorm);
+  return match;
+}
+
+function contaRecebimentoValida() {
+  const v = document.getElementById('f_conta_recebimento').value;
+  if (!v) {
+    document.querySelectorAll('.subnav button')[0].click();
+    mostrarErro('Selecione a Conta de Recebimento na aba Dados antes de importar títulos.');
+  }
+  return v;
+}
+
+let previaImportacao = [];
+
+function abrirPreviaModal(linhas) {
+  previaImportacao = linhas;
+  const tbody = document.getElementById('tbody-previa');
+  tbody.innerHTML = linhas.map(l => `
+    <tr>
+      <td>${l.origem}</td>
+      <td>${l.favorecidoNome}${l.favorecidoNovo ? ' <span class="badge aberto">novo</span>' : ''}</td>
+      <td>${l.numero_documento ?? '-'}</td>
+      <td class="num mono">${fmt(l.valor)}</td>
+      <td>${l.data_vencimento ? new Date(l.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+      <td style="font-size:11px; color:${l.statusImportacao==='Novo título'?'var(--accent)':'var(--ink-soft)'};">${l.statusImportacao}</td>
+    </tr>`).join('');
+  const novos = linhas.filter(l => l.statusImportacao === 'Novo título').length;
+  document.getElementById('previa-contador').textContent = `${linhas.length} identificado(s): ${novos} novo(s), ${linhas.length-novos} já existente(s) ou com erro.`;
+  document.getElementById('modal-importacao').classList.add('open');
+}
+document.getElementById('cancelar-importacao').addEventListener('click', () => document.getElementById('modal-importacao').classList.remove('open'));
+
+// ---------- Importar múltiplos XMLs de NFe ----------
+document.getElementById('btn-importar-xmls-lote').addEventListener('click', () => {
+  if (!contaRecebimentoValida()) return;
+  document.getElementById('input-xmls-lote').click();
+});
+document.getElementById('input-xmls-lote').addEventListener('change', async e => {
+  const arquivos = [...e.target.files];
+  if (!arquivos.length) return;
+
+  const linhas = [];
+  for (const arquivo of arquivos) {
+    try {
+      const texto = await arquivo.text();
+      const xml = new DOMParser().parseFromString(texto, 'application/xml');
+      if (xml.querySelector('parsererror')) { linhas.push({ origem: arquivo.name, valor: 0, statusImportacao: 'Erro ao ler XML' }); continue; }
+
+      const infNFe = xml.getElementsByTagName('infNFe')[0];
+      const chave = infNFe ? (infNFe.getAttribute('Id') || '').replace('NFe', '').trim() : null;
+      const vNF = xml.getElementsByTagName('vNF')[0]?.textContent;
+      const nNF = xml.getElementsByTagName('nNF')[0]?.textContent;
+      const dhEmi = (xml.getElementsByTagName('dhEmi')[0] || xml.getElementsByTagName('dEmi')[0])?.textContent;
+      const destEl = xml.getElementsByTagName('dest')[0];
+      const destNome = destEl?.getElementsByTagName('xNome')[0]?.textContent;
+      const destCnpj = (destEl?.getElementsByTagName('CNPJ')[0] || destEl?.getElementsByTagName('CPF')[0])?.textContent;
+      const favorecidoMatch = encontrarFavorecido(destNome, destCnpj);
+      const dataEmissao = dhEmi ? dhEmi.slice(0,10) : null;
+
+      // Uma NFe pode ter várias parcelas/duplicatas (<cobr><dup>) — cada uma vira um título
+      const dups = [...xml.getElementsByTagName('dup')];
+
+      const linhaBase = {
+        origem: arquivo.name,
+        chave_acesso_nfe: chave,
+        data_emissao: dataEmissao,
+        favorecidoId: favorecidoMatch?.id || null,
+        favorecidoNome: favorecidoMatch?.nome || destNome || 'Sem identificação',
+        favorecidoNovo: !favorecidoMatch && !!destNome,
+        favorecidoCnpj: destCnpj,
+        statusImportacao: 'Novo título',
+      };
+
+      if (dups.length) {
+        dups.forEach((dup, i) => {
+          const nDup = dup.getElementsByTagName('nDup')[0]?.textContent || String(i+1).padStart(3,'0');
+          const dVenc = dup.getElementsByTagName('dVenc')[0]?.textContent;
+          const vDup = dup.getElementsByTagName('vDup')[0]?.textContent;
+          linhas.push({
+            ...linhaBase,
+            numero_documento: `${nNF ?? '?'}-${nDup}`,
+            parcela_numero: i + 1,
+            parcela_total: dups.length,
+            valor: vDup ? parseFloat(vDup) : 0,
+            data_vencimento: dVenc || dataEmissao,
+          });
+        });
+      } else {
+        // sem duplicatas discriminadas — trata como parcela única
+        linhas.push({
+          ...linhaBase,
+          numero_documento: nNF ? `NF ${nNF}` : null,
+          parcela_numero: 1,
+          parcela_total: 1,
+          valor: vNF ? parseFloat(vNF) : 0,
+          data_vencimento: dataEmissao,
+        });
+      }
+    } catch (err) {
+      linhas.push({ origem: arquivo.name, valor: 0, statusImportacao: 'Erro ao processar' });
+    }
+  }
+
+  const documentos = linhas.filter(l => l.numero_documento).map(l => l.numero_documento);
+  if (documentos.length) {
+    const { data: existentes } = await supabase.from('lancamentos').select('numero_documento, status').in('numero_documento', documentos);
+    (existentes || []).forEach(ex => {
+      const l = linhas.find(x => x.numero_documento === ex.numero_documento);
+      if (l) l.statusImportacao = (ex.status === 'em_aberto' || ex.status === 'parcial') ? 'Já existe (será selecionado)' : `Já existe — status ${ex.status}, ignorado`;
+    });
+  }
+
+  abrirPreviaModal(linhas);
+  e.target.value = '';
+});
+
+// ---------- Importar planilha (CSV/Excel) ----------
+document.getElementById('btn-importar-planilha').addEventListener('click', () => {
+  if (!contaRecebimentoValida()) return;
+  document.getElementById('input-planilha').click();
+});
+document.getElementById('input-planilha').addEventListener('change', async e => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+
+  const buffer = await arquivo.arrayBuffer();
+  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+  const linhasBrutas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+
+  const acharCampo = (row, padroes) => {
+    const chave = Object.keys(row).find(k => padroes.some(p => k.toLowerCase().includes(p)));
+    return chave ? row[chave] : null;
+  };
+
+  const linhas = linhasBrutas.map(row => {
+    const nomeFav = acharCampo(row, ['favorecido','sacado','cliente','devedor','nome']);
+    const valorBruto = acharCampo(row, ['valor']);
+    const vencBruto = acharCampo(row, ['vencimento','data']);
+    const docBruto = acharCampo(row, ['documento','nota','nf','numero','título','titulo']);
+
+    let dataVenc = null;
+    if (vencBruto instanceof Date) dataVenc = vencBruto.toISOString().slice(0,10);
+    else if (typeof vencBruto === 'string' && vencBruto.trim()) {
+      const partes = vencBruto.trim().split(/[\/\-]/);
+      if (partes.length === 3) dataVenc = partes[2].length === 4 ? `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}` : vencBruto;
+    }
+
+    let valor = 0;
+    if (typeof valorBruto === 'number') valor = valorBruto;
+    else if (typeof valorBruto === 'string') {
+      const limpo = valorBruto.replace(/[^\d,.-]/g,'');
+      valor = limpo.includes(',') ? parseFloat(limpo.replace(/\./g,'').replace(',','.')) : parseFloat(limpo);
+    }
+
+    const favorecidoMatch = encontrarFavorecido(nomeFav, null);
+    return {
+      origem: 'Planilha',
+      numero_documento: docBruto ? String(docBruto) : null,
+      valor: valor || 0,
+      data_vencimento: dataVenc,
+      favorecidoId: favorecidoMatch?.id || null,
+      favorecidoNome: favorecidoMatch?.nome || nomeFav || 'Sem identificação',
+      favorecidoNovo: !favorecidoMatch && !!nomeFav,
+      statusImportacao: 'Novo título',
+    };
+  }).filter(l => l.valor > 0);
+
+  if (!linhas.length) { mostrarErro('Não foi possível identificar linhas válidas na planilha. Confira se há colunas de Favorecido e Valor.'); e.target.value = ''; return; }
+
+  abrirPreviaModal(linhas);
+  e.target.value = '';
+});
+
+// ---------- Confirmar importação (cria favorecidos/títulos e já seleciona) ----------
+document.getElementById('btn-confirmar-importacao').addEventListener('click', async () => {
+  const grupoId = document.getElementById('f_grupo').value;
+  const contaRecebimento = document.getElementById('f_conta_recebimento').value;
+  if (!grupoId || !contaRecebimento) { alert('Preencha Grupo Empresarial e Conta de Recebimento na aba Dados antes de importar.'); return; }
+  if (!planosEntrada.length) { alert('Cadastre ao menos uma conta de Entrada no Plano de Contas antes de importar.'); return; }
+
+  const btn = document.getElementById('btn-confirmar-importacao');
+  btn.disabled = true; btn.textContent = 'Importando…';
+
+  const planoPadrao = planosEntrada[0].id;
+  const validas = previaImportacao.filter(l => l.statusImportacao === 'Novo título' && l.valor > 0);
+
+  for (const l of validas) {
+    let favorecidoId = l.favorecidoId;
+    if (!favorecidoId && l.favorecidoNovo) {
+      const { data: novoFav } = await supabase.from('favorecidos').insert({
+        tenant_id: TENANT_ID, tipo: 'clientes', nome: l.favorecidoNome, cnpj_cpf: l.favorecidoCnpj || null,
+      }).select('id').single();
+      if (novoFav) { favorecidoId = novoFav.id; favorecidosCache.push(novoFav); }
+    }
+
+    await supabase.from('lancamentos').insert({
+      tenant_id: TENANT_ID,
+      grupo_empresarial_id: grupoId,
+      data: l.data_emissao || new Date().toISOString().slice(0,10),
+      data_emissao: l.data_emissao || null,
+      plano_conta_id: planoPadrao,
+      descricao: `Título antecipado — ${l.origem}`,
+      favorecido_id: favorecidoId || null,
+      status: 'em_aberto',
+      conta_bancaria_id: contaRecebimento,
+      valor: l.valor,
+      data_vencimento: l.data_vencimento || null,
+      numero_documento: l.numero_documento || null,
+      parcela_numero: l.parcela_numero || null,
+      parcela_total: l.parcela_total || null,
+      chave_acesso_nfe: l.chave_acesso_nfe || null,
+      criado_por: usuario?.id || null,
+    });
+  }
+
+  document.getElementById('modal-importacao').classList.remove('open');
+  await carregarTitulos();
+
+  // auto-seleciona os títulos recém-importados (ou já existentes identificados)
+  titulosDisponiveis.forEach(t => {
+    const bateu = previaImportacao.find(l =>
+      l.numero_documento && l.numero_documento === t.numero_documento
+    );
+    if (bateu) titulosSelecionados.add(t.id);
+  });
+  desenharTitulos();
+  atualizarResumoTitulos();
+
+  btn.disabled = false; btn.textContent = 'Confirmar e importar';
+  document.getElementById('aviso-ok').style.display = 'block';
+  document.getElementById('aviso-ok').textContent = `${validas.length} título(s) importado(s) e selecionado(s) com sucesso.`;
+});
+
+// ============================================================================
+// TRANSFERÊNCIAS
+// ============================================================================
+let transferencias = [];
+let contasCache = [];
+const { data: contasParaTransf } = await supabase.from('contas_bancarias').select('id, nome').eq('ativo', true).order('nome');
+contasCache = contasParaTransf || [];
+
+function renderTransferencias() {
+  const cont = document.getElementById('transf-linhas');
+  cont.innerHTML = transferencias.map((t, i) => `
+    <div class="transf-linha">
+      <select class="input tr-conta" data-i="${i}">
+        <option value="">Conta de destino…</option>
+        ${contasCache.map(c => `<option value="${c.id}" ${c.id===t.conta_destino_id?'selected':''}>${c.nome}</option>`).join('')}
+      </select>
+      <input class="input mono tr-valor" data-i="${i}" type="number" step="0.01" min="0.01" value="${t.valor || ''}" placeholder="0,00">
+      <button type="button" class="icon-btn danger tr-remover" data-i="${i}" title="Remover">✕</button>
+    </div>`).join('');
+
+  const total = transferencias.reduce((s,t) => s + Number(t.valor || 0), 0);
+  const liquido = Number(document.getElementById('f_valor_pago_cedente').value || 0);
+  const el = document.getElementById('transf-total');
+  el.innerHTML = `Distribuído: ${fmt(total)} de ${fmt(liquido)} (valor pago ao cedente) <span>${total > liquido ? '— excede o valor disponível' : ''}</span>`;
+  el.className = 'dist-total ' + (total > liquido ? 'erro' : (total > 0 ? 'ok' : ''));
+}
+
+document.getElementById('btn-add-transf').addEventListener('click', () => { transferencias.push({ conta_destino_id: '', valor: '' }); renderTransferencias(); });
+document.getElementById('transf-linhas').addEventListener('change', e => {
+  const i = e.target.dataset.i; if (i === undefined) return;
+  if (e.target.classList.contains('tr-conta')) transferencias[i].conta_destino_id = e.target.value;
+  if (e.target.classList.contains('tr-valor')) transferencias[i].valor = Number(e.target.value || 0);
+  renderTransferencias();
+});
+document.getElementById('transf-linhas').addEventListener('click', e => {
+  if (e.target.classList.contains('tr-remover')) { transferencias.splice(e.target.dataset.i, 1); renderTransferencias(); }
+});
+renderTransferencias();
+
+// ============================================================================
+// SALVAR
+// ============================================================================
+let borderoIdSalvo = null;
+let estadoSalvo = {};
+
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  if (borderoIdSalvo) {
+    await salvarTransferenciasEConcluir();
+  } else {
+    await salvarBorderoPrincipal();
+  }
+});
+
+document.getElementById('btn-pular-transferencias').addEventListener('click', () => {
+  window.location.href = 'borderos.html';
+});
+
+async function salvarBorderoPrincipal() {
+  document.getElementById('aviso-erro').style.display = 'none';
+  document.getElementById('aviso-ok').style.display = 'none';
+
+  const fidcId = document.getElementById('f_fidc').value;
+  const grupoId = document.getElementById('f_grupo').value;
+  const contaRecebimento = document.getElementById('f_conta_recebimento').value;
+  const dataOperacao = document.getElementById('f_data').value;
+  const valorFace = Number(document.getElementById('f_valor_face').value || 0);
+  const valorLiquido = Number(document.getElementById('f_valor_liquido').value || 0);
+  const valorRetencao = Number(document.getElementById('f_valor_retencao').value || 0);
+  const valorPagoCedente = Number(document.getElementById('f_valor_pago_cedente').value || 0);
+  const selecionados = titulosDisponiveis.filter(t => titulosSelecionados.has(t.id));
+
+  if (!fidcId) { mostrarErro('Selecione o FIDC/Factoring.'); return; }
+  if (!grupoId) { mostrarErro('Selecione o Grupo Empresarial.'); return; }
+  if (!contaRecebimento) { mostrarErro('Selecione a Conta de Recebimento.'); return; }
+  if (!valorFace || !valorPagoCedente) { mostrarErro('Preencha o Valor de Face e confira o Valor Pago ao Cedente (clique em Recalcular se necessário).'); return; }
+  if (!selecionados.length && !document.getElementById('f_plano_conta').value) {
+    mostrarErro('Nenhum título foi vinculado — selecione um Plano de Contas na aba Dados para registrar o valor recebido.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  try {
+    // 1) Cabeçalho do borderô
+    const payloadBordero = {
+      tenant_id: TENANT_ID,
+      grupo_empresarial_id: grupoId,
+      favorecido_id: fidcId,
+      numero_bordero: document.getElementById('f_numero').value || null,
+      numero_contrato: document.getElementById('f_contrato').value || null,
+      data_operacao: dataOperacao,
+      chave_acesso_nfe: document.getElementById('f_chave').value || null,
+      plano_conta_id: selecionados.length ? null : document.getElementById('f_plano_conta').value,
+      valor_face: valorFace,
+      taxa_desagio: Number(document.getElementById('f_taxa_desagio').value || 0) || null,
+      valor_desagio: Number(document.getElementById('f_valor_desagio').value || 0),
+      taxa_comissao: Number(document.getElementById('f_taxa_comissao').value || 0) || null,
+      valor_comissao: Number(document.getElementById('f_valor_comissao').value || 0),
+      iof: Number(document.getElementById('f_iof').value || 0),
+      outras_taxas: Number(document.getElementById('f_outras_taxas').value || 0),
+      valor_assinatura_eletronica: Number(document.getElementById('f_valor_assinatura').value || 0),
+      valor_outras_despesas: Number(document.getElementById('f_valor_outras_despesas').value || 0),
+      valor_liquido: valorLiquido,
+      taxa_retencao: Number(document.getElementById('f_taxa_retencao').value || 0) || null,
+      valor_retencao: valorRetencao,
+      ajuste_valor_final: Number(document.getElementById('f_ajuste').value || 0),
+      prazo_medio_dias: Number(document.getElementById('f_prazo_medio_dias').value || 0) || null,
+      taxa_desagio_mensal_efetiva: Number(document.getElementById('f_taxa_desagio_mensal_efetiva').value || 0) || null,
+      valor_pago_cedente: valorPagoCedente,
+      conta_bancaria_id: contaRecebimento,
+      observacoes: document.getElementById('f_obs').value || null,
+      criado_por: usuario?.id || null,
+    };
+    const { data: bordero, error: erroBordero } = await supabase.from('operacoes_antecipacao').insert(payloadBordero).select('id').single();
+    if (erroBordero) throw erroBordero;
+    const borderoId = bordero.id;
+
+    // 2) Anexo do XML, se selecionado
+    if (window._xmlArquivoSelecionado) {
+      const caminho = `${TENANT_ID}/borderos/${borderoId}_${window._xmlArquivoSelecionado.name}`;
+      const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, window._xmlArquivoSelecionado, { upsert: true });
+      if (!erroUpload) {
+        await supabase.from('operacoes_antecipacao').update({ xml_anexo_url: caminho, xml_anexo_nome: window._xmlArquivoSelecionado.name }).eq('id', borderoId);
+      }
+    }
+
+    const nomeFidc = document.getElementById('f_fidc').selectedOptions[0]?.textContent || 'FIDC/Factoring';
+    const refTexto = `Borderô ${document.getElementById('f_numero').value || borderoId.slice(0,8)} — ${nomeFidc}`;
+
+    // 3) Baixa dos títulos vinculados (por prazo/custo individual) OU cria lançamento avulso
+    if (selecionados.length) {
+      for (const t of selecionados) {
+        const d = detalheCustosPorTitulo[t.id];
+        const custoTitulo = d ? (d.desagio + d.comissao + d.despesasBancarias + d.assinatura + d.outrasDespesas + d.iof + d.retencao) : (t.saldo_aberto - (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1))));
+        const valorPagoTitulo = d ? d.liquido : (valorPagoCedente * (t.saldo_aberto / (selecionados.reduce((s,x)=>s+x.saldo_aberto,0)||1)));
+        const { error: erroBaixa } = await supabase.from('baixas').insert({
+          tenant_id: TENANT_ID,
+          lancamento_id: t.id,
+          bordero_id: borderoId,
+          data: dataOperacao,
+          valor_pago: +valorPagoTitulo.toFixed(2),
+          desconto: +custoTitulo.toFixed(2),
+          forma_pagamento: 'Antecipação FIDC/Factoring',
+          conta_bancaria_id: contaRecebimento,
+          observacoes: refTexto,
+          criado_por: usuario?.id || null,
+        });
+        if (erroBaixa) throw erroBaixa;
+
+        // Controle de coobrigação: para a empresa o título já está pago (baixa acima),
+        // mas para o FIDC ele só quita quando o sacado pagar na data de vencimento.
+        await supabase.from('lancamentos').update({
+          bordero_id: borderoId,
+          situacao_fidc: 'pendente',
+        }).eq('id', t.id);
+      }
+    } else {
+      const { data: novoLanc, error: erroLanc } = await supabase.from('lancamentos').insert({
+        tenant_id: TENANT_ID,
+        grupo_empresarial_id: grupoId,
+        data: dataOperacao,
+        plano_conta_id: document.getElementById('f_plano_conta').value,
+        descricao: `Antecipação de recebíveis — ${refTexto}`,
+        favorecido_id: fidcId,
+        status: 'em_aberto',
+        conta_bancaria_id: contaRecebimento,
+        valor: valorFace,
+        data_vencimento: dataOperacao,
+        forma_pagamento: 'Antecipação FIDC/Factoring',
+        bordero_id: borderoId,
+        criado_por: usuario?.id || null,
+      }).select('id').single();
+      if (erroLanc) throw erroLanc;
+
+      const { error: erroBaixa } = await supabase.from('baixas').insert({
+        tenant_id: TENANT_ID,
+        lancamento_id: novoLanc.id,
+        bordero_id: borderoId,
+        data: dataOperacao,
+        valor_pago: valorPagoCedente,
+        desconto: valorFace - valorPagoCedente,
+        forma_pagamento: 'Antecipação FIDC/Factoring',
+        conta_bancaria_id: contaRecebimento,
+        observacoes: refTexto,
+        criado_por: usuario?.id || null,
+      });
+      if (erroBaixa) throw erroBaixa;
+    }
+
+    // 3.1) Retenção/Recompra não é custo — vira um "a receber" (o FIDC devolve depois)
+    if (valorRetencao > 0.01) {
+      const primeiroPlanoEntrada = planosEntrada[0]?.id;
+      if (primeiroPlanoEntrada) {
+        await supabase.from('lancamentos').insert({
+          tenant_id: TENANT_ID,
+          grupo_empresarial_id: grupoId,
+          data: dataOperacao,
+          plano_conta_id: primeiroPlanoEntrada,
+          descricao: `Retenção/Recompra a receber — ${refTexto}`,
+          favorecido_id: fidcId,
+          status: 'em_aberto',
+          conta_bancaria_id: contaRecebimento,
+          valor: valorRetencao,
+          observacoes: 'Valor retido como garantia pelo FIDC/Factoring — devolvido conforme liquidação dos títulos ou ao final do contrato.',
+          bordero_id: borderoId,
+          criado_por: usuario?.id || null,
+        });
+      }
+    }
+
+    // Guarda o estado pra usar na etapa 2 (Transferências)
+    borderoIdSalvo = borderoId;
+    estadoSalvo = { grupoId, contaRecebimento, dataOperacao, refTexto };
+
+    document.getElementById('aviso-ok').style.display = 'block';
+    document.getElementById('aviso-ok').textContent = `Borderô salvo com sucesso! Agora informe como o valor de ${fmt(valorPagoCedente)} foi transferido entre suas contas (ou pule esta etapa).`;
+
+    // Abre automaticamente a aba de Transferências
+    document.querySelectorAll('.subnav button').forEach(b => b.classList.remove('active'));
+    document.querySelector('.subnav button[data-tab="transferencias"]').classList.add('active');
+    ['dados','titulos','transferencias'].forEach(t => document.getElementById('tab-'+t).style.display = (t === 'transferencias' ? 'block' : 'none'));
+
+    btn.disabled = false;
+    btn.textContent = 'Salvar Transferências e Concluir';
+    document.getElementById('btn-pular-transferencias').style.display = 'inline-flex';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Salvar Borderô';
+    mostrarErro('Erro ao salvar: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+async function salvarTransferenciasEConcluir() {
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  if (transferencias.length) {
+    if (transferencias.some(t => !t.conta_destino_id || !t.valor)) { mostrarErro('Preencha conta e valor em todas as linhas de transferência (ou remova as vazias).'); return; }
+    if (!planoTransferenciaId) { mostrarErro('Não há nenhuma conta do tipo "Transferência" cadastrada no Plano de Contas — cadastre uma antes de distribuir o valor recebido.'); return; }
+
+    const btn = document.getElementById('btn-salvar');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    const { grupoId, contaRecebimento, dataOperacao, refTexto } = estadoSalvo;
+
+    try {
+      for (const t of transferencias) {
+        const { data: novaTransf, error: erroTransf } = await supabase.from('lancamentos').insert({
+          tenant_id: TENANT_ID,
+          grupo_empresarial_id: grupoId,
+          data: dataOperacao,
+          plano_conta_id: planoTransferenciaId,
+          descricao: `Distribuição — ${refTexto}`,
+          status: 'em_aberto',
+          conta_bancaria_id: contaRecebimento,
+          conta_destino_id: t.conta_destino_id,
+          valor: t.valor,
+          bordero_id: borderoIdSalvo,
+          criado_por: usuario?.id || null,
+        }).select('id').single();
+        if (erroTransf) throw erroTransf;
+
+        const { error: erroBaixaTransf } = await supabase.from('baixas').insert({
+          tenant_id: TENANT_ID,
+          lancamento_id: novaTransf.id,
+          bordero_id: borderoIdSalvo,
+          data: dataOperacao,
+          valor_pago: t.valor,
+          conta_bancaria_id: contaRecebimento,
+          criado_por: usuario?.id || null,
+        });
+        if (erroBaixaTransf) throw erroBaixaTransf;
+      }
+    } catch (err) {
+      const btn = document.getElementById('btn-salvar');
+      btn.disabled = false; btn.textContent = 'Salvar Transferências e Concluir';
+      mostrarErro('Erro ao salvar transferências: ' + (err.message || JSON.stringify(err)));
+      return;
+    }
+  }
+
+  window.location.href = 'borderos.html';
+}
+</script>
+  </div>
+</div>
+</body>
+</html>

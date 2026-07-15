@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle FIDC/Factoring — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  .badge.pendente { background: var(--amber-soft); color: var(--amber); }
+  .badge.liquidado { background: var(--accent-soft); color: var(--accent); }
+  .badge.recomprado { background: var(--red-soft); color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+    <div class="nav-item active">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
+        <span class="group-label">Operações especiais</span>
+        <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
+        <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
+        <a href="controle-fidc.html"><span class="code">⚠</span> Controle FIDC/Factoring</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Relatórios</button>
+      <div class="nav-panel">
+        <span class="group-label">Fluxo de Caixa</span>
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
+        <span class="group-label">Detalhamento</span>
+        <a href="relatorio-contas.html"><span class="code">704</span> Por Conta Bancária</a>
+        <a href="relatorio-favorecidos.html"><span class="code">705</span> Por Favorecido</a>
+        <a href="relatorio-borderos.html"><span class="code">706</span> Borderôs (Antecipação)</a>
+        <span class="group-label">Planejamento</span>
+        <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
+        <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
+        <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Contabilidade</button>
+      <div class="nav-panel">
+        <a href="conciliacao-bancaria.html"><span class="code">◆</span> Conciliação Bancária</a>
+        <a href="dre.html"><span class="code">◆</span> DRE</a>
+        <a href="ativo-fixo.html"><span class="code">◆</span> Ativo Fixo</a>
+        <a href="contabilidade.html"><span class="code">◆</span> Contabilidade</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Operações especiais</span>
+      <h1 style="display:flex; align-items:center; gap:8px;">
+        Controle FIDC/Factoring
+        <span class="menu-acoes" id="ajuda-fidc">
+          <button type="button" class="menu-acoes-btn" id="btn-ajuda-fidc" title="Como funciona" style="width:24px; height:24px; padding:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:13px; vertical-align:middle;">?</button>
+          <div class="menu-acoes-lista" style="min-width:360px; padding:14px; font-size:12px; font-weight:400; line-height:1.65; color:var(--ink-soft); right:auto; left:0;">
+            Quando um título é antecipado, o dinheiro já entrou na sua conta (isso já está no seu Fluxo de Caixa). Mas para o FIDC/Factoring, o título só quita de verdade quando o <strong>sacado</strong> paga na data de vencimento — até lá, você segue <strong>coobrigado</strong>: se o sacado não pagar, você é obrigado a recomprar o título. Esta tela controla esse risco, <strong>sem alterar seu fluxo de caixa</strong> — a exceção é marcar "Recomprado": você paga o FIDC (saída real) e o título <strong>volta a ser seu</strong> — o sistema cria automaticamente um novo direito de cobrança contra o sacado, já que agora é você quem cobra diretamente, não mais o FIDC.
+          </div>
+        </span>
+      </h1>
+    </div>
+  </div>
+
+  <section class="grid grid-4" style="margin-bottom:16px;">
+    <div class="card"><div class="label">Pendentes (em risco)</div><div class="big valor aberto" id="kpi-pendente-qtd">0</div><div style="font-size:11px; color:var(--ink-soft); margin-top:4px;"><span id="kpi-pendente-valor" class="mono">R$ 0,00</span></div></div>
+    <div class="card"><div class="label">Liquidados</div><div class="big valor positivo" id="kpi-liquidado-qtd">0</div><div style="font-size:11px; color:var(--ink-soft); margin-top:4px;"><span id="kpi-liquidado-valor" class="mono">R$ 0,00</span></div></div>
+    <div class="card"><div class="label">Recomprados</div><div class="big valor negativo" id="kpi-recomprado-qtd">0</div><div style="font-size:11px; color:var(--ink-soft); margin-top:4px;"><span id="kpi-recomprado-valor" class="mono">R$ 0,00</span></div></div>
+    <div class="card"><div class="label">Vencidos ainda pendentes</div><div class="big valor negativo" id="kpi-vencido-qtd">0</div><div style="font-size:11px; color:var(--ink-soft); margin-top:4px;">atenção redobrada</div></div>
+  </section>
+
+  <div class="toolbar" style="flex-wrap:wrap;">
+    <input class="input" id="busca" placeholder="Buscar por sacado, borderô..." style="max-width:240px;">
+    <select class="input" id="f_situacao" style="max-width:170px;">
+      <option value="pendente">Pendentes</option>
+      <option value="">Todas as situações</option>
+      <option value="liquidado">Liquidados</option>
+      <option value="recomprado">Recomprados</option>
+    </select>
+    <select class="input" id="f_fidc" style="max-width:190px;"><option value="">Todos os FIDC/Factoring</option></select>
+    <span class="count-pill" id="contador">0 títulos</span>
+    <div class="spacer"></div>
+    <div id="area-exportar" style="display:flex; gap:8px;"></div>
+  </div>
+
+  <div class="toolbar" id="barra-selecao" style="display:none; background:var(--ledger); color:#fff; border-radius:var(--radius-md); padding:10px 14px; margin-bottom:10px;">
+    <span id="contador-selecao" style="font-size:13px; font-weight:600;">0 selecionado(s)</span>
+    <div class="spacer"></div>
+    <button class="btn" id="btn-liquidar-selecionados" style="background:var(--accent); padding:8px 14px;">✓ Marcar Liquidados</button>
+    <button class="btn" id="btn-recomprar-selecionados" style="background:var(--red); padding:8px 14px;">Recomprar Selecionados</button>
+    <button class="btn ghost" id="btn-limpar-selecao-fidc" style="border-color:rgba(255,255,255,.3); color:#fff; padding:8px 14px;">Cancelar</button>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table id="tabela-relatorio">
+      <thead>
+        <tr>
+          <th style="width:36px;"><input type="checkbox" id="chk-selecionar-todos-fidc"></th>
+          <th>Vencimento</th><th>Sacado</th><th>Descrição</th><th>Borderô</th><th>FIDC/Factoring</th>
+          <th class="num">Valor de Face</th><th>Situação</th><th class="num">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="9" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+
+<!-- Modal: marcar recompra (suporta vários títulos de uma vez) -->
+<div class="modal-overlay" id="modal-recompra">
+  <div class="modal" style="max-width:640px;">
+    <h2>Registrar Recompra</h2>
+    <div class="modal-sub">O(s) sacado(s) abaixo não pagaram o FIDC dentro do prazo. Pra cada título: você paga o FIDC (saída) e o título volta a ser seu — um novo direito de cobrança contra o sacado é criado automaticamente.</div>
+
+    <div class="label" style="margin:12px 0 6px;">Títulos sendo recomprados</div>
+    <div class="baixas-tabela-wrap" style="margin-bottom:14px;">
+      <table style="font-size:12px;">
+        <thead><tr><th>Sacado</th><th>Vencimento</th><th class="num">Valor a Recomprar (R$)</th></tr></thead>
+        <tbody id="tbody-titulos-recompra"></tbody>
+      </table>
+    </div>
+
+    <form id="form-recompra">
+      <label class="field"><span class="field-label">Motivo da Recompra *</span>
+        <select class="input" id="r_motivo" required>
+          <option value="">Selecione…</option>
+          <option>Sacado inadimplente</option>
+          <option>Sacado não localizado</option>
+          <option>Contestação/Divergência comercial</option>
+          <option>Título cancelado/estornado</option>
+          <option>Outro</option>
+        </select>
+      </label>
+      <div class="row-2">
+        <label class="field"><span class="field-label">Data da Recompra *</span><input class="input" type="date" id="r_data" required></label>
+        <label class="field"><span class="field-label">Conta Bancária de Pagamento *</span><select class="input" id="r_conta" required></select></label>
+      </div>
+      <label class="field"><span class="field-label">Observações adicionais</span><input class="input" type="text" id="r_obs"></label>
+    </form>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="cancelar-recompra">Cancelar</button>
+      <button class="btn primary" type="submit" form="form-recompra">Confirmar recompra</button>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import { adicionarBotoesExportacao } from '../../js/export.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+adicionarBotoesExportacao('#area-exportar', '#tabela-relatorio', 'controle-fidc');
+
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const ROTULO_SITUACAO = { pendente: 'Pendente', liquidado: 'Liquidado', recomprado: 'Recomprado' };
+
+const { data: fidcs } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'fidc_factoring').eq('ativo', true).order('nome');
+document.getElementById('f_fidc').innerHTML += (fidcs||[]).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+
+const { data: contasBancarias } = await supabase.from('contas_bancarias').select('id, nome').eq('ativo', true).order('nome');
+document.getElementById('r_conta').innerHTML = (contasBancarias||[]).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+let registros = [];
+
+async function carregar() {
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Carregando…</td></tr>`;
+
+  let query = supabase
+    .from('lancamentos')
+    .select('id, data_vencimento, descricao, valor, grupo_empresarial_id, favorecido_id, plano_conta_id, favorecidos(nome), operacoes_antecipacao:bordero_id(numero_bordero, favorecido_id, favorecidos:favorecido_id(nome)), situacao_fidc')
+    .not('situacao_fidc', 'is', null)
+    .order('data_vencimento', { ascending: true });
+
+  const situacao = document.getElementById('f_situacao').value;
+  if (situacao) query = query.eq('situacao_fidc', situacao);
+
+  const { data, error } = await query;
+  if (error) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`;
+    return;
+  }
+
+  const fidcId = document.getElementById('f_fidc').value;
+  registros = fidcId ? (data||[]).filter(r => r.operacoes_antecipacao?.favorecido_id === fidcId) : (data||[]);
+  atualizarKPIs();
+  desenhar();
+}
+
+function atualizarKPIs() {
+  const hoje = new Date().toISOString().slice(0,10);
+  const porSituacao = { pendente: {qtd:0, valor:0}, liquidado: {qtd:0, valor:0}, recomprado: {qtd:0, valor:0} };
+  let vencidosQtd = 0;
+  registros.forEach(r => {
+    const s = porSituacao[r.situacao_fidc];
+    if (s) { s.qtd++; s.valor += Math.abs(Number(r.valor)); }
+    if (r.situacao_fidc === 'pendente' && r.data_vencimento && r.data_vencimento < hoje) vencidosQtd++;
+  });
+  document.getElementById('kpi-pendente-qtd').textContent = porSituacao.pendente.qtd;
+  document.getElementById('kpi-pendente-valor').textContent = fmt(porSituacao.pendente.valor);
+  document.getElementById('kpi-liquidado-qtd').textContent = porSituacao.liquidado.qtd;
+  document.getElementById('kpi-liquidado-valor').textContent = fmt(porSituacao.liquidado.valor);
+  document.getElementById('kpi-recomprado-qtd').textContent = porSituacao.recomprado.qtd;
+  document.getElementById('kpi-recomprado-valor').textContent = fmt(porSituacao.recomprado.valor);
+  document.getElementById('kpi-vencido-qtd').textContent = vencidosQtd;
+}
+
+function desenhar() {
+  const busca = document.getElementById('busca').value.trim().toLowerCase();
+  const filtrados = busca ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca)) : registros;
+  document.getElementById('contador').textContent = `${filtrados.length} título${filtrados.length===1?'':'s'}`;
+
+  if (!filtrados.length) {
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state">Nenhum título encontrado para os filtros aplicados.</td></tr>`;
+    return;
+  }
+
+  const hoje = new Date().toISOString().slice(0,10);
+  document.getElementById('tbody').innerHTML = filtrados.map(r => {
+    const vencido = r.situacao_fidc === 'pendente' && r.data_vencimento && r.data_vencimento < hoje;
+    return `
+    <tr>
+      <td>${r.situacao_fidc === 'pendente' ? `<input type="checkbox" class="chk-titulo-fidc" value="${r.id}">` : ''}</td>
+      <td style="${vencido?'color:var(--red); font-weight:600;':''}">${r.data_vencimento ? new Date(r.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}${vencido?' ⚠':''}</td>
+      <td>${r.favorecidos?.nome ?? '-'}</td>
+      <td>${r.descricao ?? '-'}</td>
+      <td>${r.operacoes_antecipacao?.numero_bordero ?? '-'}</td>
+      <td>${r.operacoes_antecipacao?.favorecidos?.nome ?? '-'}</td>
+      <td class="num mono">${fmt(Math.abs(r.valor))}</td>
+      <td><span class="badge ${r.situacao_fidc}">${ROTULO_SITUACAO[r.situacao_fidc]}</span></td>
+      <td class="num">
+        ${r.situacao_fidc === 'pendente' ? `
+          <div class="row-actions">
+            <button class="icon-btn" data-liquidar="${r.id}">Liquidado</button>
+            <button class="icon-btn danger" data-recomprar="${r.id}">Recomprado</button>
+          </div>` : '-'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('busca').addEventListener('input', desenhar);
+document.getElementById('f_situacao').addEventListener('change', carregar);
+document.getElementById('f_fidc').addEventListener('change', carregar);
+
+// ---------- Popover de ajuda ----------
+const ajudaFidc = document.getElementById('ajuda-fidc');
+document.getElementById('btn-ajuda-fidc').addEventListener('click', e => { e.stopPropagation(); ajudaFidc.classList.toggle('open'); });
+document.addEventListener('click', () => ajudaFidc.classList.remove('open'));
+ajudaFidc.querySelector('.menu-acoes-lista').addEventListener('click', e => e.stopPropagation());
+
+// ---------- Seleção em lote ----------
+function atualizarBarraSelecaoFidc() {
+  const marcados = [...document.querySelectorAll('.chk-titulo-fidc:checked')];
+  const barra = document.getElementById('barra-selecao');
+  barra.style.display = marcados.length ? 'flex' : 'none';
+  document.getElementById('contador-selecao').textContent = `${marcados.length} selecionado(s)`;
+
+  const total = document.querySelectorAll('.chk-titulo-fidc').length;
+  const chkTodos = document.getElementById('chk-selecionar-todos-fidc');
+  chkTodos.checked = total > 0 && marcados.length === total;
+  chkTodos.indeterminate = marcados.length > 0 && marcados.length < total;
+}
+
+document.getElementById('tbody').addEventListener('change', e => {
+  if (e.target.classList.contains('chk-titulo-fidc')) atualizarBarraSelecaoFidc();
+});
+document.getElementById('chk-selecionar-todos-fidc').addEventListener('change', e => {
+  document.querySelectorAll('.chk-titulo-fidc').forEach(chk => { chk.checked = e.target.checked; });
+  atualizarBarraSelecaoFidc();
+});
+document.getElementById('btn-limpar-selecao-fidc').addEventListener('click', () => {
+  document.querySelectorAll('.chk-titulo-fidc').forEach(chk => { chk.checked = false; });
+  atualizarBarraSelecaoFidc();
+});
+
+document.getElementById('btn-liquidar-selecionados').addEventListener('click', async () => {
+  const ids = [...document.querySelectorAll('.chk-titulo-fidc:checked')].map(chk => chk.value);
+  if (!ids.length) return;
+  if (!confirm(`Confirmar que o sacado pagou o FIDC nos ${ids.length} título(s) selecionado(s)?`)) return;
+  const { error } = await supabase.from('lancamentos').update({
+    situacao_fidc: 'liquidado',
+    data_situacao_fidc: new Date().toISOString().slice(0,10),
+  }).in('id', ids);
+  if (error) { alert('Erro: ' + error.message); return; }
+  document.getElementById('barra-selecao').style.display = 'none';
+  await carregar();
+});
+
+document.getElementById('btn-recomprar-selecionados').addEventListener('click', () => {
+  const ids = [...document.querySelectorAll('.chk-titulo-fidc:checked')].map(chk => chk.value);
+  if (!ids.length) return;
+  abrirModalRecompra(ids);
+});
+
+// ---------- Ações individuais (linha) ----------
+document.getElementById('tbody').addEventListener('click', async e => {
+  const idLiquidar = e.target.dataset?.liquidar;
+  const idRecomprar = e.target.dataset?.recomprar;
+
+  if (idLiquidar) {
+    if (!confirm('Confirmar que o sacado pagou o FIDC e este título está liquidado?')) return;
+    const { error } = await supabase.from('lancamentos').update({
+      situacao_fidc: 'liquidado',
+      data_situacao_fidc: new Date().toISOString().slice(0,10),
+    }).eq('id', idLiquidar);
+    if (error) { alert('Erro: ' + error.message); return; }
+    await carregar();
+  }
+
+  if (idRecomprar) abrirModalRecompra([idRecomprar]);
+});
+
+// ---------- Modal de recompra (1 ou vários títulos) ----------
+let titulosRecompraSelecionados = [];
+
+function abrirModalRecompra(ids) {
+  titulosRecompraSelecionados = registros.filter(r => ids.includes(r.id));
+  if (!titulosRecompraSelecionados.length) return;
+
+  document.getElementById('tbody-titulos-recompra').innerHTML = titulosRecompraSelecionados.map(t => `
+    <tr>
+      <td>${t.favorecidos?.nome ?? '-'} <span style="color:var(--ink-soft); font-size:10.5px;">— ${t.descricao ?? ''}</span></td>
+      <td>${t.data_vencimento ? new Date(t.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+      <td class="num"><input class="input mono valor-recompra-titulo" data-id="${t.id}" type="number" step="0.01" min="0.01" value="${Math.abs(t.valor).toFixed(2)}" style="width:130px; text-align:right;"></td>
+    </tr>`).join('');
+
+  document.getElementById('form-recompra').reset();
+  document.getElementById('r_data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('modal-recompra').classList.add('open');
+}
+
+document.getElementById('cancelar-recompra').addEventListener('click', () => document.getElementById('modal-recompra').classList.remove('open'));
+document.getElementById('modal-recompra').addEventListener('click', e => { if (e.target.id === 'modal-recompra') e.target.classList.remove('open'); });
+
+document.getElementById('form-recompra').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!titulosRecompraSelecionados.length) return;
+
+  const { data: planosSaida } = await supabase.from('plano_contas').select('id, tipo').eq('ativo', true).eq('tipo', 'saida').limit(1);
+  if (!planosSaida?.length) { alert('Cadastre ao menos uma conta de Saída no Plano de Contas antes de registrar uma recompra.'); return; }
+  const { data: planosEntrada } = await supabase.from('plano_contas').select('id, tipo').eq('ativo', true).eq('tipo', 'entrada').limit(1);
+  if (!planosEntrada?.length) { alert('Cadastre ao menos uma conta de Entrada no Plano de Contas antes de registrar uma recompra (o título volta a ser um direito de cobrança seu).'); return; }
+
+  const motivo = document.getElementById('r_motivo').value;
+  const dataRecompra = document.getElementById('r_data').value;
+  const contaRecompra = document.getElementById('r_conta').value;
+  const obsExtra = document.getElementById('r_obs').value;
+
+  const btn = e.submitter;
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+
+  try {
+    for (const titulo of titulosRecompraSelecionados) {
+      const valorInput = document.querySelector(`.valor-recompra-titulo[data-id="${titulo.id}"]`);
+      const valorRecompra = Math.abs(Number(valorInput?.value || titulo.valor));
+      const refTexto = `${titulo.descricao ?? ''} (Borderô ${titulo.operacoes_antecipacao?.numero_bordero ?? ''})`;
+
+      // 1) Saída: você paga o FIDC para recomprar o título (dinheiro sai de fato)
+      const { error: erroSaida } = await supabase.from('lancamentos').insert({
+        tenant_id: TENANT_ID,
+        grupo_empresarial_id: titulo.grupo_empresarial_id ?? null,
+        data: dataRecompra,
+        plano_conta_id: planosSaida[0].id,
+        descricao: `Recompra de título — ${refTexto}`,
+        favorecido_id: titulo.operacoes_antecipacao?.favorecido_id ?? null,
+        status: 'em_aberto',
+        conta_bancaria_id: contaRecompra,
+        valor: -valorRecompra,
+        data_vencimento: dataRecompra,
+        observacoes: `Motivo: ${motivo}${obsExtra ? ' — ' + obsExtra : ''}`,
+        criado_por: usuario?.id || null,
+      });
+      if (erroSaida) throw erroSaida;
+
+      // 2) Entrada: o título volta a ser seu — agora é você quem cobra o sacado
+      //    diretamente (não mais o FIDC), então nasce um novo direito de cobrança.
+      const { error: erroEntrada } = await supabase.from('lancamentos').insert({
+        tenant_id: TENANT_ID,
+        grupo_empresarial_id: titulo.grupo_empresarial_id ?? null,
+        data: dataRecompra,
+        plano_conta_id: titulo.plano_conta_id || planosEntrada[0].id,
+        descricao: `Direito de cobrança recomprado — ${refTexto}`,
+        favorecido_id: titulo.favorecido_id ?? null,
+        status: 'em_aberto',
+        conta_bancaria_id: contaRecompra,
+        valor: valorRecompra,
+        observacoes: `Título recomprado do FIDC em ${new Date(dataRecompra+'T00:00:00').toLocaleDateString('pt-BR')}. Motivo: ${motivo}. A cobrança do sacado agora é direta.`,
+        criado_por: usuario?.id || null,
+      });
+      if (erroEntrada) throw erroEntrada;
+
+      const { error: erroUpdate } = await supabase.from('lancamentos').update({
+        situacao_fidc: 'recomprado',
+        data_situacao_fidc: dataRecompra,
+      }).eq('id', titulo.id);
+      if (erroUpdate) throw erroUpdate;
+    }
+
+    document.getElementById('modal-recompra').classList.remove('open');
+    document.getElementById('barra-selecao').style.display = 'none';
+    await carregar();
+  } catch (err) {
+    alert('Erro ao registrar recompra: ' + (err.message || JSON.stringify(err)));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar recompra'; }
+  }
+});
+
+await carregar();
+</script>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget — Fluxo de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  .tbl-orc { font-size: 12.5px; }
+  .tbl-orc th, .tbl-orc td { white-space: nowrap; padding: 5px 6px; }
+  .tbl-orc tr.linha-secao td { background: var(--paper); font-weight: 600; padding: 8px 9px; border-bottom: 1px solid var(--line-strong); }
+  .tbl-orc input.cel {
+    width: 96px; text-align: right; font-family: var(--font-mono); font-size: 12px;
+    border: 1px solid transparent; background: transparent; padding: 5px 6px; border-radius: 3px;
+  }
+  .tbl-orc input.cel:hover { border-color: var(--line-strong); }
+  .tbl-orc input.cel:focus { border-color: var(--accent); background: #fff; outline: none; }
+  .tbl-orc tr.linha-total td { font-weight: 700; background: var(--accent-soft); }
+  .tbl-orc tr.linha-total-saida td { font-weight: 700; background: var(--red-soft); }
+  .scroll-x { overflow-x: auto; }
+  .status-save { font-size: 11px; color: var(--ink-soft); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:#cfd8d2;">Início</a></div>
+    <div class="nav-item">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
+        <span class="group-label">Operações especiais</span>
+        <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
+        <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
+        <a href="controle-fidc.html"><span class="code">⚠</span> Controle FIDC/Factoring</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Relatórios</button>
+      <div class="nav-panel">
+        <span class="group-label">Fluxo de Caixa</span>
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
+        <span class="group-label">Detalhamento</span>
+        <a href="relatorio-contas.html"><span class="code">704</span> Por Conta Bancária</a>
+        <a href="relatorio-favorecidos.html"><span class="code">705</span> Por Favorecido</a>
+        <a href="relatorio-borderos.html"><span class="code">706</span> Borderôs (Antecipação)</a>
+        <span class="group-label">Planejamento</span>
+        <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
+        <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
+      </div>
+    </div>
+    <div class="nav-item active">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <span class="group-label">Planejamento</span>
+        <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
+        <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button>Contabilidade</button>
+      <div class="nav-panel">
+        <a href="conciliacao-bancaria.html"><span class="code">◆</span> Conciliação Bancária</a>
+        <a href="dre.html"><span class="code">◆</span> DRE</a>
+        <a href="ativo-fixo.html"><span class="code">◆</span> Ativo Fixo</a>
+        <a href="contabilidade.html"><span class="code">◆</span> Contabilidade</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <span class="group-label">Sistema</span>
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Planejamento orçamentário · 6.1</span>
+      <h1>Budget Anual</h1>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <span class="status-save" id="status-save"></span>
+      <select class="input" id="f_grupo" style="width:170px;"></select>
+      <select class="input" id="f_ano" style="width:110px;"></select>
+    </div>
+  </div>
+
+  <p style="color:var(--ink-soft); font-size:12.5px; margin:-8px 0 18px;">
+    Clique em qualquer célula e digite o valor planejado para aquele mês. Salva automaticamente ao sair do campo (Tab ou clique fora).
+  </p>
+
+  <section class="card scroll-x" style="padding:0;">
+    <table class="tbl-orc" id="tabela-orc">
+      <thead><tr><td colspan="14" class="empty-state">Carregando…</td></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+const TENANT_ID = usuario?.tenant_id;
+const TIPO_ORCAMENTO = 'budget'; // troque para 'forecast' na versão Forecast
+const MESES = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+const selAno = document.getElementById('f_ano');
+const anoAtual = new Date().getFullYear();
+for (let a = anoAtual + 1; a >= anoAtual - 2; a--) selAno.innerHTML += `<option value="${a}" ${a===anoAtual?'selected':''}>${a}</option>`;
+selAno.addEventListener('change', carregar);
+
+const selGrupo = document.getElementById('f_grupo');
+const { data: grupos } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+selGrupo.innerHTML = (grupos || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+selGrupo.addEventListener('change', carregar);
+
+let planos = [];
+let valores = {}; // valores[planoId][mes] = valor
+
+async function carregar() {
+  const ano = Number(selAno.value);
+  const grupoId = selGrupo.value;
+  document.querySelector('#tabela-orc thead').innerHTML = `<tr><td colspan="14" class="empty-state">Carregando…</td></tr>`;
+  document.querySelector('#tabela-orc tbody').innerHTML = '';
+  if (!grupoId) { document.querySelector('#tabela-orc thead').innerHTML = `<tr><td colspan="14" class="empty-state">Cadastre um Grupo Empresarial primeiro.</td></tr>`; return; }
+
+  const { data: pc, error: erroPC } = await supabase.from('plano_contas').select('id, tipo, codigo_conta, nome_conta').eq('ativo', true).in('tipo', ['entrada','saida']).order('codigo_conta');
+  if (erroPC) { document.querySelector('#tabela-orc thead').innerHTML = `<tr><td colspan="14" class="empty-state" style="color:var(--red)">Erro: ${erroPC.message}</td></tr>`; return; }
+  planos = pc || [];
+
+  const { data: orc, error } = await supabase.from('orcamentos').select('plano_conta_id, mes, valor_previsto')
+    .eq('tipo', TIPO_ORCAMENTO).eq('ano', ano).eq('grupo_empresarial_id', grupoId);
+  if (error) { document.querySelector('#tabela-orc thead').innerHTML = `<tr><td colspan="14" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+
+  valores = {};
+  (orc || []).forEach(o => {
+    valores[o.plano_conta_id] = valores[o.plano_conta_id] || {};
+    valores[o.plano_conta_id][o.mes] = Number(o.valor_previsto);
+  });
+
+  desenhar();
+}
+
+function celula(planoId, mes) {
+  const v = valores[planoId]?.[mes] ?? '';
+  return `<td><input class="cel" type="number" step="0.01" data-plano="${planoId}" data-mes="${mes}" value="${v}"></td>`;
+}
+
+function totalLinha(lista, mes) {
+  return lista.reduce((s, p) => s + (valores[p.id]?.[mes] || 0), 0);
+}
+
+function desenhar() {
+  document.querySelector('#tabela-orc thead').innerHTML =
+    `<tr><th>BUDGET (Planejamento orçamentário anual)</th>${MESES.map(m=>`<th class="num">${m}</th>`).join('')}</tr>`;
+
+  const entradas = planos.filter(p => p.tipo === 'entrada');
+  const saidas = planos.filter(p => p.tipo === 'saida');
+
+  let corpo = '';
+  corpo += `<tr class="linha-total"><td>ENTRADAS</td>${Array.from({length:12},(_,i)=>`<td class="num mono">${fmt(totalLinha(entradas, i+1))}</td>`).join('')}</tr>`;
+  entradas.forEach(p => {
+    corpo += `<tr><td style="padding-left:18px; color:var(--ink-soft);">${p.codigo_conta} — ${p.nome_conta}</td>${Array.from({length:12},(_,i)=>celula(p.id, i+1)).join('')}</tr>`;
+  });
+  corpo += `<tr class="linha-total-saida"><td>SAÍDAS</td>${Array.from({length:12},(_,i)=>`<td class="num mono">${fmt(totalLinha(saidas, i+1))}</td>`).join('')}</tr>`;
+  saidas.forEach(p => {
+    corpo += `<tr><td style="padding-left:18px; color:var(--ink-soft);">${p.codigo_conta} — ${p.nome_conta}</td>${Array.from({length:12},(_,i)=>celula(p.id, i+1)).join('')}</tr>`;
+  });
+
+  document.querySelector('#tabela-orc tbody').innerHTML = corpo;
+}
+
+function fmt(v) { return Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
+
+document.querySelector('#tabela-orc').addEventListener('change', async e => {
+  const input = e.target.closest('input.cel');
+  if (!input) return;
+  const planoId = input.dataset.plano;
+  const mes = Number(input.dataset.mes);
+  const valor = input.value === '' ? 0 : Number(input.value);
+
+  valores[planoId] = valores[planoId] || {};
+  valores[planoId][mes] = valor;
+
+  const status = document.getElementById('status-save');
+  status.textContent = 'Salvando…';
+
+  const { error } = await supabase.from('orcamentos').upsert({
+    tenant_id: TENANT_ID,
+    grupo_empresarial_id: selGrupo.value,
+    tipo: TIPO_ORCAMENTO,
+    ano: Number(selAno.value),
+    mes,
+    plano_conta_id: planoId,
+    valor_previsto: valor,
+  }, { onConflict: 'tenant_id,grupo_empresarial_id,tipo,ano,mes,plano_conta_id' });
+
+  status.textContent = error ? 'Erro ao salvar' : 'Salvo ✓';
+  if (error) console.error(error);
+  desenhar(); // atualiza totais
+  setTimeout(() => { if (status.textContent !== 'Salvando…') status.textContent = ''; }, 2000);
+});
+
+await carregar();
+</script>
+  </div>
+</div>
+</body>
+</html>
