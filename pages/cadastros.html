@@ -241,6 +241,7 @@ const ENTIDADES = {
       { nome: 'periodicidade', label: 'Periodicidade', tipo: 'text' },
       { nome: 'conta_bancaria_padrao_id', label: 'Conta Bancária Padrão', tipo: 'select-remoto', tabelaRef: 'contas_bancarias', obrigatorio: false },
       { nome: 'centro_custo_padrao_id', label: 'Centro de Custo Padrão', tipo: 'select-remoto', tabelaRef: 'centros_custo', obrigatorio: false },
+      { nome: 'plano_conta_padrao_id', label: 'Plano de Contas Padrão', tipo: 'select-remoto', tabelaRef: 'plano_contas', campoNome: 'nome_conta', obrigatorio: false },
       { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
     ],
   },
@@ -359,11 +360,12 @@ document.getElementById('tbody').addEventListener('click', async e => {
 const overlay = document.getElementById('modal-overlay');
 const form = document.getElementById('form-registro');
 
-async function opcoesRemotas(tabelaRef) {
-  if (cacheRef[tabelaRef]) return cacheRef[tabelaRef];
-  const { data } = await supabase.from(tabelaRef).select('id, nome').eq('ativo', true).order('nome');
-  cacheRef[tabelaRef] = data || [];
-  return cacheRef[tabelaRef];
+async function opcoesRemotas(tabelaRef, campoNome = 'nome') {
+  const chaveCache = `${tabelaRef}:${campoNome}`;
+  if (cacheRef[chaveCache]) return cacheRef[chaveCache];
+  const { data } = await supabase.from(tabelaRef).select(`id, ${campoNome}`).eq('ativo', true).order(campoNome);
+  cacheRef[chaveCache] = (data || []).map(r => ({ id: r.id, nome: r[campoNome] }));
+  return cacheRef[chaveCache];
 }
 
 async function abrirModal(registro = null) {
@@ -391,7 +393,7 @@ async function abrirModal(registro = null) {
           </select>
         </label>`);
     } else if (campo.tipo === 'select-remoto') {
-      const opts = await opcoesRemotas(campo.tabelaRef);
+      const opts = await opcoesRemotas(campo.tabelaRef, campo.campoNome || 'nome');
       camposHtml.push(`
         <label class="field">
           <span class="field-label">${campo.label}${campo.obrigatorio?' *':''}</span>

@@ -432,7 +432,9 @@ await Promise.all([
 document.getElementById('f_favorecido').addEventListener('change', async e => {
   const favorecidoId = e.target.value;
   if (!favorecidoId) return;
-  const { data: fav } = await supabase.from('favorecidos').select('conta_bancaria_padrao_id, centro_custo_padrao_id').eq('id', favorecidoId).single();
+  const { data: fav } = await supabase.from('favorecidos')
+    .select('conta_bancaria_padrao_id, centro_custo_padrao_id, plano_conta_padrao_id, plano_contas:plano_conta_padrao_id(tipo)')
+    .eq('id', favorecidoId).single();
   if (!fav) return;
 
   const tipo = document.getElementById('f_tipo').value;
@@ -442,6 +444,14 @@ document.getElementById('f_favorecido').addEventListener('change', async e => {
   if (fav.centro_custo_padrao_id && typeof distCCs !== 'undefined' && !distCCs.length) {
     distCCs.push({ centro_custo_id: fav.centro_custo_padrao_id, percentual: 100 });
     if (typeof renderDistribuicaoCC === 'function') renderDistribuicaoCC();
+  }
+  if (fav.plano_conta_padrao_id && fav.plano_contas?.tipo === tipo && typeof distContas !== 'undefined') {
+    if (!distContas.length) {
+      distContas.push({ plano_conta_id: fav.plano_conta_padrao_id, percentual: 100 });
+    } else if (distContas.length === 1 && !distContas[0].plano_conta_id) {
+      distContas[0].plano_conta_id = fav.plano_conta_padrao_id;
+    }
+    if (typeof renderDistribuicaoConta === 'function') renderDistribuicaoConta();
   }
 });
 

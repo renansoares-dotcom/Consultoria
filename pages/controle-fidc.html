@@ -97,7 +97,7 @@
         <span class="menu-acoes" id="ajuda-fidc">
           <button type="button" class="menu-acoes-btn" id="btn-ajuda-fidc" title="Como funciona" style="width:24px; height:24px; padding:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:13px; vertical-align:middle;">?</button>
           <div class="menu-acoes-lista" style="min-width:360px; padding:14px; font-size:12px; font-weight:400; line-height:1.65; color:var(--ink-soft); right:auto; left:0;">
-            Quando um título é antecipado, o dinheiro já entrou na sua conta (isso já está no seu Fluxo de Caixa). Mas para o FIDC/Factoring, o título só quita de verdade quando o <strong>sacado</strong> paga na data de vencimento — até lá, você segue <strong>coobrigado</strong>: se o sacado não pagar, você é obrigado a recomprar o título. Esta tela controla esse risco, <strong>sem alterar seu fluxo de caixa</strong> (a única exceção é marcar "Recomprado", que gera uma saída real).
+            Quando um título é antecipado, o dinheiro já entrou na sua conta (isso já está no seu Fluxo de Caixa). Mas para o FIDC/Factoring, o título só quita de verdade quando o <strong>sacado</strong> paga na data de vencimento — até lá, você segue <strong>coobrigado</strong>: se o sacado não pagar, você é obrigado a recomprar o título. Esta tela controla esse risco, <strong>sem alterar seu fluxo de caixa</strong> — a exceção é marcar "Recomprado": você paga o FIDC (saída real) e o título <strong>volta a ser seu</strong> — o sistema cria automaticamente um novo direito de cobrança contra o sacado, já que agora é você quem cobra diretamente, não mais o FIDC.
           </div>
         </span>
       </h1>
@@ -151,7 +151,7 @@
 <div class="modal-overlay" id="modal-recompra">
   <div class="modal" style="max-width:640px;">
     <h2>Registrar Recompra</h2>
-    <div class="modal-sub">O(s) sacado(s) abaixo não pagaram o FIDC dentro do prazo — cada título vira uma saída no seu fluxo de caixa.</div>
+    <div class="modal-sub">O(s) sacado(s) abaixo não pagaram o FIDC dentro do prazo. Pra cada título: você paga o FIDC (saída) e o título volta a ser seu — um novo direito de cobrança contra o sacado é criado automaticamente.</div>
 
     <div class="label" style="margin:12px 0 6px;">Títulos sendo recomprados</div>
     <div class="baixas-tabela-wrap" style="margin-bottom:14px;">
@@ -221,7 +221,7 @@ async function carregar() {
 
   let query = supabase
     .from('lancamentos')
-    .select('id, data_vencimento, descricao, valor, grupo_empresarial_id, favorecido_id, favorecidos(nome), operacoes_antecipacao:bordero_id(numero_bordero, favorecido_id, favorecidos:favorecido_id(nome)), situacao_fidc')
+    .select('id, data_vencimento, descricao, valor, grupo_empresarial_id, favorecido_id, plano_conta_id, favorecidos(nome), operacoes_antecipacao:bordero_id(numero_bordero, favorecido_id, favorecidos:favorecido_id(nome)), situacao_fidc')
     .not('situacao_fidc', 'is', null)
     .order('data_vencimento', { ascending: true });
 
@@ -390,8 +390,10 @@ document.getElementById('form-recompra').addEventListener('submit', async e => {
   e.preventDefault();
   if (!titulosRecompraSelecionados.length) return;
 
-  const { data: planos } = await supabase.from('plano_contas').select('id, tipo').eq('ativo', true).eq('tipo', 'saida').limit(1);
-  if (!planos?.length) { alert('Cadastre ao menos uma conta de Saída no Plano de Contas antes de registrar uma recompra.'); return; }
+  const { data: planosSaida } = await supabase.from('plano_contas').select('id, tipo').eq('ativo', true).eq('tipo', 'saida').limit(1);
+  if (!planosSaida?.length) { alert('Cadastre ao menos uma conta de Saída no Plano de Contas antes de registrar uma recompra.'); return; }
+  const { data: planosEntrada } = await supabase.from('plano_contas').select('id, tipo').eq('ativo', true).eq('tipo', 'entrada').limit(1);
+  if (!planosEntrada?.length) { alert('Cadastre ao menos uma conta de Entrada no Plano de Contas antes de registrar uma recompra (o título volta a ser um direito de cobrança seu).'); return; }
 
   const motivo = document.getElementById('r_motivo').value;
   const dataRecompra = document.getElementById('r_data').value;
@@ -405,14 +407,16 @@ document.getElementById('form-recompra').addEventListener('submit', async e => {
     for (const titulo of titulosRecompraSelecionados) {
       const valorInput = document.querySelector(`.valor-recompra-titulo[data-id="${titulo.id}"]`);
       const valorRecompra = Math.abs(Number(valorInput?.value || titulo.valor));
+      const refTexto = `${titulo.descricao ?? ''} (Borderô ${titulo.operacoes_antecipacao?.numero_bordero ?? ''})`;
 
-      const { error: erroLanc } = await supabase.from('lancamentos').insert({
+      // 1) Saída: você paga o FIDC para recomprar o título (dinheiro sai de fato)
+      const { error: erroSaida } = await supabase.from('lancamentos').insert({
         tenant_id: TENANT_ID,
         grupo_empresarial_id: titulo.grupo_empresarial_id ?? null,
         data: dataRecompra,
-        plano_conta_id: planos[0].id,
-        descricao: `Recompra de título — ${titulo.descricao ?? ''} (Borderô ${titulo.operacoes_antecipacao?.numero_bordero ?? ''})`,
-        favorecido_id: titulo.operacoes_antecipacao?.favorecido_id ?? titulo.favorecido_id ?? null,
+        plano_conta_id: planosSaida[0].id,
+        descricao: `Recompra de título — ${refTexto}`,
+        favorecido_id: titulo.operacoes_antecipacao?.favorecido_id ?? null,
         status: 'em_aberto',
         conta_bancaria_id: contaRecompra,
         valor: -valorRecompra,
@@ -420,7 +424,24 @@ document.getElementById('form-recompra').addEventListener('submit', async e => {
         observacoes: `Motivo: ${motivo}${obsExtra ? ' — ' + obsExtra : ''}`,
         criado_por: usuario?.id || null,
       });
-      if (erroLanc) throw erroLanc;
+      if (erroSaida) throw erroSaida;
+
+      // 2) Entrada: o título volta a ser seu — agora é você quem cobra o sacado
+      //    diretamente (não mais o FIDC), então nasce um novo direito de cobrança.
+      const { error: erroEntrada } = await supabase.from('lancamentos').insert({
+        tenant_id: TENANT_ID,
+        grupo_empresarial_id: titulo.grupo_empresarial_id ?? null,
+        data: dataRecompra,
+        plano_conta_id: titulo.plano_conta_id || planosEntrada[0].id,
+        descricao: `Direito de cobrança recomprado — ${refTexto}`,
+        favorecido_id: titulo.favorecido_id ?? null,
+        status: 'em_aberto',
+        conta_bancaria_id: contaRecompra,
+        valor: valorRecompra,
+        observacoes: `Título recomprado do FIDC em ${new Date(dataRecompra+'T00:00:00').toLocaleDateString('pt-BR')}. Motivo: ${motivo}. A cobrança do sacado agora é direta.`,
+        criado_por: usuario?.id || null,
+      });
+      if (erroEntrada) throw erroEntrada;
 
       const { error: erroUpdate } = await supabase.from('lancamentos').update({
         situacao_fidc: 'recomprado',
