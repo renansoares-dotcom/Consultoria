@@ -83,7 +83,7 @@
 
   // Se já houver sessão válida, pula direto pro dashboard
   supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) window.location.href = 'pages/dashboard.html';
+    if (session) window.location.href = 'pages/financeiro/dashboard.html';
   });
 
   form.addEventListener('submit', async (e) => {
@@ -105,7 +105,7 @@
       return;
     }
 
-    window.location.href = 'pages/dashboard.html';
+    window.location.href = 'pages/financeiro/dashboard.html';
   });
 
   document.getElementById('link-esqueci').addEventListener('click', async (e) => {
