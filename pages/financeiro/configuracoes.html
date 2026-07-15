@@ -141,6 +141,14 @@
       <span class="field-label">URL do logotipo</span>
       <input class="input" id="c_logo" placeholder="https://...">
     </label>
+    <label class="field">
+      <span class="field-label">Segmento da Indústria</span>
+      <select class="input" id="c_segmento">
+        <option value="generico">Genérico</option>
+        <option value="plasticos">Indústria de Plásticos</option>
+      </select>
+      <p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 0;">Decide quais campos e telas específicas aparecem no módulo Produção (ex: Moldes, Cor/Masterbatch, Regrind).</p>
+    </label>
     <div class="row-2">
       <label class="field">
         <span class="field-label">Moeda</span>
@@ -214,6 +222,7 @@ async function carregar() {
     document.getElementById('c_logo').value = data.logo_url ?? '';
     document.getElementById('c_moeda').value = data.moeda ?? 'BRL';
     document.getElementById('c_ano_fiscal').value = data.ano_fiscal_inicio ?? 1;
+    document.getElementById('c_segmento').value = data.segmento_industria ?? 'generico';
   }
 }
 
@@ -225,6 +234,7 @@ document.getElementById('form-config').addEventListener('submit', async e => {
     logo_url: document.getElementById('c_logo').value || null,
     moeda: document.getElementById('c_moeda').value,
     ano_fiscal_inicio: Number(document.getElementById('c_ano_fiscal').value),
+    segmento_industria: document.getElementById('c_segmento').value,
   };
   const { error } = await supabase.from('configuracoes').upsert(payload, { onConflict: 'tenant_id' });
   if (error) { mostrarAviso('Erro ao salvar: ' + error.message, true); return; }

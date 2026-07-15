@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estoque — LivroCaixa ERP</title>
+<title>Moldes — LivroCaixa ERP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
@@ -20,9 +20,9 @@
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
         <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
-        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../producao/dashboard.html" class="sidebar-link active"><i data-lucide="factory"></i> Produção</a>
         <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
-        <a href="../estoque/dashboard.html" class="sidebar-link active"><i data-lucide="package"></i> Estoque</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
         <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
@@ -39,6 +39,10 @@
   <div class="app-main">
 <header class="topbar">
   <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>ERP</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--ink-soft);">Ordens de Produção</a></div>
+    <div class="nav-item active"><a href="moldes.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--accent);">Moldes</a></div>
+  </nav>
   <div class="topbar-right">
     <div class="user-chip" id="user-chip">
       <div class="avatar" id="user-avatar">--</div>
@@ -50,71 +54,50 @@
 <main class="page">
   <div class="page-header">
     <div>
-      <span class="eyebrow">Estoque</span>
-      <h1>Produtos</h1>
+      <span class="eyebrow">Produção · Plásticos</span>
+      <h1>Moldes</h1>
     </div>
-    <button class="btn primary" id="btn-novo">＋ Novo Produto</button>
+    <button class="btn primary" id="btn-novo">＋ Novo Molde</button>
   </div>
 
   <div class="toolbar">
     <input class="input" id="busca" placeholder="Buscar por código ou nome...">
-    <select class="input" id="f_tipo" style="max-width:190px;">
-      <option value="">Todos os tipos</option>
-      <option value="materia_prima">Matéria-Prima</option>
-      <option value="produto_acabado">Produto Acabado</option>
-      <option value="insumo">Insumo</option>
-    </select>
-    <span class="count-pill" id="contador">0 produtos</span>
+    <span class="count-pill" id="contador">0 moldes</span>
     <div class="spacer"></div>
   </div>
 
   <section class="card" style="padding:0; overflow:hidden;">
     <table>
       <thead>
-        <tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Unidade</th><th class="num">Saldo Atual</th><th class="num">Saldo Mínimo</th><th class="num">Ações</th></tr>
+        <tr><th>Código</th><th>Nome</th><th>Produto</th><th class="num">Cavidades</th><th>Máquina Compatível</th><th class="num">Ações</th></tr>
       </thead>
-      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
     </table>
   </section>
 </main>
   </div>
 </div>
 
-<!-- Modal: novo/editar produto -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
-    <h2 id="modal-titulo">Novo Produto</h2>
-    <div class="modal-sub">Preencha os campos abaixo.</div>
-    <form id="form-produto">
+    <h2 id="modal-titulo">Novo Molde</h2>
+    <div class="modal-sub">Cadastro de ferramenta/molde.</div>
+    <form id="form-molde">
       <div class="row-2">
         <label class="field"><span class="field-label">Código *</span><input class="input mono" id="f_codigo" required></label>
-        <label class="field"><span class="field-label">Unidade de Medida *</span>
-          <select class="input" id="f_unidade" required>
-            <option value="UN">UN — Unidade</option>
-            <option value="KG">KG — Quilograma</option>
-            <option value="M">M — Metro</option>
-            <option value="L">L — Litro</option>
-            <option value="PC">PC — Peça</option>
-          </select>
-        </label>
+        <label class="field"><span class="field-label">Nº de Cavidades</span><input class="input mono" type="number" min="1" id="f_cavidades" value="1"></label>
       </div>
       <label class="field"><span class="field-label">Nome *</span><input class="input" id="f_nome" required></label>
       <div class="row-2">
-        <label class="field"><span class="field-label">Tipo *</span>
-          <select class="input" id="f_tipo_produto" required>
-            <option value="">Selecione…</option>
-            <option value="materia_prima">Matéria-Prima</option>
-            <option value="produto_acabado">Produto Acabado</option>
-            <option value="insumo">Insumo</option>
-          </select>
-        </label>
-        <label class="field"><span class="field-label">Saldo Mínimo</span><input class="input mono" type="number" step="0.001" id="f_saldo_minimo"></label>
+        <label class="field"><span class="field-label">Produto que Fabrica</span><select class="input" id="f_produto"><option value="">Nenhum</option></select></label>
+        <label class="field"><span class="field-label">Máquina Compatível</span><input class="input" id="f_maquina"></label>
       </div>
+      <label class="field"><span class="field-label">Observações</span><textarea class="input" id="f_obs" style="min-height:70px; resize:vertical;"></textarea></label>
       <div class="checkbox-field"><input type="checkbox" id="f_ativo" checked><label for="f_ativo">Ativo</label></div>
     </form>
     <div class="modal-actions">
       <button class="btn ghost" type="button" id="btn-cancelar">Cancelar</button>
-      <button class="btn primary" type="submit" form="form-produto">Salvar</button>
+      <button class="btn primary" type="submit" form="form-molde">Salvar</button>
     </div>
   </div>
 </div>
@@ -135,41 +118,36 @@ document.getElementById('user-chip').addEventListener('click', async () => {
 });
 const TENANT_ID = usuario?.tenant_id;
 
-const ROTULO_TIPO = { materia_prima: 'Matéria-Prima', produto_acabado: 'Produto Acabado', insumo: 'Insumo' };
-let registros = [];
+const { data: produtos } = await supabase.from('produtos').select('id, codigo, nome').eq('ativo', true).order('codigo');
+document.getElementById('f_produto').innerHTML += (produtos||[]).map(p => `<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
 
+let registros = [];
 async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
-  const { data, error } = await supabase.from('produtos').select('*').order('codigo');
-  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+  const { data, error } = await supabase.from('moldes').select('*, produtos(codigo, nome)').order('codigo');
+  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
   registros = data || [];
   desenhar();
 }
 
 function desenhar() {
   const busca = document.getElementById('busca').value.trim().toLowerCase();
-  const tipo = document.getElementById('f_tipo').value;
-  let filtrados = registros;
-  if (tipo) filtrados = filtrados.filter(r => r.tipo === tipo);
-  if (busca) filtrados = filtrados.filter(r => JSON.stringify(r).toLowerCase().includes(busca));
-
-  document.getElementById('contador').textContent = `${filtrados.length} produto${filtrados.length===1?'':'s'}`;
-  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum produto encontrado.</td></tr>`; return; }
+  const filtrados = busca ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca)) : registros;
+  document.getElementById('contador').textContent = `${filtrados.length} molde${filtrados.length===1?'':'s'}`;
+  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum molde cadastrado.</td></tr>`; return; }
 
   document.getElementById('tbody').innerHTML = filtrados.map(r => `
     <tr>
       <td class="mono">${r.codigo}</td>
       <td>${r.nome}${!r.ativo ? ' <span class="badge inadimplente">Inativo</span>' : ''}</td>
-      <td>${ROTULO_TIPO[r.tipo] ?? r.tipo}</td>
-      <td>${r.unidade_medida}</td>
-      <td class="num mono ${r.saldo_minimo != null && Number(r.saldo_atual) < Number(r.saldo_minimo) ? 'valor negativo' : ''}">${Number(r.saldo_atual).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-      <td class="num mono">${r.saldo_minimo != null ? Number(r.saldo_minimo).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'}</td>
+      <td>${r.produtos ? r.produtos.codigo + ' — ' + r.produtos.nome : '-'}</td>
+      <td class="num mono">${r.numero_cavidades}</td>
+      <td>${r.maquina_compativel ?? '-'}</td>
       <td class="num"><button class="icon-btn" data-editar="${r.id}">Editar</button></td>
     </tr>`).join('');
 }
 
 document.getElementById('busca').addEventListener('input', desenhar);
-document.getElementById('f_tipo').addEventListener('change', desenhar);
 document.getElementById('tbody').addEventListener('click', e => {
   const id = e.target.dataset?.editar;
   if (id) abrirModal(registros.find(r => r.id === id));
@@ -179,13 +157,14 @@ const overlay = document.getElementById('modal-overlay');
 let editandoId = null;
 function abrirModal(registro = null) {
   editandoId = registro?.id ?? null;
-  document.getElementById('modal-titulo').textContent = registro ? 'Editar Produto' : 'Novo Produto';
-  document.getElementById('form-produto').reset();
+  document.getElementById('modal-titulo').textContent = registro ? 'Editar Molde' : 'Novo Molde';
+  document.getElementById('form-molde').reset();
   document.getElementById('f_codigo').value = registro?.codigo ?? '';
   document.getElementById('f_nome').value = registro?.nome ?? '';
-  document.getElementById('f_tipo_produto').value = registro?.tipo ?? '';
-  document.getElementById('f_unidade').value = registro?.unidade_medida ?? 'UN';
-  document.getElementById('f_saldo_minimo').value = registro?.saldo_minimo ?? '';
+  document.getElementById('f_cavidades').value = registro?.numero_cavidades ?? 1;
+  document.getElementById('f_produto').value = registro?.produto_id ?? '';
+  document.getElementById('f_maquina').value = registro?.maquina_compativel ?? '';
+  document.getElementById('f_obs').value = registro?.observacoes ?? '';
   document.getElementById('f_ativo').checked = registro?.ativo !== false;
   overlay.classList.add('open');
 }
@@ -193,18 +172,19 @@ document.getElementById('btn-novo').addEventListener('click', () => abrirModal()
 document.getElementById('btn-cancelar').addEventListener('click', () => overlay.classList.remove('open'));
 overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 
-document.getElementById('form-produto').addEventListener('submit', async e => {
+document.getElementById('form-molde').addEventListener('submit', async e => {
   e.preventDefault();
   const payload = {
     tenant_id: TENANT_ID,
     codigo: document.getElementById('f_codigo').value.trim(),
     nome: document.getElementById('f_nome').value.trim(),
-    tipo: document.getElementById('f_tipo_produto').value,
-    unidade_medida: document.getElementById('f_unidade').value,
-    saldo_minimo: document.getElementById('f_saldo_minimo').value ? Number(document.getElementById('f_saldo_minimo').value) : null,
+    numero_cavidades: Number(document.getElementById('f_cavidades').value || 1),
+    produto_id: document.getElementById('f_produto').value || null,
+    maquina_compativel: document.getElementById('f_maquina').value || null,
+    observacoes: document.getElementById('f_obs').value || null,
     ativo: document.getElementById('f_ativo').checked,
   };
-  const query = editandoId ? supabase.from('produtos').update(payload).eq('id', editandoId) : supabase.from('produtos').insert(payload);
+  const query = editandoId ? supabase.from('moldes').update(payload).eq('id', editandoId) : supabase.from('moldes').insert(payload);
   const { error } = await query;
   if (error) { alert('Erro ao salvar: ' + error.message); return; }
   overlay.classList.remove('open');

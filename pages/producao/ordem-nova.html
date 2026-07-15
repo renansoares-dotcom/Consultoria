@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordem de Produção — LivroCaixa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link active"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1000px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Nova Ordem de Produção</span>
+      </div>
+      <div class="janela-titulo-acoes"><a href="dashboard.html" class="janela-btn" title="Voltar">←</a></div>
+    </div>
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+      <div id="aviso-ok" class="card" style="display:none; border-color:var(--accent); background:var(--accent-soft); color:var(--accent); margin-bottom:16px; font-size:13px;"></div>
+
+      <div class="linha-flex">
+        <label class="field f-grow"><span class="field-label">Produto *</span><select class="input" id="f_produto" required></select></label>
+        <label class="field f-160"><span class="field-label">Quantidade Planejada *</span><input class="input mono" type="number" step="0.001" min="0.001" id="f_qtd_planejada" required></label>
+        <label class="field f-200"><span class="field-label">Grupo Empresarial</span><select class="input" id="f_grupo"></select></label>
+      </div>
+      <div class="linha-flex">
+        <label class="field f-160"><span class="field-label">Data de Abertura</span><input class="input" type="date" id="f_data_abertura"></label>
+        <label class="field f-160"><span class="field-label">Data Prevista</span><input class="input" type="date" id="f_data_prevista"></label>
+        <label class="field f-200"><span class="field-label">Status</span>
+          <select class="input" id="f_status">
+            <option value="planejada">Planejada</option>
+            <option value="em_andamento">Em Andamento</option>
+            <option value="concluida">Concluída</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </label>
+        <label class="field f-grow"><span class="field-label">Pedido de Venda Vinculado</span><input class="input" id="f_pedido_display" disabled placeholder="Nenhum (produção para estoque)"></label>
+      </div>
+
+      <div class="janela-secao" id="bloco-plasticos" style="display:none;">
+        <div class="label" style="margin-bottom:4px;">Detalhes do Processo — Plásticos</div>
+        <p style="color:var(--ink-soft); font-size:11.5px; margin:0 0 14px;">Esses campos aparecem porque o segmento da sua empresa está configurado como Indústria de Plásticos.</p>
+        <div class="linha-flex">
+          <label class="field f-grow"><span class="field-label">Molde</span><select class="input" id="f_molde"><option value="">Nenhum</option></select></label>
+          <label class="field f-260"><span class="field-label">Cor / Masterbatch</span><input class="input" id="f_cor" placeholder="Ex: Natural, Preto, RAL 9010"></label>
+          <label class="field f-160"><span class="field-label">Regrind (%)</span><input class="input mono" type="number" step="0.01" min="0" max="100" id="f_regrind"></label>
+        </div>
+      </div>
+
+      <label class="field"><span class="field-label">Observações</span><textarea class="input" id="f_obs" style="min-height:70px; resize:vertical;"></textarea></label>
+
+      <div class="modal-actions" style="margin-top:8px;">
+        <button class="btn primary" type="button" id="btn-salvar">Salvar Ordem</button>
+      </div>
+
+      <div class="janela-secao" id="bloco-apontamento" style="display:none; margin-top:8px;">
+        <div class="baixas-persistentes-titulo">
+          <div class="label" style="margin-bottom:0;">Apontamentos de Produção</div>
+          <div class="saldo-card">
+            <div class="item"><div style="font-size:11px; color:var(--ink-soft);">Produzido</div><div class="num valor positivo" id="resumo-produzida">0</div></div>
+            <div class="item"><div style="font-size:11px; color:var(--ink-soft);">Planejado</div><div class="num" id="resumo-planejada">0</div></div>
+          </div>
+        </div>
+
+        <div class="row-3" style="margin-bottom:12px;">
+          <label class="field"><span class="field-label">Quantidade Produzida *</span><input class="input mono" type="number" step="0.001" min="0.001" id="ap_quantidade"></label>
+          <label class="field"><span class="field-label">Refugo</span><input class="input mono" type="number" step="0.001" min="0" id="ap_refugo" value="0"></label>
+          <label class="field"><span class="field-label">Data</span><input class="input" type="date" id="ap_data"></label>
+        </div>
+        <div class="row-3" style="margin-bottom:12px;">
+          <label class="field"><span class="field-label">Turno</span>
+            <select class="input" id="ap_turno">
+              <option value="">Não informado</option>
+              <option value="1º Turno">1º Turno</option>
+              <option value="2º Turno">2º Turno</option>
+              <option value="3º Turno">3º Turno</option>
+            </select>
+          </label>
+          <label class="field" style="grid-column: span 2;"><span class="field-label">Observações</span><input class="input" id="ap_obs"></label>
+        </div>
+        <button type="button" class="btn ghost" id="btn-add-apontamento">＋ Registrar Apontamento</button>
+
+        <div class="baixas-tabela-wrap" style="margin-top:16px;">
+          <table style="font-size:12px;">
+            <thead><tr><th>Data</th><th>Turno</th><th class="num">Produzido</th><th class="num">Refugo</th><th>Observações</th></tr></thead>
+            <tbody id="tbody-apontamentos"><tr><td colspan="5" class="empty-state">Nenhum apontamento ainda.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+const fmt = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+function mostrarErro(msg) {
+  document.getElementById('aviso-ok').style.display = 'none';
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------- Segmento da indústria decide se mostra a camada Plásticos ----------
+const { data: config } = await supabase.from('configuracoes').select('segmento_industria').eq('tenant_id', TENANT_ID).maybeSingle();
+if (config?.segmento_industria === 'plasticos') {
+  document.getElementById('bloco-plasticos').style.display = 'block';
+  const { data: moldes } = await supabase.from('moldes').select('id, codigo, nome').eq('ativo', true).order('codigo');
+  document.getElementById('f_molde').innerHTML += (moldes||[]).map(m => `<option value="${m.id}">${m.codigo} — ${m.nome}</option>`).join('');
+}
+
+const { data: produtos } = await supabase.from('produtos').select('id, codigo, nome').eq('ativo', true).order('codigo');
+document.getElementById('f_produto').innerHTML = '<option value="">Selecione…</option>' + (produtos||[]).map(p => `<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+
+const { data: grupos } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+document.getElementById('f_grupo').innerHTML = '<option value="">Selecione…</option>' + (grupos||[]).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+
+document.getElementById('f_data_abertura').value = new Date().toISOString().slice(0,10);
+document.getElementById('ap_data').value = new Date().toISOString().slice(0,10);
+
+const params = new URLSearchParams(location.search);
+let idEdicao = params.get('id');
+
+async function carregarDados() {
+  if (!idEdicao) return;
+  document.getElementById('titulo-janela').textContent = 'Editar Ordem de Produção';
+  const { data: op, error } = await supabase.from('ordens_producao').select('*, pedidos_venda(numero_pedido, favorecidos(nome))').eq('id', idEdicao).single();
+  if (error || !op) { mostrarErro('Ordem não encontrada.'); return; }
+
+  document.getElementById('f_produto').value = op.produto_id;
+  document.getElementById('f_qtd_planejada').value = op.quantidade_planejada;
+  document.getElementById('f_grupo').value = op.grupo_empresarial_id ?? '';
+  document.getElementById('f_data_abertura').value = op.data_abertura;
+  document.getElementById('f_data_prevista').value = op.data_prevista ?? '';
+  document.getElementById('f_status').value = op.status;
+  document.getElementById('f_obs').value = op.observacoes ?? '';
+  document.getElementById('f_molde').value = op.molde_id ?? '';
+  document.getElementById('f_cor').value = op.cor_masterbatch ?? '';
+  document.getElementById('f_regrind').value = op.percentual_regrind ?? '';
+  if (op.pedidos_venda) {
+    document.getElementById('f_pedido_display').value = `${op.pedidos_venda.numero_pedido ?? ''} — ${op.pedidos_venda.favorecidos?.nome ?? ''}`;
+  }
+
+  document.getElementById('resumo-produzida').textContent = fmt(op.quantidade_produzida);
+  document.getElementById('resumo-planejada').textContent = fmt(op.quantidade_planejada);
+  document.getElementById('bloco-apontamento').style.display = 'block';
+  await carregarApontamentos();
+}
+await carregarDados();
+
+async function carregarApontamentos() {
+  const { data } = await supabase.from('apontamentos_producao').select('*').eq('ordem_producao_id', idEdicao).order('data', { ascending: false });
+  const tbody = document.getElementById('tbody-apontamentos');
+  if (!data || !data.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhum apontamento ainda.</td></tr>`; return; }
+  tbody.innerHTML = data.map(a => `
+    <tr>
+      <td>${new Date(a.data+'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td>${a.turno ?? '-'}</td>
+      <td class="num mono valor positivo">${fmt(a.quantidade)}</td>
+      <td class="num mono ${a.quantidade_refugo>0?'valor negativo':''}">${fmt(a.quantidade_refugo)}</td>
+      <td>${a.observacoes ?? '-'}</td>
+    </tr>`).join('');
+}
+
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  document.getElementById('aviso-erro').style.display = 'none';
+  const produtoId = document.getElementById('f_produto').value;
+  const qtd = document.getElementById('f_qtd_planejada').value;
+  if (!produtoId) { mostrarErro('Selecione o Produto.'); return; }
+  if (!qtd || Number(qtd) <= 0) { mostrarErro('Informe a Quantidade Planejada.'); return; }
+
+  const payload = {
+    tenant_id: TENANT_ID,
+    grupo_empresarial_id: document.getElementById('f_grupo').value || null,
+    produto_id: produtoId,
+    quantidade_planejada: Number(qtd),
+    data_abertura: document.getElementById('f_data_abertura').value || new Date().toISOString().slice(0,10),
+    data_prevista: document.getElementById('f_data_prevista').value || null,
+    status: document.getElementById('f_status').value,
+    observacoes: document.getElementById('f_obs').value || null,
+    molde_id: document.getElementById('f_molde').value || null,
+    cor_masterbatch: document.getElementById('f_cor').value || null,
+    percentual_regrind: document.getElementById('f_regrind').value ? Number(document.getElementById('f_regrind').value) : null,
+    criado_por: usuario?.id || null,
+  };
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  if (idEdicao) {
+    const { error } = await supabase.from('ordens_producao').update(payload).eq('id', idEdicao);
+    btn.disabled = false; btn.textContent = 'Salvar Ordem';
+    if (error) { mostrarErro('Erro ao salvar: ' + error.message); return; }
+    document.getElementById('aviso-ok').style.display = 'block';
+    document.getElementById('aviso-ok').textContent = 'Ordem atualizada com sucesso.';
+  } else {
+    const { data, error } = await supabase.from('ordens_producao').insert(payload).select('id').single();
+    btn.disabled = false; btn.textContent = 'Salvar Ordem';
+    if (error) { mostrarErro('Erro ao salvar: ' + error.message); return; }
+    idEdicao = data.id;
+    history.replaceState(null, '', `?id=${idEdicao}`);
+    document.getElementById('titulo-janela').textContent = 'Editar Ordem de Produção';
+    document.getElementById('bloco-apontamento').style.display = 'block';
+    document.getElementById('resumo-produzida').textContent = '0';
+    document.getElementById('resumo-planejada').textContent = fmt(qtd);
+    document.getElementById('aviso-ok').style.display = 'block';
+    document.getElementById('aviso-ok').textContent = 'Ordem criada! Agora você já pode registrar apontamentos de produção abaixo.';
+    window.scrollTo({ top: document.getElementById('bloco-apontamento').offsetTop - 100, behavior: 'smooth' });
+  }
+});
+
+document.getElementById('btn-add-apontamento').addEventListener('click', async () => {
+  if (!idEdicao) return;
+  const quantidade = Number(document.getElementById('ap_quantidade').value || 0);
+  if (quantidade <= 0) { mostrarErro('Informe a Quantidade Produzida do apontamento.'); return; }
+
+  const btn = document.getElementById('btn-add-apontamento');
+  btn.disabled = true; btn.textContent = 'Registrando…';
+
+  const { error } = await supabase.from('apontamentos_producao').insert({
+    tenant_id: TENANT_ID,
+    ordem_producao_id: idEdicao,
+    quantidade,
+    quantidade_refugo: Number(document.getElementById('ap_refugo').value || 0),
+    data: document.getElementById('ap_data').value || new Date().toISOString().slice(0,10),
+    turno: document.getElementById('ap_turno').value || null,
+    observacoes: document.getElementById('ap_obs').value || null,
+    criado_por: usuario?.id || null,
+  });
+
+  btn.disabled = false; btn.textContent = '＋ Registrar Apontamento';
+  if (error) { mostrarErro('Erro ao registrar apontamento: ' + error.message); return; }
+
+  document.getElementById('ap_quantidade').value = '';
+  document.getElementById('ap_refugo').value = '0';
+  document.getElementById('ap_obs').value = '';
+  await carregarApontamentos();
+  await carregarDados();
+});
+</script>
+</body>
+</html>

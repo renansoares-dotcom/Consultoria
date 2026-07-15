@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedido de Venda — LivroCaixa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">L</div>
+      <div class="name">LivroCaixa<small>ERP</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link active"><i data-lucide="trending-up"></i> Vendas</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1000px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Novo Pedido de Venda</span>
+      </div>
+      <div class="janela-titulo-acoes"><a href="dashboard.html" class="janela-btn" title="Voltar">←</a></div>
+    </div>
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+      <div class="linha-flex">
+        <label class="field f-160"><span class="field-label">Nº do Pedido</span><input class="input" id="f_numero" placeholder="Automático se vazio"></label>
+        <label class="field f-grow"><span class="field-label">Cliente *</span><select class="input" id="f_cliente" required></select></label>
+        <label class="field f-200"><span class="field-label">Grupo Empresarial</span><select class="input" id="f_grupo"></select></label>
+      </div>
+      <div class="linha-flex">
+        <label class="field f-160"><span class="field-label">Data do Pedido *</span><input class="input" type="date" id="f_data" required></label>
+        <label class="field f-160"><span class="field-label">Entrega Prevista</span><input class="input" type="date" id="f_entrega"></label>
+        <label class="field f-200"><span class="field-label">Status</span>
+          <select class="input" id="f_status">
+            <option value="aberto">Aberto</option>
+            <option value="em_producao">Em Produção</option>
+            <option value="faturado">Faturado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="janela-secao">
+        <div class="label" style="margin-bottom:10px;">Itens do Pedido</div>
+        <div id="itens-linhas"></div>
+        <button type="button" class="btn ghost" id="btn-add-item">＋ Adicionar item</button>
+        <div class="dist-total ok" id="itens-total">Total: R$ 0,00</div>
+      </div>
+
+      <label class="field"><span class="field-label">Observações</span><textarea class="input" id="f_obs" style="min-height:70px; resize:vertical;"></textarea></label>
+
+      <div class="modal-actions" style="margin-top:18px;">
+        <button class="btn primary" type="button" id="btn-salvar">Salvar Pedido</button>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+const { data: clientes } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'clientes').eq('ativo', true).order('nome');
+document.getElementById('f_cliente').innerHTML = '<option value="">Selecione…</option>' + (clientes||[]).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+const { data: grupos } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+document.getElementById('f_grupo').innerHTML = '<option value="">Selecione…</option>' + (grupos||[]).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+
+let produtosCache = [];
+{
+  const { data } = await supabase.from('produtos').select('id, codigo, nome, unidade_medida').eq('ativo', true).order('codigo');
+  produtosCache = data || [];
+}
+
+document.getElementById('f_data').value = new Date().toISOString().slice(0,10);
+
+let itens = [];
+function renderItens() {
+  document.getElementById('itens-linhas').innerHTML = itens.map((it, i) => `
+    <div class="linha-flex" style="align-items:flex-end; margin-bottom:10px;">
+      <label class="field f-grow"><span class="field-label">Produto</span>
+        <select class="input item-produto" data-i="${i}">
+          <option value="">Selecione…</option>
+          ${produtosCache.map(p => `<option value="${p.id}" ${p.id===it.produto_id?'selected':''}>${p.codigo} — ${p.nome}</option>`).join('')}
+        </select>
+      </label>
+      <label class="field f-130"><span class="field-label">Quantidade</span><input class="input mono item-qtd" data-i="${i}" type="number" step="0.001" min="0" value="${it.quantidade||''}"></label>
+      <label class="field f-160"><span class="field-label">Valor Unitário (R$)</span><input class="input mono item-valor" data-i="${i}" type="number" step="0.0001" min="0" value="${it.valor_unitario||''}"></label>
+      <span style="min-width:120px; text-align:right; font-family:var(--font-mono); font-weight:600;">${fmt(Number(it.quantidade||0)*Number(it.valor_unitario||0))}</span>
+      <button type="button" class="icon-btn danger item-remover" data-i="${i}">✕</button>
+    </div>`).join('');
+
+  const total = itens.reduce((s,it) => s + Number(it.quantidade||0)*Number(it.valor_unitario||0), 0);
+  document.getElementById('itens-total').textContent = `Total: ${fmt(total)}`;
+}
+document.getElementById('btn-add-item').addEventListener('click', () => { itens.push({ produto_id:'', quantidade:'', valor_unitario:'' }); renderItens(); });
+document.getElementById('itens-linhas').addEventListener('change', e => {
+  const i = e.target.dataset.i; if (i === undefined) return;
+  if (e.target.classList.contains('item-produto')) itens[i].produto_id = e.target.value;
+  if (e.target.classList.contains('item-qtd')) itens[i].quantidade = e.target.value;
+  if (e.target.classList.contains('item-valor')) itens[i].valor_unitario = e.target.value;
+  renderItens();
+});
+document.getElementById('itens-linhas').addEventListener('click', e => {
+  if (e.target.classList.contains('item-remover')) { itens.splice(e.target.dataset.i, 1); renderItens(); }
+});
+renderItens();
+
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+if (idEdicao) {
+  document.getElementById('titulo-janela').textContent = 'Editar Pedido de Venda';
+  const { data: p } = await supabase.from('pedidos_venda').select('*, pedido_venda_itens(*)').eq('id', idEdicao).single();
+  if (p) {
+    document.getElementById('f_numero').value = p.numero_pedido ?? '';
+    document.getElementById('f_cliente').value = p.cliente_id ?? '';
+    document.getElementById('f_grupo').value = p.grupo_empresarial_id ?? '';
+    document.getElementById('f_data').value = p.data_pedido;
+    document.getElementById('f_entrega').value = p.data_entrega_prevista ?? '';
+    document.getElementById('f_status').value = p.status;
+    document.getElementById('f_obs').value = p.observacoes ?? '';
+    itens = (p.pedido_venda_itens || []).map(i => ({ id: i.id, produto_id: i.produto_id, quantidade: i.quantidade, valor_unitario: i.valor_unitario }));
+    renderItens();
+  }
+}
+
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  document.getElementById('aviso-erro').style.display = 'none';
+  const clienteId = document.getElementById('f_cliente').value;
+  if (!clienteId) { mostrarErro('Selecione o Cliente.'); return; }
+  const itensValidos = itens.filter(it => it.produto_id && Number(it.quantidade) > 0);
+  if (!itensValidos.length) { mostrarErro('Adicione ao menos um item com produto e quantidade.'); return; }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const payload = {
+    tenant_id: TENANT_ID,
+    grupo_empresarial_id: document.getElementById('f_grupo').value || null,
+    numero_pedido: document.getElementById('f_numero').value || null,
+    cliente_id: clienteId,
+    data_pedido: document.getElementById('f_data').value,
+    data_entrega_prevista: document.getElementById('f_entrega').value || null,
+    status: document.getElementById('f_status').value,
+    observacoes: document.getElementById('f_obs').value || null,
+    criado_por: usuario?.id || null,
+  };
+
+  try {
+    let pedidoId = idEdicao;
+    if (idEdicao) {
+      const { error } = await supabase.from('pedidos_venda').update(payload).eq('id', idEdicao);
+      if (error) throw error;
+      await supabase.from('pedido_venda_itens').delete().eq('pedido_venda_id', idEdicao);
+    } else {
+      const { data, error } = await supabase.from('pedidos_venda').insert(payload).select('id').single();
+      if (error) throw error;
+      pedidoId = data.id;
+    }
+
+    for (const it of itensValidos) {
+      const { error } = await supabase.from('pedido_venda_itens').insert({
+        tenant_id: TENANT_ID, pedido_venda_id: pedidoId, produto_id: it.produto_id,
+        quantidade: Number(it.quantidade), valor_unitario: Number(it.valor_unitario || 0),
+      });
+      if (error) throw error;
+    }
+
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Salvar Pedido';
+    mostrarErro('Erro ao salvar: ' + (err.message || JSON.stringify(err)));
+  }
+});
+</script>
+</body>
+</html>

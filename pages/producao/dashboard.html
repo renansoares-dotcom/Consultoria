@@ -37,51 +37,110 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="topbar">
-      <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>ERP</small></div>
-      <div class="topbar-right">
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
-      </div>
-    </header>
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>ERP</small></div>
+  <nav class="nav-cascade">
+    <div class="nav-item active"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--accent);">Ordens de Produção</a></div>
+    <div class="nav-item"><a href="moldes.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--ink-soft);">Moldes</a></div>
+  </nav>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
 
-    <main class="page">
-      <div class="page-header">
-        <div>
-          <span class="eyebrow">Módulo</span>
-          <h1>Produção</h1>
-        </div>
-      </div>
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Produção</span>
+      <h1>Ordens de Produção</h1>
+    </div>
+    <a href="ordem-nova.html" class="btn primary">＋ Nova Ordem</a>
+  </div>
 
-      <section class="card" style="padding:64px 40px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-          <i data-lucide="factory" style="width:26px; height:26px;"></i>
-        </div>
-        <h2 style="font-size:18px; margin-bottom:8px;">Módulo em construção</h2>
-        <p style="color:var(--ink-soft); font-size:13.5px; max-width:420px; margin:0 auto;">
-          A estrutura de navegação de Produção já está pronta. As telas e a lógica de negócio deste módulo entram nas próximas etapas.
-        </p>
-      </section>
-    </main>
+  <div class="toolbar">
+    <input class="input" id="busca" placeholder="Buscar por produto ou pedido...">
+    <select class="input" id="f_status" style="max-width:180px;">
+      <option value="">Status: todos</option>
+      <option value="planejada">Planejada</option>
+      <option value="em_andamento">Em Andamento</option>
+      <option value="concluida">Concluída</option>
+      <option value="cancelada">Cancelada</option>
+    </select>
+    <span class="count-pill" id="contador">0 ordens</span>
+    <div class="spacer"></div>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Abertura</th><th>Produto</th><th>Pedido Vinculado</th>
+          <th class="num">Planejada</th><th class="num">Produzida</th><th>Status</th><th class="num">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
   </div>
 </div>
 
 <script type="module">
-  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
-  import { initNav } from '../../js/nav.js';
-  initNav();
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
 
-  const sessao = await exigirSessao();
-  const usuario = await usuarioAtual();
-  if (usuario) {
-    document.getElementById('user-nome').textContent = usuario.nome;
-    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  }
-  document.getElementById('user-chip').addEventListener('click', async () => {
-    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
-  });
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+const fmt = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const ROTULO_STATUS = { planejada: 'Planejada', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
+const CLASSE_STATUS = { planejada: 'aberto', em_andamento: 'parcial', concluida: 'pago', cancelada: 'inadimplente' };
+
+let registros = [];
+
+async function carregar() {
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+  let query = supabase.from('ordens_producao').select('id, numero_op, data_abertura, quantidade_planejada, quantidade_produzida, status, produtos(codigo, nome), pedidos_venda(numero_pedido)').order('data_abertura', { ascending: false });
+  const status = document.getElementById('f_status').value;
+  if (status) query = query.eq('status', status);
+  const { data, error } = await query;
+  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+  registros = data || [];
+  desenhar();
+}
+
+function desenhar() {
+  const busca = document.getElementById('busca').value.trim().toLowerCase();
+  const filtrados = busca ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca)) : registros;
+  document.getElementById('contador').textContent = `${filtrados.length} ordem${filtrados.length===1?'':'s'}`;
+  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma ordem encontrada. <a href="ordem-nova.html">Criar a primeira</a>.</td></tr>`; return; }
+
+  document.getElementById('tbody').innerHTML = filtrados.map(r => `
+    <tr>
+      <td>${new Date(r.data_abertura+'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td>${r.produtos?.codigo ?? ''} — ${r.produtos?.nome ?? '-'}</td>
+      <td>${r.pedidos_venda?.numero_pedido ?? '-'}</td>
+      <td class="num mono">${fmt(r.quantidade_planejada)}</td>
+      <td class="num mono">${fmt(r.quantidade_produzida)}</td>
+      <td><span class="badge ${CLASSE_STATUS[r.status]}">${ROTULO_STATUS[r.status]}</span></td>
+      <td class="num"><a href="ordem-nova.html?id=${r.id}" class="icon-btn">Abrir</a></td>
+    </tr>`).join('');
+}
+
+document.getElementById('busca').addEventListener('input', desenhar);
+document.getElementById('f_status').addEventListener('change', carregar);
+await carregar();
 </script>
 </body>
 </html>
