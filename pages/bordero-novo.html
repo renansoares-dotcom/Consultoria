@@ -33,6 +33,7 @@
       <div class="nav-panel">
         <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
         <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
         <span class="group-label">Operações especiais</span>
         <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
         <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
@@ -223,6 +224,17 @@
               <input class="input mono" type="number" step="0.01" min="0" id="f_valor_pago_cedente" placeholder="0,00" required style="font-weight:700; color:var(--accent);" title="É este valor que efetivamente cai na conta bancária.">
             </label>
             <button type="button" class="btn ghost" id="btn-recalcular" style="align-self:flex-end;">↻ Recalcular</button>
+          </div>
+
+          <div class="linha-flex">
+            <label class="field f-160">
+              <span class="field-label">Prazo Médio (dias)</span>
+              <input class="input mono" type="number" step="0.1" id="f_prazo_medio_dias" placeholder="0,0" readonly title="Prazo médio dos títulos, ponderado pelo valor de cada um.">
+            </label>
+            <label class="field f-200">
+              <span class="field-label">Deságio Efetivo (% ao mês)</span>
+              <input class="input mono" type="number" step="0.001" id="f_taxa_desagio_mensal_efetiva" placeholder="0,000" readonly title="Taxa normalizada para % ao mês, considerando o prazo médio — permite comparar operações com prazos diferentes.">
+            </label>
           </div>
         </div>
 
@@ -687,6 +699,14 @@ function calcularCustosPorPrazo() {
   document.getElementById('f_taxa_comissao').value = somaFace ? (somaComissao / somaFace * 100).toFixed(3) : '';
   document.getElementById('f_taxa_retencao').value = liquidoOperacao ? (somaRetencao / liquidoOperacao * 100).toFixed(3) : '';
 
+  // Prazo médio (ponderado pelo valor de cada título) e deságio normalizado a % ao mês —
+  // permite comparar operações com prazos diferentes de forma justa.
+  const somaDiasPonderado = selecionados.reduce((s,t) => s + diasPorTitulo[t.id] * t.saldo_aberto, 0);
+  const prazoMedioDias = somaFace ? somaDiasPonderado / somaFace : 0;
+  const taxaDesagioMensalEfetiva = (prazoMedioDias > 0 && somaFace) ? (somaDesagio / somaFace) / prazoMedioDias * 30 * 100 : 0;
+  document.getElementById('f_prazo_medio_dias').value = prazoMedioDias.toFixed(1);
+  document.getElementById('f_taxa_desagio_mensal_efetiva').value = taxaDesagioMensalEfetiva.toFixed(3);
+
   const ajuste = Number(document.getElementById('c_ajuste').value || 0);
   document.getElementById('f_ajuste').value = ajuste.toFixed(2);
   const valorFinal = Math.max(0, valorPagoCedenteCalculado + ajuste);
@@ -722,6 +742,25 @@ document.getElementById('btn-calcular-custos').addEventListener('click', calcula
 });
 
 await carregarTitulos();
+
+// ---------- Pré-seleção vinda de "Todos os Lançamentos" (Criar Borderô com Selecionados) ----------
+{
+  const preSelecionados = sessionStorage.getItem('bordero_titulos_preselecionados');
+  if (preSelecionados) {
+    sessionStorage.removeItem('bordero_titulos_preselecionados');
+    try {
+      const ids = JSON.parse(preSelecionados);
+      ids.forEach(id => { if (titulosDisponiveis.some(t => t.id === id)) titulosSelecionados.add(id); });
+      if (titulosSelecionados.size) {
+        desenharTitulos();
+        atualizarResumoTitulos();
+        document.querySelectorAll('.subnav button').forEach(b => b.classList.remove('active'));
+        document.querySelector('.subnav button[data-tab="titulos"]').classList.add('active');
+        ['dados','titulos','transferencias'].forEach(t => document.getElementById('tab-'+t).style.display = (t === 'titulos' ? 'block' : 'none'));
+      }
+    } catch (err) { /* ignora pré-seleção inválida */ }
+  }
+}
 
 // ============================================================================
 // IMPORTAÇÃO EM LOTE (XMLs múltiplos ou planilha CSV/Excel)
@@ -1077,6 +1116,8 @@ async function salvarBorderoPrincipal() {
       taxa_retencao: Number(document.getElementById('f_taxa_retencao').value || 0) || null,
       valor_retencao: valorRetencao,
       ajuste_valor_final: Number(document.getElementById('f_ajuste').value || 0),
+      prazo_medio_dias: Number(document.getElementById('f_prazo_medio_dias').value || 0) || null,
+      taxa_desagio_mensal_efetiva: Number(document.getElementById('f_taxa_desagio_mensal_efetiva').value || 0) || null,
       valor_pago_cedente: valorPagoCedente,
       conta_bancaria_id: contaRecebimento,
       observacoes: document.getElementById('f_obs').value || null,

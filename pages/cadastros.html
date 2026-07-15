@@ -33,6 +33,7 @@
         <span class="group-label">Movimentação</span>
         <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
         <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
         <span class="group-label">Operações especiais</span>
         <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
         <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
@@ -237,6 +238,8 @@ const ENTIDADES = {
       { nome: 'forma_pagamento', label: 'Forma de Pagamento', tipo: 'text' },
       { nome: 'dados_bancarios', label: 'Dados Bancários', tipo: 'text' },
       { nome: 'periodicidade', label: 'Periodicidade', tipo: 'text' },
+      { nome: 'conta_bancaria_padrao_id', label: 'Conta Bancária Padrão', tipo: 'select-remoto', tabelaRef: 'contas_bancarias', obrigatorio: false },
+      { nome: 'centro_custo_padrao_id', label: 'Centro de Custo Padrão', tipo: 'select-remoto', tabelaRef: 'centros_custo', obrigatorio: false },
       { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
     ],
   },

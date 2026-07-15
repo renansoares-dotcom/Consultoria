@@ -30,6 +30,7 @@
         <span class="group-label">Movimentação</span>
         <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
         <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
         <span class="group-label">Operações especiais</span>
         <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
         <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
@@ -126,6 +127,7 @@
   <div class="toolbar" id="barra-selecao" style="display:none; background:var(--ledger); color:#fff; border-radius:var(--radius-md); padding:10px 14px; margin-bottom:10px;">
     <span id="contador-selecao" style="font-size:13px; font-weight:600;">0 selecionado(s)</span>
     <div class="spacer"></div>
+    <button class="btn" id="btn-criar-bordero" style="background:var(--accent); padding:8px 14px;">📑 Criar Borderô com Selecionados</button>
     <button class="btn" id="btn-excluir-selecionados" style="background:var(--red); padding:8px 14px;">🗑 Excluir selecionados</button>
     <button class="btn ghost" id="btn-limpar-selecao" style="border-color:rgba(255,255,255,.3); color:#fff; padding:8px 14px;">Cancelar</button>
   </div>
@@ -355,6 +357,26 @@ document.getElementById('chk-selecionar-todos').addEventListener('change', e => 
 document.getElementById('btn-limpar-selecao').addEventListener('click', () => {
   document.querySelectorAll('.chk-linha').forEach(chk => { chk.checked = false; });
   atualizarBarraSelecao();
+});
+
+document.getElementById('btn-criar-bordero').addEventListener('click', () => {
+  const ids = [...document.querySelectorAll('.chk-linha:checked')].map(chk => chk.value);
+  if (!ids.length) return;
+
+  const selecionados = lancamentos.filter(l => ids.includes(l.id));
+  const validos = selecionados.filter(l => l.plano_contas?.tipo === 'entrada' && (l.status === 'em_aberto' || l.status === 'parcial'));
+  const invalidos = selecionados.length - validos.length;
+
+  if (!validos.length) {
+    alert('Nenhum dos lançamentos selecionados é uma Conta a Receber em aberto — só esse tipo pode virar um Borderô de Antecipação.');
+    return;
+  }
+  if (invalidos > 0) {
+    if (!confirm(`${invalidos} dos selecionados não são Contas a Receber em aberto e serão ignorados. Continuar com os outros ${validos.length}?`)) return;
+  }
+
+  sessionStorage.setItem('bordero_titulos_preselecionados', JSON.stringify(validos.map(l => l.id)));
+  window.location.href = 'bordero-novo.html';
 });
 
 document.getElementById('btn-excluir-selecionados').addEventListener('click', async () => {

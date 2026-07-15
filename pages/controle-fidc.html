@@ -34,6 +34,7 @@
       <div class="nav-panel">
         <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
         <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
         <span class="group-label">Operações especiais</span>
         <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
         <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
@@ -90,13 +91,17 @@
   <div class="page-header">
     <div>
       <span class="eyebrow">Operações especiais</span>
-      <h1>Controle FIDC/Factoring</h1>
+      <h1 style="display:flex; align-items:center; gap:8px;">
+        Controle FIDC/Factoring
+        <span class="menu-acoes" id="ajuda-fidc">
+          <button type="button" class="menu-acoes-btn" id="btn-ajuda-fidc" title="Como funciona" style="width:24px; height:24px; padding:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:13px; vertical-align:middle;">?</button>
+          <div class="menu-acoes-lista" style="min-width:360px; padding:14px; font-size:12px; font-weight:400; line-height:1.65; color:var(--ink-soft); right:auto; left:0;">
+            Quando um título é antecipado, o dinheiro já entrou na sua conta (isso já está no seu Fluxo de Caixa). Mas para o FIDC/Factoring, o título só quita de verdade quando o <strong>sacado</strong> paga na data de vencimento — até lá, você segue <strong>coobrigado</strong>: se o sacado não pagar, você é obrigado a recomprar o título. Esta tela controla esse risco, <strong>sem alterar seu fluxo de caixa</strong> (a única exceção é marcar "Recomprado", que gera uma saída real).
+          </div>
+        </span>
+      </h1>
     </div>
   </div>
-
-  <p style="color:var(--ink-soft); font-size:12.5px; margin:-8px 0 18px; max-width:820px;">
-    Quando um título é antecipado, o dinheiro já entrou na sua conta (isso já está no seu Fluxo de Caixa). Mas para o FIDC/Factoring, o título só quita de verdade quando o <strong>sacado</strong> paga na data de vencimento — até lá, você segue <strong>coobrigado</strong>: se o sacado não pagar, você é obrigado a recomprar o título. Esta tela controla esse risco, <strong>sem alterar seu fluxo de caixa</strong> (a única exceção é marcar "Recomprado", que gera uma saída real).
-  </p>
 
   <section class="grid grid-4" style="margin-bottom:16px;">
     <div class="card"><div class="label">Pendentes (em risco)</div><div class="big valor aberto" id="kpi-pendente-qtd">0</div><div style="font-size:11px; color:var(--ink-soft); margin-top:4px;"><span id="kpi-pendente-valor" class="mono">R$ 0,00</span></div></div>
@@ -289,6 +294,12 @@ function desenhar() {
 document.getElementById('busca').addEventListener('input', desenhar);
 document.getElementById('f_situacao').addEventListener('change', carregar);
 document.getElementById('f_fidc').addEventListener('change', carregar);
+
+// ---------- Popover de ajuda ----------
+const ajudaFidc = document.getElementById('ajuda-fidc');
+document.getElementById('btn-ajuda-fidc').addEventListener('click', e => { e.stopPropagation(); ajudaFidc.classList.toggle('open'); });
+document.addEventListener('click', () => ajudaFidc.classList.remove('open'));
+ajudaFidc.querySelector('.menu-acoes-lista').addEventListener('click', e => e.stopPropagation());
 
 // ---------- Seleção em lote ----------
 function atualizarBarraSelecaoFidc() {

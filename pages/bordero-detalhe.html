@@ -207,6 +207,8 @@ function renderDocumento(b, configuracoes, titulos, transferencias) {
     <div class="doc-secao-titulo">Demonstrativo da Operação</div>
     <div class="demonstrativo">
       <div class="rotulo">Número de Títulos</div><div class="valor">${titulos.length || '—'}</div>
+      ${b.prazo_medio_dias ? `<div class="rotulo">Prazo Médio (ponderado)</div><div class="valor">${Number(b.prazo_medio_dias).toLocaleString('pt-BR',{maximumFractionDigits:1})} dias</div>` : ''}
+      ${b.taxa_desagio_mensal_efetiva ? `<div class="rotulo">Deságio Efetivo</div><div class="valor">${Number(b.taxa_desagio_mensal_efetiva).toLocaleString('pt-BR',{maximumFractionDigits:3})}% ao mês</div>` : ''}
       <div class="rotulo">Valor Total dos Títulos (Face)</div><div class="valor">${fmt(b.valor_face)}</div>
       <div class="rotulo linha-desconto">Deságio / Fator de Compra ${b.taxa_desagio ? `(${Number(b.taxa_desagio).toLocaleString('pt-BR',{maximumFractionDigits:3})}%)` : ''}</div><div class="valor linha-desconto">− ${fmt(b.valor_desagio)}</div>
       <div class="rotulo linha-desconto">Comissão de Prestação de Serviço ${b.taxa_comissao ? `(${Number(b.taxa_comissao).toLocaleString('pt-BR',{maximumFractionDigits:3})}%)` : ''}</div><div class="valor linha-desconto">− ${fmt(b.valor_comissao)}</div>
