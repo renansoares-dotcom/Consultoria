@@ -98,7 +98,10 @@
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
 
     if (error) {
-      erroBox.textContent = 'E-mail ou senha inválidos. Verifique e tente novamente.';
+      console.error('Erro de login Supabase:', error);
+      erroBox.textContent = error.message === 'Invalid login credentials'
+        ? 'E-mail ou senha inválidos. Verifique e tente novamente.'
+        : `Erro: ${error.message}`;
       erroBox.style.display = 'block';
       btn.textContent = 'Entrar';
       btn.disabled = false;
