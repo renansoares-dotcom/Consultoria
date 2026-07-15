@@ -11,90 +11,90 @@
 </head>
 <body>
 
-<div class="app-shell">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <div class="mark">L</div>
-      <div class="name">LivroCaixa<small>CONSULTORIA</small></div>
-    </div>
+<header class="topbar">
+  <div class="brand">Livro<span style="color:var(--accent)">Caixa</span><small>CONSULTORIA</small></div>
 
-    <div class="sidebar-scroll">
-      <nav class="sidebar-nav">
-        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="layout-dashboard"></i> Início</a>
-
-        <div class="sidebar-group-label">Cadastros</div>
-        <div class="sidebar-group">
-          <a href="cadastros.html#plano_contas" class="sidebar-link"><i data-lucide="list-tree"></i> Plano de Contas</a>
-          <a href="cadastros.html#grupos_empresariais" class="sidebar-link"><i data-lucide="building-2"></i> Grupos Empresariais</a>
-          <a href="cadastros.html#contas_bancarias" class="sidebar-link"><i data-lucide="landmark"></i> Contas Bancárias</a>
-          <a href="cadastros.html#centros_custo" class="sidebar-link"><i data-lucide="tags"></i> Centros de Custo</a>
-          <a href="cadastros.html#favorecidos" class="sidebar-link"><i data-lucide="users"></i> Favorecidos</a>
-        </div>
-
-        <div class="sidebar-group-label">Lançamentos</div>
-        <div class="sidebar-group">
-          <a href="lancamento-novo.html" class="sidebar-link"><i data-lucide="plus-circle"></i> Novo lançamento</a>
-          <a href="lancamentos.html" class="sidebar-link"><i data-lucide="list"></i> Todos os lançamentos</a>
-          <a href="importar-notas.html" class="sidebar-link"><i data-lucide="file-input"></i> Importar Notas (XML)</a>
-          <a href="bordero-novo.html" class="sidebar-link"><i data-lucide="banknote"></i> Novo Borderô</a>
-          <a href="borderos.html" class="sidebar-link"><i data-lucide="layers"></i> Borderôs lançados</a>
-          <a href="controle-fidc.html" class="sidebar-link"><i data-lucide="shield-alert"></i> Controle FIDC/Factoring</a>
-        </div>
-
-        <div class="sidebar-group-label">Relatórios</div>
-        <div class="sidebar-group">
-          <a href="fluxo-diario.html" class="sidebar-link"><i data-lucide="calendar-days"></i> Fluxo Diário</a>
-          <a href="fluxo-mensal.html" class="sidebar-link"><i data-lucide="calendar-range"></i> Fluxo Mensal</a>
-          <a href="relatorio-contas.html" class="sidebar-link"><i data-lucide="landmark"></i> Por Conta Bancária</a>
-          <a href="relatorio-favorecidos.html" class="sidebar-link"><i data-lucide="users"></i> Por Favorecido</a>
-          <a href="relatorio-borderos.html" class="sidebar-link"><i data-lucide="bar-chart-3"></i> Borderôs (Antecipação)</a>
-          <a href="comparativo-orcamento.html" class="sidebar-link"><i data-lucide="target"></i> Taxa de Realização</a>
-        </div>
-
-        <div class="sidebar-group-label">Contas a Receber/Pagar</div>
-        <div class="sidebar-group">
-          <a href="necessidade-caixa.html" class="sidebar-link"><i data-lucide="wallet"></i> Necessidade de Caixa</a>
-          <a href="contas-receber.html" class="sidebar-link"><i data-lucide="arrow-down-circle"></i> Contas a Receber</a>
-          <a href="contas-pagar.html" class="sidebar-link"><i data-lucide="arrow-up-circle"></i> Contas a Pagar</a>
-        </div>
-
-        <div class="sidebar-group-label">Budget &amp; Forecast</div>
-        <div class="sidebar-group">
-          <a href="budget.html" class="sidebar-link"><i data-lucide="pie-chart"></i> Budget Anual</a>
-          <a href="forecast.html" class="sidebar-link"><i data-lucide="trending-up"></i> Forecast</a>
-        </div>
-
-        <div class="sidebar-group-label">Administração</div>
-        <div class="sidebar-group">
-          <a href="usuarios.html" class="sidebar-link"><i data-lucide="user-cog"></i> Usuários e Acessos</a>
-          <a href="auditoria.html" class="sidebar-link"><i data-lucide="history"></i> Auditoria</a>
-          <a href="configuracoes.html" class="sidebar-link"><i data-lucide="settings"></i> Configurações</a>
-        </div>
-      </nav>
-    </div>
-
-    <div class="sidebar-footer">
-      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
-    </div>
-  </aside>
-
-  <div class="app-main">
-    <header class="app-header">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <button class="sidebar-mobile-toggle" id="sidebar-mobile-toggle"><i data-lucide="menu"></i></button>
-        <div class="breadcrumb"><span class="current">Início</span></div>
+  <nav class="nav-cascade">
+    <div class="nav-item active"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--accent);">Início</a></div>
+    <div class="nav-item">
+      <button>Cadastros</button>
+      <div class="nav-panel">
+        <span class="group-label">Base</span>
+        <a href="cadastros.html#plano_contas"><span class="code">1</span> Plano de Contas</a>
+        <a href="cadastros.html#grupos_empresariais"><span class="code">2</span> Grupos Empresariais</a>
+        <a href="cadastros.html#contas_bancarias"><span class="code">3</span> Contas Bancárias</a>
+        <a href="cadastros.html#centros_custo"><span class="code">4</span> Centros de Custo</a>
+        <a href="cadastros.html#favorecidos"><span class="code">5</span> Favorecidos</a>
       </div>
-      <div class="topbar-right">
-        <div class="saldo-ticker">
-          <span>SALDO ATUAL</span>
-          <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
-        </div>
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Lançamentos</button>
+      <div class="nav-panel">
+        <span class="group-label">Movimentação</span>
+        <a href="lancamento-novo.html"><span class="code">＋</span> Novo lançamento</a>
+        <a href="lancamentos.html"><span class="code">≣</span> Todos os lançamentos</a>
+        <a href="importar-notas.html"><span class="code">📥</span> Importar Notas Fiscais (XML)</a>
+        <span class="group-label">Operações especiais</span>
+        <a href="bordero-novo.html"><span class="code">FIDC</span> Novo Borderô (Antecipação)</a>
+        <a href="borderos.html"><span class="code">≣</span> Borderôs lançados</a>
+        <a href="controle-fidc.html"><span class="code">⚠</span> Controle FIDC/Factoring</a>
       </div>
-    </header>
+    </div>
+
+    <div class="nav-item">
+      <button>Relatórios</button>
+      <div class="nav-panel">
+        <span class="group-label">Fluxo de Caixa</span>
+        <a href="fluxo-diario.html"><span class="code">4.1</span> Fluxo Diário</a>
+        <a href="fluxo-mensal.html"><span class="code">4.3</span> Fluxo Mensal</a>
+        <span class="group-label">Detalhamento</span>
+        <a href="relatorio-contas.html"><span class="code">704</span> Por Conta Bancária</a>
+        <a href="relatorio-favorecidos.html"><span class="code">705</span> Por Favorecido</a>
+        <a href="relatorio-borderos.html"><span class="code">706</span> Borderôs (Antecipação)</a>
+        <span class="group-label">Planejamento</span>
+        <a href="comparativo-orcamento.html"><span class="code">TR</span> Taxa de Realização</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Contas a Receber/Pagar</button>
+      <div class="nav-panel">
+        <a href="necessidade-caixa.html"><span class="code">5.1</span> Necessidade de Caixa</a>
+        <a href="contas-receber.html"><span class="code">5.2</span> Contas a Receber</a>
+        <a href="contas-pagar.html"><span class="code">5.3</span> Contas a Pagar</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Budget &amp; Forecast</button>
+      <div class="nav-panel">
+        <a href="budget.html"><span class="code">6.1</span> Budget Anual</a>
+        <a href="forecast.html"><span class="code">6.2</span> Forecast</a>
+      </div>
+    </div>
+
+    <div class="nav-item">
+      <button>Administração</button>
+      <div class="nav-panel">
+        <a href="usuarios.html"><span class="code">◆</span> Usuários e Acessos</a>
+        <a href="auditoria.html"><span class="code">◆</span> Auditoria</a>
+        <a href="configuracoes.html"><span class="code">◆</span> Configurações</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="saldo-ticker">
+      <span>SALDO ATUAL</span>
+      <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
+    </div>
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
 
 <main class="page">
   <div class="page-header">
@@ -127,6 +127,47 @@
     </div>
   </section>
 
+  <section class="grid grid-2" style="margin-bottom:18px;">
+    <div class="card">
+      <div class="label" style="margin-bottom:18px;">Saldo por Conta Bancária</div>
+      <div class="donut-box-wrap" id="donut-contas">
+        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:18px;">Aging de Contas a Receber</div>
+      <div class="donut-box-wrap" id="donut-aging">
+        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-bottom:18px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+      <div class="label" style="margin-bottom:0;">Fluxo Mensal — Entradas vs Saídas</div>
+      <div class="grafico-legenda-topo">
+        <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
+        <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
+      </div>
+    </div>
+    <div class="grafico-barras-mensal" id="grafico-fluxo-mensal"></div>
+  </section>
+
+  <section class="grid grid-2" style="margin-bottom:18px;">
+    <div class="card">
+      <div class="label" style="margin-bottom:18px;">Top 5 Favorecidos por Movimentação</div>
+      <div class="bar-list" id="top-favorecidos">
+        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:18px;">Distribuição por Plano de Contas</div>
+      <div class="bar-list" id="dist-plano-contas">
+        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
+      </div>
+    </div>
+  </section>
+
   <section class="card">
     <div class="label" style="margin-bottom:14px;">Últimos lançamentos</div>
     <table>
@@ -141,25 +182,14 @@
     </table>
   </section>
 </main>
-  </div>
-</div>
 
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
 initNav();
 
-// ---------- Sidebar: ícones Lucide + menu mobile + tema ----------
+// ---------- Ícones Lucide ----------
 if (window.lucide) lucide.createIcons();
-document.getElementById('sidebar-mobile-toggle')?.addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('mobile-open');
-});
-document.getElementById('theme-toggle-sidebar')?.addEventListener('click', () => {
-  const atual = document.documentElement.getAttribute('data-theme');
-  const novo = atual === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', novo);
-  localStorage.setItem('tema', novo);
-});
 
   const sessao = await exigirSessao();
   if (sessao) {
@@ -236,6 +266,212 @@ document.getElementById('theme-toggle-sidebar')?.addEventListener('click', () =>
     document.getElementById('saldo-topo').textContent = fmt(realizado);
   }
   await carregarCards();
+
+  // ============================================================================
+  // BI — donuts, fluxo mensal e rankings (tudo em CSS puro, sem biblioteca)
+  // ============================================================================
+  const CORES_SERIE = ['#1f7a5c', '#2f9e9e', '#b76e11', '#5b7fdb', '#8a63d2', '#c0392b', '#94a3b8'];
+
+  function montarConicGradient(segmentos) {
+    const total = segmentos.reduce((s,x) => s + x.valor, 0) || 1;
+    let acc = 0;
+    const partes = segmentos.map(seg => {
+      const inicio = (acc / total * 100).toFixed(2);
+      acc += Math.max(seg.valor, 0);
+      const fim = (acc / total * 100).toFixed(2);
+      return `${seg.cor} ${inicio}% ${fim}%`;
+    });
+    return `conic-gradient(${partes.join(', ')})`;
+  }
+
+  function renderDonut(containerId, segmentos, totalLabel, totalTexto) {
+    const cont = document.getElementById(containerId);
+    const validos = segmentos.filter(s => s.valor > 0);
+    if (!validos.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
+
+    cont.innerHTML = `
+      <div class="donut-box">
+        <div class="donut" style="background:${montarConicGradient(validos)};"></div>
+        <div class="donut-hole">
+          <div class="big">${totalTexto}</div>
+          <div class="small">${totalLabel}</div>
+        </div>
+      </div>
+      <div class="chart-legend">
+        ${validos.map(s => `
+          <div class="item">
+            <span class="dot" style="background:${s.cor};"></span>
+            <span class="nome">${s.nome}</span>
+            <span class="valor">${fmt(s.valor)}</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // ---------- Saldo por Conta Bancária ----------
+  async function carregarDonutContas() {
+    const grupoId = selGrupo.value;
+    let qContas = supabase.from('contas_bancarias').select('id, nome, saldo_inicial').eq('ativo', true);
+    if (grupoId) qContas = qContas.eq('grupo_empresarial_id', grupoId);
+    const { data: contas } = await qContas;
+
+    let qReal = supabase.from('vw_realizado').select('conta_bancaria_id, conta_destino_id, valor_desembolsado, tipo, grupo_empresarial_id');
+    if (grupoId) qReal = qReal.eq('grupo_empresarial_id', grupoId);
+    const { data: realizados } = await qReal;
+
+    const saldos = {};
+    (contas || []).forEach(c => { saldos[c.id] = Number(c.saldo_inicial || 0); });
+    (realizados || []).forEach(r => {
+      const v = Number(r.valor_desembolsado);
+      if (r.tipo === 'transferencia') {
+        if (saldos[r.conta_bancaria_id] !== undefined) saldos[r.conta_bancaria_id] -= v;
+        if (saldos[r.conta_destino_id] !== undefined) saldos[r.conta_destino_id] += v;
+      } else if (saldos[r.conta_bancaria_id] !== undefined) {
+        saldos[r.conta_bancaria_id] += v * (r.tipo === 'entrada' ? 1 : -1);
+      }
+    });
+
+    const totalGeral = Object.values(saldos).reduce((s,v) => s+v, 0);
+    const segmentos = (contas || []).map((c,i) => ({ nome: c.nome, valor: Math.max(saldos[c.id], 0), cor: CORES_SERIE[i % CORES_SERIE.length] }));
+    renderDonut('donut-contas', segmentos, 'Saldo Total', fmt(totalGeral).replace('R$ ',''));
+  }
+
+  // ---------- Aging de Contas a Receber ----------
+  async function carregarDonutAging() {
+    const grupoId = selGrupo.value;
+    let q = supabase.from('vw_saldo_lancamento').select('saldo_aberto, lancamentos!inner(data_vencimento, grupo_empresarial_id, plano_contas!inner(tipo))').eq('lancamentos.plano_contas.tipo', 'entrada');
+    if (grupoId) q = q.eq('lancamentos.grupo_empresarial_id', grupoId);
+    const { data } = await q;
+
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const buckets = { atual: 0, d30: 0, d60: 0, d90: 0, vencido: 0 };
+    (data || []).forEach(r => {
+      const venc = r.lancamentos?.data_vencimento ? new Date(r.lancamentos.data_vencimento + 'T00:00:00') : null;
+      const valor = Number(r.saldo_aberto || 0);
+      if (valor <= 0) return;
+      if (!venc) { buckets.atual += valor; return; }
+      const dias = Math.round((venc - hoje) / 86400000);
+      if (dias < 0) buckets.vencido += valor;
+      else if (dias <= 30) buckets.atual += valor;
+      else if (dias <= 60) buckets.d30 += valor;
+      else if (dias <= 90) buckets.d60 += valor;
+      else buckets.d90 += valor;
+    });
+
+    const total = Object.values(buckets).reduce((s,v) => s+v, 0);
+    const segmentos = [
+      { nome: 'A vencer (até 30d)', valor: buckets.atual, cor: CORES_SERIE[0] },
+      { nome: '31–60 dias', valor: buckets.d30, cor: CORES_SERIE[1] },
+      { nome: '61–90 dias', valor: buckets.d60, cor: CORES_SERIE[2] },
+      { nome: 'Acima de 90 dias', valor: buckets.d90, cor: CORES_SERIE[3] },
+      { nome: 'Vencido', valor: buckets.vencido, cor: CORES_SERIE[5] },
+    ];
+    renderDonut('donut-aging', segmentos, 'Total a Receber', fmt(total).replace('R$ ',''));
+  }
+
+  // ---------- Fluxo Mensal (últimos 6 meses) ----------
+  async function carregarFluxoMensal() {
+    const grupoId = selGrupo.value;
+    const hoje = new Date();
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+
+    let q = supabase.from('vw_realizado').select('data_baixa, valor_desembolsado, tipo, grupo_empresarial_id').gte('data_baixa', inicio.toISOString().slice(0,10));
+    if (grupoId) q = q.eq('grupo_empresarial_id', grupoId);
+    const { data } = await q;
+
+    const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    const porMes = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      porMes[chave] = { entrada: 0, saida: 0, label: `${MESES_ABR[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` };
+    }
+    (data || []).forEach(r => {
+      const chave = r.data_baixa.slice(0,7);
+      if (!porMes[chave] || r.tipo === 'transferencia') return;
+      porMes[chave][r.tipo === 'entrada' ? 'entrada' : 'saida'] += Number(r.valor_desembolsado);
+    });
+
+    const valores = Object.values(porMes);
+    const max = Math.max(...valores.flatMap(m => [m.entrada, m.saida]), 0.01);
+
+    document.getElementById('grafico-fluxo-mensal').innerHTML = valores.map(m => `
+      <div class="grupo-mes">
+        <div class="barras" title="Entradas: ${fmt(m.entrada)} · Saídas: ${fmt(m.saida)}">
+          <div class="barra bg-serie-1" style="height:${Math.max(3, m.entrada/max*130)}px;"></div>
+          <div class="barra bg-serie-6" style="height:${Math.max(3, m.saida/max*130)}px;"></div>
+        </div>
+        <span class="mes-label">${m.label}</span>
+      </div>`).join('');
+  }
+
+  // ---------- Top 5 Favorecidos por Movimentação ----------
+  async function carregarTopFavorecidos() {
+    const grupoId = selGrupo.value;
+    let q = supabase.from('vw_realizado').select('favorecido_id, valor_desembolsado, tipo, grupo_empresarial_id').neq('tipo', 'transferencia');
+    if (grupoId) q = q.eq('grupo_empresarial_id', grupoId);
+    const { data } = await q;
+
+    const idsFavorecidos = [...new Set((data || []).map(r => r.favorecido_id).filter(Boolean))];
+    let nomesPorId = {};
+    if (idsFavorecidos.length) {
+      const { data: favs } = await supabase.from('favorecidos').select('id, nome').in('id', idsFavorecidos);
+      (favs || []).forEach(f => { nomesPorId[f.id] = f.nome; });
+    }
+
+    const porFavorecido = {};
+    (data || []).forEach(r => {
+      const nome = nomesPorId[r.favorecido_id];
+      if (!nome) return;
+      porFavorecido[nome] = (porFavorecido[nome] || 0) + Number(r.valor_desembolsado);
+    });
+
+    const top = Object.entries(porFavorecido).sort((a,b) => b[1]-a[1]).slice(0,5);
+    const cont = document.getElementById('top-favorecidos');
+    if (!top.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
+    const max = top[0][1] || 1;
+    cont.innerHTML = top.map(([nome, valor], i) => `
+      <div class="linha">
+        <div class="topo"><span class="nome">${nome}</span><span class="valor">${fmt(valor)}</span></div>
+        <div class="trilho"><div class="fill" style="width:${(valor/max*100).toFixed(1)}%; background:${CORES_SERIE[i % CORES_SERIE.length]};"></div></div>
+      </div>`).join('');
+  }
+
+  // ---------- Distribuição por Plano de Contas ----------
+  async function carregarDistPlanoContas() {
+    const grupoId = selGrupo.value;
+    let q = supabase.from('vw_realizado').select('valor_desembolsado, tipo, grupo_empresarial_id, plano_conta_id, nome_conta').neq('tipo', 'transferencia');
+    if (grupoId) q = q.eq('grupo_empresarial_id', grupoId);
+    const { data } = await q;
+
+    const porPlano = {};
+    (data || []).forEach(r => {
+      const nome = r.nome_conta;
+      if (!nome) return;
+      porPlano[nome] = (porPlano[nome] || 0) + Number(r.valor_desembolsado);
+    });
+
+    const top = Object.entries(porPlano).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const cont = document.getElementById('dist-plano-contas');
+    if (!top.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
+    const max = top[0][1] || 1;
+    cont.innerHTML = top.map(([nome, valor], i) => `
+      <div class="linha">
+        <div class="topo"><span class="nome">${nome}</span><span class="valor">${fmt(valor)}</span></div>
+        <div class="trilho"><div class="fill" style="width:${(valor/max*100).toFixed(1)}%; background:${CORES_SERIE[i % CORES_SERIE.length]};"></div></div>
+      </div>`).join('');
+  }
+
+  async function carregarBI() {
+    await Promise.all([
+      carregarDonutContas(),
+      carregarDonutAging(),
+      carregarFluxoMensal(),
+      carregarTopFavorecidos(),
+      carregarDistPlanoContas(),
+    ]);
+  }
+  await carregarBI();
+  selGrupo.addEventListener('change', carregarBI);
 
   // Exemplo de carga real: últimos 10 lançamentos do tenant (RLS filtra automaticamente)
   async function carregarUltimosLancamentos() {
