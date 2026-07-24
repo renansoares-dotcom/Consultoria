@@ -23,6 +23,10 @@ export function salvarTema(tema) {
 export function initTheme() {
   aplicarTema(temaAtual());
 
+  // Páginas com sidebar de módulos já têm o controle fixo #theme-toggle-sidebar
+  // (ligado separadamente em nav.js) — não duplicar o botão no topbar nesse caso.
+  if (document.getElementById('theme-toggle-sidebar')) return;
+
   const alvo = document.querySelector('.topbar-right');
   if (!alvo || alvo.querySelector('.theme-toggle')) return; // sem topbar (login) ou botão já existe
 

@@ -610,7 +610,7 @@ label.field .field-label { display: block; font-size: 12px; font-weight: 600; ma
 
   @page { margin: 16mm 14mm; }
   body::before {
-    content: "LivroCaixa Consultoria — Relatório gerado em " attr(data-impresso-em);
+    content: "Datativo Industrial — Relatório gerado em " attr(data-impresso-em);
     display: block; font-size: 9px; color: #888; margin-bottom: 10px;
   }
 }
