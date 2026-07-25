@@ -208,6 +208,7 @@
 
   const sessao = await exigirSessao();
   const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
   if (usuario) {
     document.getElementById('user-nome').textContent = usuario.nome;
     document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
@@ -287,6 +288,7 @@
     const datas = transacoes.map(t => t.data).sort();
 
     const { data: cabecalho, error: erroCabecalho } = await supabase.from('extratos_importados').insert({
+      tenant_id: TENANT_ID,
       conta_bancaria_id: contaId,
       nome_arquivo: arquivo.name,
       periodo_inicio: datas[0],
@@ -299,6 +301,7 @@
     if (erroCabecalho) { alert('Erro ao registrar a importação: ' + erroCabecalho.message); inputOfx.value = ''; return; }
 
     const linhas = transacoes.map(t => ({
+      tenant_id: TENANT_ID,
       extrato_importado_id: cabecalho.id,
       conta_bancaria_id: contaId,
       fitid: t.fitid,
