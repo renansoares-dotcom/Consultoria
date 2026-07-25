@@ -34,12 +34,14 @@ export function initTheme() {
   btn.className = 'theme-toggle';
   btn.type = 'button';
   btn.setAttribute('aria-label', 'Alternar tema claro/escuro');
-  btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Claro' : '🌙 Escuro';
+  btn.innerHTML = document.documentElement.getAttribute('data-theme') === 'dark' ? '<i data-lucide="sun"></i> Claro' : '<i data-lucide="moon"></i> Escuro';
   alvo.insertBefore(btn, alvo.firstChild);
+  if (window.lucide) lucide.createIcons();
 
   btn.addEventListener('click', () => {
     const novo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     salvarTema(novo);
-    btn.textContent = novo === 'dark' ? '☀️ Claro' : '🌙 Escuro';
+    btn.innerHTML = novo === 'dark' ? '<i data-lucide="sun"></i> Claro' : '<i data-lucide="moon"></i> Escuro';
+    if (window.lucide) lucide.createIcons();
   });
 }

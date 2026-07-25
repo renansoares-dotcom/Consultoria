@@ -120,7 +120,7 @@
           </label>
           <label class="field" style="grid-column: span 2;"><span class="field-label">Observações</span><input class="input" id="ap_obs"></label>
         </div>
-        <button type="button" class="btn ghost" id="btn-add-apontamento">＋ Registrar Apontamento</button>
+        <button type="button" class="btn ghost" id="btn-add-apontamento"><i data-lucide="plus"></i> Registrar Apontamento</button>
 
         <div class="baixas-tabela-wrap" style="margin-top:16px;">
           <table style="font-size:12px;">
@@ -286,7 +286,7 @@ document.getElementById('btn-add-apontamento').addEventListener('click', async (
     criado_por: usuario?.id || null,
   });
 
-  btn.disabled = false; btn.textContent = '＋ Registrar Apontamento';
+  btn.disabled = false; btn.textContent = '<i data-lucide="plus"></i> Registrar Apontamento';
   if (error) { mostrarErro('Erro ao registrar apontamento: ' + error.message); return; }
 
   document.getElementById('ap_quantidade').value = '';

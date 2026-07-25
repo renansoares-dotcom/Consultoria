@@ -145,7 +145,7 @@
       <span class="eyebrow">Detalhamento · 706</span>
       <h1>Relatório de Borderôs de Antecipação</h1>
     </div>
-    <a href="bordero-novo.html" class="btn primary">＋ Novo Borderô</a>
+    <a href="bordero-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo Borderô</a>
   </div>
 
   <!-- Filtros -->
@@ -474,7 +474,8 @@ if (btnPdfOriginal) {
   btnPdfNovo.addEventListener('click', async () => {
     btnPdfNovo.disabled = true; btnPdfNovo.textContent = 'Preparando…';
     for (const r of registros) { await carregarDetalhe(r.id); }
-    btnPdfNovo.disabled = false; btnPdfNovo.textContent = '⬇ PDF';
+    btnPdfNovo.disabled = false; btnPdfNovo.innerHTML = '<i data-lucide="download"></i> PDF';
+    if (window.lucide) lucide.createIcons();
     window.print();
   });
 }

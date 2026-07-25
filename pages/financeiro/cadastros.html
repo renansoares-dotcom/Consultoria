@@ -143,7 +143,7 @@
     <input class="input" id="busca" placeholder="Buscar...">
     <span class="count-pill" id="contador">0 registros</span>
     <div class="spacer"></div>
-    <button class="btn primary" id="btn-novo">＋ Novo</button>
+    <button class="btn primary" id="btn-novo"><i data-lucide="plus"></i> Novo</button>
   </div>
 
   <section class="card" style="padding:0; overflow:hidden;">
@@ -350,7 +350,7 @@ function desenharTabela() {
   document.getElementById('contador').textContent = `${filtrados.length} registro${filtrados.length===1?'':'s'}`;
 
   if (!filtrados.length) {
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="${cfg.colunas.length+1}" class="empty-state">Nenhum registro encontrado. Clique em "＋ Novo" para cadastrar.</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="${cfg.colunas.length+1}" class="empty-state">Nenhum registro encontrado. Clique em "<i data-lucide="plus"></i> Novo" para cadastrar.</td></tr>`;
     return;
   }
 

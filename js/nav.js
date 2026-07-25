@@ -48,8 +48,9 @@ export function initNav() {
     const btn = document.createElement('button');
     btn.className = 'menu-toggle';
     btn.setAttribute('aria-label', 'Abrir menu');
-    btn.innerHTML = '☰';
+    btn.innerHTML = '<i data-lucide="menu"></i>';
     topbar.insertBefore(btn, nav);
+    if (window.lucide) lucide.createIcons();
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       nav.classList.toggle('mobile-open');

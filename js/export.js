@@ -43,15 +43,16 @@ export function adicionarBotoesExportacao(seletorContainer, seletorTabela, nomeA
   const btnCSV = document.createElement('button');
   btnCSV.type = 'button';
   btnCSV.className = 'btn ghost no-print';
-  btnCSV.textContent = '⬇ CSV';
+  btnCSV.innerHTML = '<i data-lucide="download"></i> CSV';
   btnCSV.addEventListener('click', () => exportarCSV(nomeArquivo, seletorTabela));
 
   const btnPDF = document.createElement('button');
   btnPDF.type = 'button';
   btnPDF.className = 'btn ghost no-print';
-  btnPDF.textContent = '⬇ PDF';
+  btnPDF.innerHTML = '<i data-lucide="download"></i> PDF';
   btnPDF.addEventListener('click', exportarPDF);
 
   container.appendChild(btnCSV);
   container.appendChild(btnPDF);
+  if (window.lucide) lucide.createIcons();
 }
