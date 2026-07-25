@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Necessidade de Materiais — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link active"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">PCP · Elo Produção↔Compras (Fase 1)</span>
+      <h1>Necessidade de Materiais</h1>
+    </div>
+    <a href="dashboard.html" class="btn ghost"><i data-lucide="arrow-left"></i> Voltar ao PCP</a>
+  </div>
+
+  <p style="color:var(--ink-soft); font-size:12.5px; margin:-8px 0 18px; max-width:820px;">
+    Calculado a partir da Estrutura de Produto (BOM) de todas as Ordens de Produção abertas, descontando o estoque atual, o estoque mínimo e o que já foi requisitado e ainda está em aberto. Nada aqui vira pedido de compra sozinho — toda requisição precisa da sua aprovação.
+  </p>
+
+  <div class="subnav" id="abas">
+    <button class="active" data-aba="necessidade">Necessidade de Compra</button>
+    <button data-aba="pendentes">Requisições Pendentes</button>
+    <button data-aba="historico">Histórico</button>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"><tr><td colspan="8" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: nova requisição -->
+<div class="modal-overlay" id="modal-requisitar">
+  <div class="modal">
+    <h2>Nova Requisição de Compra</h2>
+    <p class="modal-sub" id="req-produto-nome">—</p>
+    <label class="field">
+      <span class="field-label">Quantidade solicitada</span>
+      <input class="input mono" type="number" step="0.0001" min="0.0001" id="req_quantidade">
+    </label>
+    <label class="field">
+      <span class="field-label">Observações</span>
+      <textarea class="input" id="req_obs" placeholder="Opcional"></textarea>
+    </label>
+    <p style="font-size:11.5px; color:var(--ink-soft);" id="req-ops-info"></p>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-req">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-req">Criar requisição</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: decisão (aprovar/rejeitar) -->
+<div class="modal-overlay" id="modal-decisao">
+  <div class="modal">
+    <h2 id="decisao-titulo">Decidir requisição</h2>
+    <p class="modal-sub" id="decisao-produto-nome">—</p>
+    <label class="field">
+      <span class="field-label">Motivo / observação</span>
+      <textarea class="input" id="decisao_motivo" placeholder="Opcional"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-decisao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-decisao">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
+  const fmtData = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
+  const LABEL_STATUS = { pendente: 'Pendente', aprovada: 'Aprovada', rejeitada: 'Rejeitada', cancelada: 'Cancelada' };
+  const BADGE_STATUS = { pendente: 'aberto', aprovada: 'liquidado', rejeitada: 'inadimplente', cancelada: 'inadimplente' };
+
+  let abaAtual = 'necessidade';
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-aba]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    abaAtual = btn.dataset.aba;
+    carregar();
+  });
+
+  async function carregar() {
+    if (abaAtual === 'necessidade') return carregarNecessidade();
+    return carregarRequisicoes(abaAtual === 'pendentes' ? ['pendente'] : ['aprovada', 'rejeitada', 'cancelada']);
+  }
+
+  // ---------- Aba: Necessidade de Compra ----------
+  async function carregarNecessidade() {
+    document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Material</th><th class="num">Saldo Atual</th><th class="num">Saldo Mínimo</th><th class="num">Necessidade Produção</th><th class="num">Já Requisitado</th><th class="num">Necessidade Líquida</th><th style="text-align:right;">Ações</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('vw_necessidade_consolidada').select('*').gt('necessidade_liquida', 0).order('necessidade_liquida', { ascending: false });
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhuma necessidade de compra no momento — tudo coberto pelo estoque atual.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(m => `
+      <tr>
+        <td class="mono">${m.codigo}</td>
+        <td>${m.nome}</td>
+        <td class="num mono">${fmtNum(m.saldo_atual)} ${m.unidade_medida}</td>
+        <td class="num mono">${fmtNum(m.saldo_minimo)} ${m.unidade_medida}</td>
+        <td class="num mono">${fmtNum(m.necessidade_producao)} ${m.unidade_medida}</td>
+        <td class="num mono">${fmtNum(m.ja_requisitado_em_aberto)} ${m.unidade_medida}</td>
+        <td class="num mono valor negativo">${fmtNum(m.necessidade_liquida)} ${m.unidade_medida}</td>
+        <td style="text-align:right;"><button class="icon-btn" data-requisitar="${m.produto_id}" data-nome="${m.nome.replace(/"/g,'&quot;')}" data-qtd="${m.necessidade_liquida}" data-unidade="${m.unidade_medida}"><i data-lucide="file-plus"></i> Requisitar</button></td>
+      </tr>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-requisitar]');
+    if (btn) abrirModalRequisitar(btn.dataset.requisitar, btn.dataset.nome, btn.dataset.qtd, btn.dataset.unidade);
+    const btnDecisao = e.target.closest('[data-decisao]');
+    if (btnDecisao) abrirModalDecisao(btnDecisao.dataset.decisao, btnDecisao.dataset.acao, btnDecisao.dataset.nome);
+  });
+
+  // ---------- Modal: nova requisição ----------
+  const modalReq = document.getElementById('modal-requisitar');
+  let produtoEmRequisicao = null;
+
+  async function abrirModalRequisitar(produtoId, nome, quantidadeSugerida, unidade) {
+    produtoEmRequisicao = produtoId;
+    document.getElementById('req-produto-nome').textContent = `${nome} (${unidade})`;
+    document.getElementById('req_quantidade').value = Number(quantidadeSugerida).toFixed(4);
+    document.getElementById('req_obs').value = '';
+
+    const { data: origens } = await supabase.from('vw_necessidade_op_material').select('numero_op, necessidade_bruta').eq('componente_id', produtoId);
+    const info = document.getElementById('req-ops-info');
+    if (origens?.length) {
+      info.textContent = 'Puxado por: ' + origens.map(o => `OP ${o.numero_op ?? '(sem número)'} (${fmtNum(o.necessidade_bruta)} ${unidade})`).join(', ');
+    } else {
+      info.textContent = 'Sem Ordem de Produção associada (ex: reposição de estoque mínimo).';
+    }
+
+    modalReq.classList.add('open');
+  }
+
+  document.getElementById('btn-cancelar-req').addEventListener('click', () => modalReq.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-req').addEventListener('click', async () => {
+    const quantidade = parseFloat(document.getElementById('req_quantidade').value);
+    if (!quantidade || quantidade <= 0) { alert('Informe uma quantidade maior que zero.'); return; }
+
+    const { data: nova, error } = await supabase.from('requisicoes_compra').insert({
+      tenant_id: TENANT_ID,
+      produto_id: produtoEmRequisicao,
+      quantidade_solicitada: quantidade,
+      observacoes: document.getElementById('req_obs').value.trim() || null,
+      criado_por: usuario?.id,
+    }).select('id').single();
+
+    if (error) { alert('Erro ao criar requisição: ' + error.message); return; }
+
+    // Rastreabilidade: liga a requisição às OPs que geraram a necessidade deste material
+    const { data: origens } = await supabase.from('vw_necessidade_op_material').select('ordem_producao_id, necessidade_bruta').eq('componente_id', produtoEmRequisicao);
+    if (origens?.length) {
+      const linhas = origens.map(o => ({ tenant_id: TENANT_ID, requisicao_id: nova.id, ordem_producao_id: o.ordem_producao_id, quantidade: o.necessidade_bruta }));
+      await supabase.from('requisicao_compra_origem').insert(linhas);
+    }
+
+    modalReq.classList.remove('open');
+    alert('Requisição criada com sucesso. Ela precisa ser aprovada antes de virar pedido de compra.');
+    await carregar();
+  });
+
+  // ---------- Aba: Requisições (pendentes / histórico) ----------
+  async function carregarRequisicoes(statusFiltro) {
+    document.getElementById('thead').innerHTML = `<tr><th>Criada em</th><th>Material</th><th class="num">Quantidade</th><th>Status</th><th>Observações</th><th style="text-align:right;">Ações</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('requisicoes_compra')
+      .select('id, quantidade_solicitada, status, observacoes, criado_em, motivo_decisao, produtos(nome, unidade_medida)')
+      .in('status', statusFiltro)
+      .order('criado_em', { ascending: false });
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma requisição aqui.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td>${fmtData(r.criado_em)}</td>
+        <td>${r.produtos?.nome ?? '(produto removido)'}</td>
+        <td class="num mono">${fmtNum(r.quantidade_solicitada)} ${r.produtos?.unidade_medida ?? ''}</td>
+        <td><span class="badge ${BADGE_STATUS[r.status]}">${LABEL_STATUS[r.status]}</span></td>
+        <td style="font-size:12px; color:var(--ink-soft);">${r.observacoes ?? r.motivo_decisao ?? '—'}</td>
+        <td style="text-align:right; white-space:nowrap;">${r.status === 'pendente' ? `
+          <button class="icon-btn" data-decisao="${r.id}" data-acao="aprovada" data-nome="${r.produtos?.nome ?? ''}"><i data-lucide="check"></i> Aprovar</button>
+          <button class="icon-btn danger" data-decisao="${r.id}" data-acao="rejeitada" data-nome="${r.produtos?.nome ?? ''}"><i data-lucide="x"></i> Rejeitar</button>` : ''}</td>
+      </tr>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ---------- Modal: decisão ----------
+  const modalDecisao = document.getElementById('modal-decisao');
+  let requisicaoEmDecisao = null, acaoEmDecisao = null;
+
+  function abrirModalDecisao(requisicaoId, acao, nome) {
+    requisicaoEmDecisao = requisicaoId;
+    acaoEmDecisao = acao;
+    document.getElementById('decisao-titulo').textContent = acao === 'aprovada' ? 'Aprovar requisição' : 'Rejeitar requisição';
+    document.getElementById('decisao-produto-nome').textContent = nome;
+    document.getElementById('decisao_motivo').value = '';
+    modalDecisao.classList.add('open');
+  }
+
+  document.getElementById('btn-cancelar-decisao').addEventListener('click', () => modalDecisao.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-decisao').addEventListener('click', async () => {
+    const { error } = await supabase.from('requisicoes_compra').update({
+      status: acaoEmDecisao,
+      decidido_por: usuario?.id,
+      decidido_em: new Date().toISOString(),
+      motivo_decisao: document.getElementById('decisao_motivo').value.trim() || null,
+    }).eq('id', requisicaoEmDecisao);
+    if (error) { alert('Erro ao decidir: ' + error.message); return; }
+    modalDecisao.classList.remove('open');
+    await carregar();
+  });
+
+  await carregar();
+</script>
+</body>
+</html>

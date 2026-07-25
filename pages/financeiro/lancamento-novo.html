@@ -274,6 +274,24 @@
             <span id="info-aprovacao" style="color:var(--ink-soft); font-size:12px; margin-left:8px;"></span>
           </div>
 
+          <label class="field">
+            <span class="field-label">Classificação DRE (opcional)</span>
+            <select class="input" id="f_dre_override">
+              <option value="">Usar a classificação padrão da conta</option>
+              <option value="receita_bruta">Receita Bruta</option>
+              <option value="deducoes">Deduções</option>
+              <option value="cmv">CMV / CPV</option>
+              <option value="despesa_administrativa">Despesa Administrativa</option>
+              <option value="despesa_comercial">Despesa Comercial</option>
+              <option value="receita_financeira">Receita Financeira</option>
+              <option value="despesa_financeira">Despesa Financeira</option>
+              <option value="outras_receitas">Outras Receitas</option>
+              <option value="outras_despesas">Outras Despesas</option>
+              <option value="ir_csll">IR / CSLL</option>
+            </select>
+            <span style="color:var(--ink-soft); font-size:11.5px;">Use quando este lançamento específico for diferente do padrão da conta — ex: este frete é de entrega (despesa comercial), não de compra (CMV).</span>
+          </label>
+
           <div id="card-saldo" class="saldo-card" style="display:none; border-top:1px solid var(--line-strong); padding-top:14px; margin-top:14px;">
             <div class="item"><div class="label">Valor Original</div><div class="num" id="saldo-original">R$ 0,00</div></div>
             <div class="item"><div class="label">Total Pago (baixas)</div><div class="num valor positivo" id="saldo-pago">R$ 0,00</div></div>
@@ -826,6 +844,7 @@ async function carregarDadosExistentes() {
   document.getElementById('f_prorrogacao').value = l.data_prorrogacao_vencimento ?? '';
   document.getElementById('f_motivo_prorrogacao').value = l.motivo_prorrogacao ?? '';
   document.getElementById('f_obs').value = l.observacoes ?? '';
+  document.getElementById('f_dre_override').value = l.classificacao_dre_override ?? '';
   document.getElementById('f_aprovado').checked = !!l.aprovado_por;
   if (l.aprovado_por) {
     const { data: aprovador } = await supabase.from('usuarios').select('nome').eq('id', l.aprovado_por).single();
@@ -883,6 +902,7 @@ document.getElementById('form-dados').addEventListener('submit', async e => {
     data_prorrogacao_vencimento: document.getElementById('f_prorrogacao').value || null,
     motivo_prorrogacao: document.getElementById('f_motivo_prorrogacao').value || null,
     observacoes: document.getElementById('f_obs').value || null,
+    classificacao_dre_override: document.getElementById('f_dre_override').value || null,
     criado_por: usuario?.id || null,
   };
 
