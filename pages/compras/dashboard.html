@@ -54,16 +54,28 @@
           <span class="eyebrow">Módulo</span>
           <h1>Compras</h1>
         </div>
+        <a href="pedido-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo Pedido de Compra</a>
       </div>
 
-      <section class="card" style="padding:64px 40px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-          <i data-lucide="shopping-cart" style="width:26px; height:26px;"></i>
-        </div>
-        <h2 style="font-size:18px; margin-bottom:8px;">Módulo em construção</h2>
-        <p style="color:var(--ink-soft); font-size:13.5px; max-width:420px; margin:0 auto;">
-          A estrutura de navegação de Compras já está pronta. As telas e a lógica de negócio deste módulo entram nas próximas etapas.
-        </p>
+      <section class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Pedidos Abertos</div><div class="big" id="card-abertos">0</div></div>
+        <div class="card"><div class="label">Aguardando Recebimento</div><div class="big" id="card-aguardando">0</div></div>
+        <div class="card"><div class="label">Requisições Aprovadas sem Pedido</div><div class="big valor aberto" id="card-req-avulsas">0</div></div>
+      </section>
+
+      <div class="subnav" id="abas">
+        <button class="active" data-filtro="abertos">Em Aberto</button>
+        <button data-filtro="recebidos">Recebidos</button>
+        <button data-filtro="todos">Todos</button>
+      </div>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead>
+            <tr><th>Pedido</th><th>Fornecedor</th><th>Data</th><th>Entrega Prevista</th><th>Status</th><th class="num">Valor Total</th><th style="text-align:right;">Ações</th></tr>
+          </thead>
+          <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
       </section>
     </main>
   </div>
@@ -83,6 +95,59 @@
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const LABEL_STATUS = { aberto: 'Aberto', enviado: 'Enviado', recebido_parcial: 'Recebido Parcial', recebido_total: 'Recebido Total', cancelado: 'Cancelado' };
+  const BADGE_STATUS = { aberto: 'aberto', enviado: 'aberto', recebido_parcial: 'parcial', recebido_total: 'pago', cancelado: 'inadimplente' };
+
+  let filtroAtual = 'abertos';
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-filtro]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroAtual = btn.dataset.filtro;
+    carregar();
+  });
+
+  async function carregarResumo() {
+    const { count: abertos } = await supabase.from('pedidos_compra').select('id', { count: 'exact', head: true }).eq('status', 'aberto');
+    const { count: aguardando } = await supabase.from('pedidos_compra').select('id', { count: 'exact', head: true }).in('status', ['enviado', 'recebido_parcial']);
+    const { count: reqAvulsas } = await supabase.from('requisicoes_compra').select('id', { count: 'exact', head: true }).eq('status', 'aprovada');
+    document.getElementById('card-abertos').textContent = abertos || 0;
+    document.getElementById('card-aguardando').textContent = aguardando || 0;
+    document.getElementById('card-req-avulsas').textContent = reqAvulsas || 0;
+  }
+
+  async function carregar() {
+    await carregarResumo();
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+    let query = supabase.from('pedidos_compra').select('id, numero_pedido, data_pedido, data_entrega_prevista, status, favorecidos:fornecedor_id(nome), pedido_compra_itens(quantidade, valor_unitario)').order('data_pedido', { ascending: false });
+    if (filtroAtual === 'abertos') query = query.in('status', ['aberto', 'enviado', 'recebido_parcial']);
+    else if (filtroAtual === 'recebidos') query = query.eq('status', 'recebido_total');
+
+    const { data, error } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum pedido nesta aba.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(p => {
+      const total = (p.pedido_compra_itens || []).reduce((s, i) => s + Number(i.quantidade) * Number(i.valor_unitario), 0);
+      return `<tr>
+        <td class="mono">${p.numero_pedido || p.id.slice(0,8)}</td>
+        <td>${p.favorecidos?.nome ?? '—'}</td>
+        <td>${fmtData(p.data_pedido)}</td>
+        <td>${fmtData(p.data_entrega_prevista)}</td>
+        <td><span class="badge ${BADGE_STATUS[p.status]}">${LABEL_STATUS[p.status]}</span></td>
+        <td class="num mono">${fmt(total)}</td>
+        <td style="text-align:right;"><a class="icon-btn" href="pedido-novo.html?id=${p.id}">Abrir</a></td>
+      </tr>`;
+    }).join('');
+  }
+
+  await carregar();
 </script>
 </body>
 </html>

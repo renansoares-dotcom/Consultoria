@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedido de Compra — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link active"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Novo Pedido de Compra</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="dashboard.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+      <!-- ============================== MODO CRIAÇÃO ============================== -->
+      <div id="modo-criacao">
+        <div class="linha-flex">
+          <label class="field f-grow">
+            <span class="field-label">Fornecedor *</span>
+            <select class="input" id="f_fornecedor" required><option value="">Selecione…</option></select>
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Data do Pedido</span>
+            <input class="input" type="date" id="f_data_pedido">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Entrega Prevista</span>
+            <input class="input" type="date" id="f_data_entrega">
+          </label>
+        </div>
+
+        <div class="janela-secao">
+          <div class="label" style="margin-bottom:10px;">Requisições Aprovadas (marque as que farão parte deste pedido)</div>
+          <div class="lista-selecao" id="lista-requisicoes" style="max-height:260px;">
+            <div class="empty-state">Selecione um fornecedor para ver as requisições vinculáveis, ou adicione itens avulsos abaixo.</div>
+          </div>
+        </div>
+
+        <div class="janela-secao">
+          <div class="label" style="margin-bottom:10px;">Item avulso (produto sem requisição aprovada)</div>
+          <div class="linha-flex">
+            <label class="field f-grow">
+              <span class="field-label">Produto</span>
+              <select class="input" id="na_produto"></select>
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Quantidade</span>
+              <input class="input mono" type="number" step="0.0001" min="0.0001" id="na_quantidade">
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Valor Unitário (R$)</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="na_valor">
+            </label>
+            <button class="btn ghost" type="button" id="btn-add-avulso"><i data-lucide="plus"></i></button>
+          </div>
+          <div id="lista-avulsos" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:8px;">
+          <button class="btn primary" type="button" id="btn-criar-pedido">Criar Pedido de Compra</button>
+        </div>
+      </div>
+
+      <!-- ============================== MODO EDIÇÃO / RECEBIMENTO ============================== -->
+      <div id="modo-edicao" style="display:none;">
+        <div class="saldo-card" style="margin-bottom:18px;">
+          <div class="item"><div class="label">Fornecedor</div><div class="num" id="disp-fornecedor" style="font-size:15px;">—</div></div>
+          <div class="item"><div class="label">Status</div><div class="num" id="disp-status" style="font-size:15px;">—</div></div>
+          <div class="item"><div class="label">Valor Total</div><div class="num" id="disp-total">—</div></div>
+        </div>
+
+        <div class="label" style="margin-bottom:10px;">Itens do Pedido — registre o recebimento aqui</div>
+        <div class="baixas-tabela-wrap">
+          <table>
+            <thead><tr><th>Produto</th><th class="num">Qtd. Pedida</th><th class="num">Valor Unit.</th><th class="num">Já Recebido</th><th class="num">Receber Agora</th></tr></thead>
+            <tbody id="tbody-itens"></tbody>
+          </table>
+        </div>
+
+        <div class="modal-actions" style="margin-top:18px;">
+          <button class="btn primary" type="button" id="btn-registrar-recebimento"><i data-lucide="package-check"></i> Registrar Recebimento</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+const TENANT_ID = usuario?.tenant_id;
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
+const LABEL_STATUS = { aberto: 'Aberto', enviado: 'Enviado', recebido_parcial: 'Recebido Parcial', recebido_total: 'Recebido Total', cancelado: 'Cancelado' };
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+
+if (idEdicao) {
+  await modoEdicao();
+} else {
+  await modoCriacao();
+}
+
+// ============================================================================
+// MODO CRIAÇÃO
+// ============================================================================
+async function modoCriacao() {
+  document.getElementById('f_data_pedido').value = new Date().toISOString().slice(0, 10);
+
+  const { data: fornecedores } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'fornecedores').eq('ativo', true).order('nome');
+  document.getElementById('f_fornecedor').innerHTML = '<option value="">Selecione…</option>' + (fornecedores || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+
+  const { data: produtos } = await supabase.from('produtos').select('id, codigo, nome, unidade_medida').in('tipo', ['materia_prima', 'insumo']).eq('ativo', true).order('nome');
+  document.getElementById('na_produto').innerHTML = (produtos || []).map(p => `<option value="${p.id}" data-unidade="${p.unidade_medida}">${p.codigo} — ${p.nome}</option>`).join('');
+
+  document.getElementById('f_fornecedor').addEventListener('change', carregarRequisicoesDisponiveis);
+  await carregarRequisicoesDisponiveis();
+
+  document.getElementById('btn-add-avulso').addEventListener('click', adicionarItemAvulso);
+  document.getElementById('lista-avulsos').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-remover-avulso]');
+    if (btn) { itensAvulsos.splice(Number(btn.dataset.removerAvulso), 1); renderizarAvulsos(); }
+  });
+
+  document.getElementById('btn-criar-pedido').addEventListener('click', criarPedido);
+}
+
+async function carregarRequisicoesDisponiveis() {
+  const lista = document.getElementById('lista-requisicoes');
+  lista.innerHTML = `<div class="empty-state">Carregando…</div>`;
+
+  const { data, error } = await supabase
+    .from('requisicoes_compra')
+    .select('id, quantidade_solicitada, observacoes, produtos(codigo, nome, unidade_medida)')
+    .eq('status', 'aprovada')
+    .order('criado_em');
+
+  if (error) { lista.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
+  if (!data?.length) { lista.innerHTML = `<div class="empty-state">Nenhuma requisição aprovada aguardando pedido no momento.</div>`; return; }
+
+  lista.innerHTML = data.map(r => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="checkbox" class="chk-requisicao" value="${r.id}" data-produto="${r.produtos?.codigo ?? ''} — ${r.produtos?.nome ?? ''}" data-quantidade="${r.quantidade_solicitada}">
+          <span>${r.produtos?.codigo ?? ''} — ${r.produtos?.nome ?? ''}</span>
+        </label>
+      </div>
+      <div class="col-valor">${fmtNum(r.quantidade_solicitada)} ${r.produtos?.unidade_medida ?? ''}</div>
+    </div>`).join('');
+}
+
+let itensAvulsos = [];
+function adicionarItemAvulso() {
+  const sel = document.getElementById('na_produto');
+  const produtoId = sel.value;
+  const quantidade = parseFloat(document.getElementById('na_quantidade').value);
+  const valor = parseFloat(document.getElementById('na_valor').value || 0);
+  if (!produtoId) { alert('Selecione um produto.'); return; }
+  if (!quantidade || quantidade <= 0) { alert('Informe uma quantidade maior que zero.'); return; }
+
+  itensAvulsos.push({ produtoId, nome: sel.options[sel.selectedIndex].textContent, quantidade, valor });
+  document.getElementById('na_quantidade').value = '';
+  document.getElementById('na_valor').value = '';
+  renderizarAvulsos();
+}
+
+function renderizarAvulsos() {
+  const cont = document.getElementById('lista-avulsos');
+  if (!itensAvulsos.length) { cont.innerHTML = ''; return; }
+  cont.innerHTML = itensAvulsos.map((it, i) => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">${it.nome}</div>
+      <div class="col-valor">${fmtNum(it.quantidade)} × ${fmt(it.valor)}</div>
+      <button class="icon-btn danger" data-remover-avulso="${i}" style="margin-left:8px;"><i data-lucide="trash-2"></i></button>
+    </div>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function criarPedido() {
+  document.getElementById('aviso-erro').style.display = 'none';
+  const fornecedorId = document.getElementById('f_fornecedor').value;
+  if (!fornecedorId) { mostrarErro('Selecione o fornecedor.'); return; }
+
+  const requisicoesMarcadas = [...document.querySelectorAll('.chk-requisicao:checked')].map(el => ({ id: el.value, quantidade: Number(el.dataset.quantidade) }));
+  if (!requisicoesMarcadas.length && !itensAvulsos.length) { mostrarErro('Marque ao menos uma requisição ou adicione um item avulso.'); return; }
+
+  const btn = document.getElementById('btn-criar-pedido');
+  btn.disabled = true; btn.textContent = 'Criando…';
+
+  const { data: pedido, error: erroPedido } = await supabase.from('pedidos_compra').insert({
+    tenant_id: TENANT_ID,
+    fornecedor_id: fornecedorId,
+    data_pedido: document.getElementById('f_data_pedido').value || new Date().toISOString().slice(0, 10),
+    data_entrega_prevista: document.getElementById('f_data_entrega').value || null,
+    criado_por: usuario?.id,
+  }).select('id').single();
+
+  if (erroPedido) { btn.disabled = false; btn.textContent = 'Criar Pedido de Compra'; mostrarErro('Erro ao criar pedido: ' + erroPedido.message); return; }
+
+  // itens vindos de requisições aprovadas
+  if (requisicoesMarcadas.length) {
+    const { data: requisicoesCompletas } = await supabase.from('requisicoes_compra').select('id, produto_id, quantidade_solicitada').in('id', requisicoesMarcadas.map(r => r.id));
+    const itensReq = (requisicoesCompletas || []).map(r => ({
+      tenant_id: TENANT_ID, pedido_compra_id: pedido.id, produto_id: r.produto_id, quantidade: r.quantidade_solicitada, valor_unitario: 0, requisicao_id: r.id,
+    }));
+    await supabase.from('pedido_compra_itens').insert(itensReq);
+    await supabase.from('requisicoes_compra').update({ status: 'atendida' }).in('id', requisicoesMarcadas.map(r => r.id));
+  }
+
+  // itens avulsos
+  if (itensAvulsos.length) {
+    const itensNovos = itensAvulsos.map(it => ({
+      tenant_id: TENANT_ID, pedido_compra_id: pedido.id, produto_id: it.produtoId, quantidade: it.quantidade, valor_unitario: it.valor,
+    }));
+    await supabase.from('pedido_compra_itens').insert(itensNovos);
+  }
+
+  window.location.href = `pedido-novo.html?id=${pedido.id}`;
+}
+
+// ============================================================================
+// MODO EDIÇÃO / RECEBIMENTO
+// ============================================================================
+async function modoEdicao() {
+  document.getElementById('modo-criacao').style.display = 'none';
+  document.getElementById('modo-edicao').style.display = 'block';
+  document.getElementById('titulo-janela').textContent = 'Pedido de Compra';
+
+  const { data: p, error } = await supabase.from('pedidos_compra').select('*, favorecidos:fornecedor_id(nome)').eq('id', idEdicao).single();
+  if (error || !p) { mostrarErro('Pedido não encontrado.'); return; }
+
+  document.getElementById('disp-fornecedor').textContent = p.favorecidos?.nome ?? '—';
+  document.getElementById('disp-status').textContent = LABEL_STATUS[p.status] ?? p.status;
+
+  const { data: itens } = await supabase.from('pedido_compra_itens').select('id, quantidade, valor_unitario, quantidade_recebida, produtos(codigo, nome, unidade_medida)').eq('pedido_compra_id', idEdicao);
+
+  const total = (itens || []).reduce((s, i) => s + Number(i.quantidade) * Number(i.valor_unitario), 0);
+  document.getElementById('disp-total').textContent = fmt(total);
+
+  document.getElementById('tbody-itens').innerHTML = (itens || []).map(i => `
+    <tr>
+      <td>${i.produtos?.codigo ?? ''} — ${i.produtos?.nome ?? '(produto removido)'}</td>
+      <td class="num mono">${fmtNum(i.quantidade)} ${i.produtos?.unidade_medida ?? ''}</td>
+      <td class="num mono">${fmt(i.valor_unitario)}</td>
+      <td class="num mono">${fmtNum(i.quantidade_recebida)}</td>
+      <td class="num"><input class="input mono" style="text-align:right;" type="number" step="0.0001" min="0" max="${i.quantidade}" data-item="${i.id}" data-atual="${i.quantidade_recebida}" value="${i.quantidade_recebida}"></td>
+    </tr>`).join('');
+
+  document.getElementById('btn-registrar-recebimento').addEventListener('click', registrarRecebimento);
+}
+
+async function registrarRecebimento() {
+  document.getElementById('aviso-erro').style.display = 'none';
+  const inputs = [...document.querySelectorAll('#tbody-itens input[data-item]')];
+  const alterados = inputs.filter(el => Number(el.value) !== Number(el.dataset.atual));
+
+  if (!alterados.length) { mostrarErro('Nenhuma quantidade recebida foi alterada.'); return; }
+
+  const btn = document.getElementById('btn-registrar-recebimento');
+  btn.disabled = true; btn.textContent = 'Registrando…';
+
+  for (const el of alterados) {
+    const novaQuantidade = Number(el.value);
+    if (novaQuantidade < Number(el.dataset.atual)) {
+      btn.disabled = false; btn.textContent = 'Registrar Recebimento';
+      mostrarErro('A quantidade recebida não pode diminuir — se recebeu errado, ajuste o estoque manualmente depois.');
+      return;
+    }
+    const { error } = await supabase.from('pedido_compra_itens').update({ quantidade_recebida: novaQuantidade }).eq('id', el.dataset.item);
+    if (error) { btn.disabled = false; btn.textContent = 'Registrar Recebimento'; mostrarErro('Erro ao registrar: ' + error.message); return; }
+  }
+
+  window.location.reload();
+}
+</script>
+</body>
+</html>
