@@ -190,6 +190,14 @@ const TENANT_ID = usuario?.tenant_id;
 // Configuração de cada cadastro: campos da tabela, colunas exibidas e o
 // formulário do modal. Adicionar um novo cadastro = adicionar uma entrada aqui.
 // ============================================================================
+const LABEL_DRE = {
+  receita_bruta: 'Receita Bruta', deducoes: 'Deduções', cmv: 'CMV/CPV',
+  despesa_administrativa: 'Desp. Administrativa', despesa_comercial: 'Desp. Comercial',
+  receita_financeira: 'Receita Financeira', despesa_financeira: 'Despesa Financeira',
+  outras_receitas: 'Outras Receitas', outras_despesas: 'Outras Despesas', ir_csll: 'IR/CSLL',
+  nao_classificado: 'Não classificado',
+};
+
 const ENTIDADES = {
   plano_contas: {
     label: 'Plano de Contas',
@@ -200,6 +208,7 @@ const ENTIDADES = {
       { chave: 'nome_grupo', titulo: 'Grupo' },
       { chave: 'codigo_conta', titulo: 'Cód. Conta' },
       { chave: 'nome_conta', titulo: 'Conta' },
+      { chave: 'classificacao_dre', titulo: 'Linha do DRE', render: v => LABEL_DRE[v] ?? v },
       { chave: 'ativo', titulo: 'Status', render: v => v ? '<span class="status-dot on"></span>Ativo' : '<span class="status-dot off"></span>Inativo' },
     ],
     campos: [
@@ -208,6 +217,13 @@ const ENTIDADES = {
       { nome: 'nome_grupo', label: 'Nome do Grupo', tipo: 'text', placeholder: 'Ex: Receita de vendas', obrigatorio: true },
       { nome: 'codigo_conta', label: 'Código da Conta', tipo: 'text', placeholder: 'Ex: 1.01.01', obrigatorio: true },
       { nome: 'nome_conta', label: 'Nome da Conta', tipo: 'text', placeholder: 'Ex: Receita com vendas de produtos', obrigatorio: true },
+      { nome: 'classificacao_dre', label: 'Linha do DRE', tipo: 'select', opcoes: [
+        ['receita_bruta','Receita Bruta'], ['deducoes','Deduções (impostos/devoluções)'], ['cmv','CMV / CPV'],
+        ['despesa_administrativa','Despesa Administrativa'], ['despesa_comercial','Despesa Comercial'],
+        ['receita_financeira','Receita Financeira'], ['despesa_financeira','Despesa Financeira'],
+        ['outras_receitas','Outras Receitas'], ['outras_despesas','Outras Despesas'], ['ir_csll','IR / CSLL'],
+        ['nao_classificado','Não classificado'],
+      ], obrigatorio: true, padrao: 'nao_classificado' },
       { nome: 'ativo', label: 'Ativo', tipo: 'checkbox', padrao: true },
     ],
   },

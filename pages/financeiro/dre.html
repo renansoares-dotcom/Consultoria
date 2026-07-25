@@ -134,14 +134,19 @@
       <span class="eyebrow">Contabilidade</span>
       <h1>DRE — Demonstrativo de Resultado</h1>
     </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <select class="input" id="f_grupo" style="width:170px;"></select>
+      <input type="month" class="input" id="f_mes_de" style="width:150px;">
+      <span style="color:var(--ink-soft);">até</span>
+      <input type="month" class="input" id="f_mes_ate" style="width:150px;">
+      <button class="btn primary" id="btn-gerar">Gerar</button>
+    </div>
   </div>
 
-  <section class="card" style="padding:64px 40px; text-align:center;">
-    <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-      <i data-lucide="file-bar-chart" style="width:26px; height:26px;"></i>
-    </div>
-    <h2 style="font-size:18px; margin-bottom:8px;">Em construção</h2>
-    <p style="color:var(--ink-soft); font-size:13.5px; max-width:460px; margin:0 auto;">Demonstrativo de Resultado do Exercício, estruturado a partir do Plano de Contas.</p>
+  <div id="aviso-nao-classificado" style="display:none; background:var(--amber-soft); color:var(--amber); border-radius:var(--radius-md); padding:12px 16px; font-size:12.5px; margin-bottom:18px;"></div>
+
+  <section class="card" id="area-dre">
+    <div class="empty-state">Escolha o período e clique em Gerar.</div>
   </section>
 </main>
   </div>
@@ -161,6 +166,105 @@
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+  // ---------- Grupo empresarial ----------
+  const selGrupo = document.getElementById('f_grupo');
+  const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
+  selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
+
+  // Período padrão: mês corrente
+  const hoje = new Date();
+  const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('f_mes_de').value = mesAtual;
+  document.getElementById('f_mes_ate').value = mesAtual;
+
+  // ---------- Estrutura do DRE: cada linha é uma classificação, com sinal e onde entra no cálculo ----------
+  const ESTRUTURA = [
+    { grupo: 'receita_bruta', label: 'Receita Bruta de Vendas', sinal: 1 },
+    { grupo: 'deducoes', label: '(-) Deduções (impostos/devoluções)', sinal: -1 },
+    { subtotal: 'Receita Líquida', chaves: ['receita_bruta', 'deducoes'] },
+    { grupo: 'cmv', label: '(-) CMV / CPV', sinal: -1 },
+    { subtotal: 'Lucro Bruto', chaves: ['receita_bruta', 'deducoes', 'cmv'] },
+    { grupo: 'despesa_administrativa', label: '(-) Despesas Administrativas', sinal: -1 },
+    { grupo: 'despesa_comercial', label: '(-) Despesas Comerciais', sinal: -1 },
+    { subtotal: 'Resultado Operacional', chaves: ['receita_bruta', 'deducoes', 'cmv', 'despesa_administrativa', 'despesa_comercial'] },
+    { grupo: 'receita_financeira', label: '(+) Receitas Financeiras', sinal: 1 },
+    { grupo: 'despesa_financeira', label: '(-) Despesas Financeiras', sinal: -1 },
+    { grupo: 'outras_receitas', label: '(+) Outras Receitas', sinal: 1 },
+    { grupo: 'outras_despesas', label: '(-) Outras Despesas', sinal: -1 },
+    { subtotal: 'Resultado Antes do IR/CSLL', chaves: ['receita_bruta', 'deducoes', 'cmv', 'despesa_administrativa', 'despesa_comercial', 'receita_financeira', 'despesa_financeira', 'outras_receitas', 'outras_despesas'] },
+    { grupo: 'ir_csll', label: '(-) IR / CSLL', sinal: -1 },
+    { subtotal: 'Lucro Líquido', chaves: ['receita_bruta', 'deducoes', 'cmv', 'despesa_administrativa', 'despesa_comercial', 'receita_financeira', 'despesa_financeira', 'outras_receitas', 'outras_despesas', 'ir_csll'], destaque: true },
+  ];
+
+  document.getElementById('btn-gerar').addEventListener('click', gerarDRE);
+
+  async function gerarDRE() {
+    const grupoId = selGrupo.value;
+    const mesDe = document.getElementById('f_mes_de').value;
+    const mesAte = document.getElementById('f_mes_ate').value;
+    const area = document.getElementById('area-dre');
+
+    if (!mesDe || !mesAte) { alert('Escolha o período (de/até).'); return; }
+
+    const dataInicio = `${mesDe}-01`;
+    const [anoFim, mesFim] = mesAte.split('-').map(Number);
+    const dataFim = new Date(anoFim, mesFim, 0).toISOString().slice(0, 10); // último dia do mês final
+
+    area.innerHTML = `<div class="empty-state">Calculando…</div>`;
+
+    let query = supabase.from('vw_dre_lancamentos').select('valor, classificacao_dre').gte('data', dataInicio).lte('data', dataFim);
+    if (grupoId) query = query.eq('grupo_empresarial_id', grupoId);
+    const { data, error } = await query;
+
+    if (error) { area.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro ao calcular: ${error.message}</div>`; return; }
+
+    const totais = {};
+    let naoClassificado = 0;
+    (data || []).forEach(l => {
+      const chave = l.classificacao_dre;
+      if (chave === 'nao_classificado') { naoClassificado += Math.abs(Number(l.valor)); return; }
+      totais[chave] = (totais[chave] || 0) + Math.abs(Number(l.valor));
+    });
+
+    const avisoEl = document.getElementById('aviso-nao-classificado');
+    if (naoClassificado > 0) {
+      avisoEl.style.display = 'block';
+      avisoEl.innerHTML = `<i data-lucide="alert-triangle" style="width:14px; height:14px; vertical-align:-2px;"></i> ${fmt(naoClassificado)} em lançamentos deste período não têm classificação de DRE definida e <strong>não entram</strong> no cálculo abaixo. Classifique as contas em Cadastros → Plano de Contas para incluir esse valor.`;
+    } else {
+      avisoEl.style.display = 'none';
+    }
+
+    function subtotalDe(chaves) {
+      return chaves.reduce((soma, chave) => {
+        const linha = ESTRUTURA.find(l => l.grupo === chave);
+        const sinal = linha ? linha.sinal : 1;
+        return soma + sinal * (totais[chave] || 0);
+      }, 0);
+    }
+
+    const linhasHtml = ESTRUTURA.map(item => {
+      if (item.subtotal) {
+        const valor = subtotalDe(item.chaves);
+        return `<tr style="${item.destaque ? 'border-top:2px solid var(--ink); font-weight:700;' : 'background:var(--paper); font-weight:650;'}">
+          <td colspan="2">${item.subtotal}</td>
+          <td class="num valor ${valor >= 0 ? 'positivo' : 'negativo'}">${fmt(valor)}</td>
+        </tr>`;
+      }
+      const valorBruto = totais[item.grupo] || 0;
+      return `<tr>
+        <td colspan="2" style="color:var(--ink-soft);">${item.label}</td>
+        <td class="num valor">${fmt(item.sinal * valorBruto)}</td>
+      </tr>`;
+    }).join('');
+
+    area.innerHTML = `<table><tbody>${linhasHtml}</tbody></table>`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  await gerarDRE();
 </script>
 </body>
 </html>
