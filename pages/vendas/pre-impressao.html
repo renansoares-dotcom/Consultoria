@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pré-impressão — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link active"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Comercial</span>
+      <h1>Pré-impressão</h1>
+    </div>
+    <button class="btn primary" id="btn-novo-projeto"><i data-lucide="plus"></i> Novo Projeto de Arte</button>
+  </div>
+
+  <div class="subnav" id="abas">
+    <button class="active" data-filtro="pendentes">Aguardando Decisão</button>
+    <button data-filtro="todos">Todos</button>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead><tr><th>Projeto</th><th>Cliente</th><th>Produto</th><th>Versão Atual</th><th>Status</th><th style="text-align:right;">Ações</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: novo projeto -->
+<div class="modal-overlay" id="modal-projeto">
+  <div class="modal">
+    <h2>Novo Projeto de Arte</h2>
+    <label class="field"><span class="field-label">Nome *</span><input class="input" id="pj_nome" placeholder="Ex: Saco 30x40 estampado - Cliente XYZ"></label>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Cliente</span><select class="input" id="pj_cliente"><option value="">Nenhum</option></select></label>
+      <label class="field f-grow"><span class="field-label">Produto</span><select class="input" id="pj_produto"><option value="">Nenhum</option></select></label>
+    </div>
+    <label class="field"><span class="field-label">Pedido de Venda</span><select class="input" id="pj_pedido"><option value="">Nenhum</option></select></label>
+    <label class="field"><span class="field-label">Observações</span><textarea class="input" id="pj_obs"></textarea></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-projeto">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-projeto">Criar Projeto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalhe do projeto (versões + aprovação) -->
+<div class="modal-overlay" id="modal-detalhe">
+  <div class="modal" style="max-width:680px;">
+    <h2 id="detalhe-titulo">Projeto de Arte</h2>
+    <p class="modal-sub" id="detalhe-info">—</p>
+
+    <div class="label" style="margin:14px 0 8px;">Versões (histórico completo, imutável)</div>
+    <div id="lista-versoes" style="margin-bottom:18px;"></div>
+
+    <div class="linha-flex">
+      <input type="file" id="input-arquivo-arte" style="display:none;">
+      <button class="btn ghost" type="button" id="btn-enviar-versao"><i data-lucide="upload"></i> Enviar Nova Versão</button>
+    </div>
+
+    <div id="area-decisao" style="margin-top:18px; display:none;">
+      <div class="label" style="margin-bottom:8px;">Decisão sobre a última versão</div>
+      <textarea class="input" id="dec_comentario" placeholder="Comentário (opcional para aprovar, recomendado para reprovar/solicitar alteração)" style="margin-bottom:10px;"></textarea>
+      <div style="display:flex; gap:10px;">
+        <button class="btn primary" type="button" id="btn-aprovar"><i data-lucide="check"></i> Aprovar</button>
+        <button class="btn ghost" type="button" id="btn-solicitar-alteracao">Solicitar Alteração</button>
+        <button class="btn ghost" type="button" id="btn-reprovar" style="color:var(--red); border-color:var(--red);">Reprovar</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-fechar-detalhe">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+  const LABEL_STATUS = { em_andamento: 'Em Andamento', aguardando_aprovacao: 'Aguardando Aprovação', aprovado: 'Aprovado', reprovado: 'Reprovado', cancelado: 'Cancelado' };
+  const BADGE_STATUS = { em_andamento: 'parcial', aguardando_aprovacao: 'aberto', aprovado: 'liquidado', reprovado: 'inadimplente', cancelado: 'inadimplente' };
+  const LABEL_DECISAO = { aprovado: 'Aprovado', reprovado: 'Reprovado', solicitar_alteracao: 'Alteração solicitada' };
+
+  let projetosCache = [];
+  let filtroAtual = 'pendentes';
+
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-filtro]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroAtual = btn.dataset.filtro;
+    desenhar();
+  });
+
+  async function carregar() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('projetos_arte')
+      .select('id, nome, status, favorecidos:cliente_id(nome), produtos:produto_id(codigo, nome), arte_versoes(numero_versao, criado_em)')
+      .order('criado_em', { ascending: false });
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    projetosCache = data || [];
+    desenhar();
+  }
+
+  function desenhar() {
+    let filtrados = projetosCache;
+    if (filtroAtual === 'pendentes') filtrados = filtrados.filter(p => p.status === 'em_andamento' || p.status === 'aguardando_aprovacao');
+
+    const tbody = document.getElementById('tbody');
+    if (!filtrados.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum projeto aqui.</td></tr>`; return; }
+
+    tbody.innerHTML = filtrados.map(p => {
+      const ultimaVersao = (p.arte_versoes || []).sort((a,b) => b.numero_versao - a.numero_versao)[0];
+      return `<tr>
+        <td>${p.nome}</td>
+        <td>${p.favorecidos?.nome ?? '—'}</td>
+        <td>${p.produtos ? p.produtos.codigo + ' — ' + p.produtos.nome : '—'}</td>
+        <td>${ultimaVersao ? 'v' + ultimaVersao.numero_versao : 'Sem versão ainda'}</td>
+        <td><span class="badge ${BADGE_STATUS[p.status]}">${LABEL_STATUS[p.status]}</span></td>
+        <td style="text-align:right;"><button class="icon-btn" data-abrir="${p.id}"><i data-lucide="folder-open"></i> Abrir</button></td>
+      </tr>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-abrir]');
+    if (btn) abrirDetalhe(btn.dataset.abrir);
+  });
+
+  // ---------- Novo projeto ----------
+  const modalProjeto = document.getElementById('modal-projeto');
+  document.getElementById('btn-novo-projeto').addEventListener('click', async () => {
+    const { data: clientes } = await supabase.from('favorecidos').select('id, nome').eq('ativo', true).order('nome');
+    document.getElementById('pj_cliente').innerHTML = '<option value="">Nenhum</option>' + (clientes || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+    const { data: produtos } = await supabase.from('produtos').select('id, codigo, nome').eq('tipo', 'produto_acabado').eq('ativo', true).order('nome');
+    document.getElementById('pj_produto').innerHTML = '<option value="">Nenhum</option>' + (produtos || []).map(p => `<option value="${p.id}">${p.codigo} — ${p.nome}</option>`).join('');
+    const { data: pedidos } = await supabase.from('pedidos_venda').select('id, numero_pedido').order('data_pedido', { ascending: false }).limit(100);
+    document.getElementById('pj_pedido').innerHTML = '<option value="">Nenhum</option>' + (pedidos || []).map(p => `<option value="${p.id}">${p.numero_pedido || p.id.slice(0,8)}</option>`).join('');
+
+    ['pj_nome','pj_obs'].forEach(id => document.getElementById(id).value = '');
+    modalProjeto.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-projeto').addEventListener('click', () => modalProjeto.classList.remove('open'));
+
+  document.getElementById('btn-salvar-projeto').addEventListener('click', async () => {
+    const nome = document.getElementById('pj_nome').value.trim();
+    if (!nome) { alert('Dê um nome ao projeto.'); return; }
+
+    const { error } = await supabase.from('projetos_arte').insert({
+      tenant_id: TENANT_ID, nome,
+      cliente_id: document.getElementById('pj_cliente').value || null,
+      produto_id: document.getElementById('pj_produto').value || null,
+      pedido_venda_id: document.getElementById('pj_pedido').value || null,
+      observacoes: document.getElementById('pj_obs').value.trim() || null,
+      criado_por: usuario?.id,
+    });
+    if (error) { alert('Erro ao criar projeto: ' + error.message); return; }
+    modalProjeto.classList.remove('open');
+    await carregar();
+  });
+
+  // ---------- Detalhe / versões / aprovação ----------
+  const modalDetalhe = document.getElementById('modal-detalhe');
+  let projetoEmDetalhe = null;
+
+  async function abrirDetalhe(id) {
+    projetoEmDetalhe = id;
+    const p = projetosCache.find(x => x.id === id);
+    document.getElementById('detalhe-titulo').textContent = p.nome;
+    document.getElementById('detalhe-info').textContent = `${p.favorecidos?.nome ?? 'Sem cliente'} · ${LABEL_STATUS[p.status]}`;
+    modalDetalhe.classList.add('open');
+    await carregarVersoes();
+  }
+  document.getElementById('btn-fechar-detalhe').addEventListener('click', async () => { modalDetalhe.classList.remove('open'); await carregar(); });
+
+  async function carregarVersoes() {
+    const { data: versoes } = await supabase.from('arte_versoes')
+      .select('id, numero_versao, arquivo_nome, tamanho_bytes, criado_em, arte_aprovacoes(decisao, comentario, criado_em)')
+      .eq('projeto_id', projetoEmDetalhe).order('numero_versao', { ascending: false });
+
+    document.getElementById('lista-versoes').innerHTML = (versoes?.length ? versoes.map(v => {
+      const decisoes = (v.arte_aprovacoes || []).map(d => `<div style="font-size:11px; color:var(--ink-soft);">${LABEL_DECISAO[d.decisao]} — ${fmtDataHora(d.criado_em)}${d.comentario ? ': ' + d.comentario : ''}</div>`).join('');
+      return `<div class="lista-selecao-linha" style="flex-direction:column; align-items:flex-start;">
+        <div style="display:flex; justify-content:space-between; width:100%;">
+          <div class="col-desc">v${v.numero_versao} — ${v.arquivo_nome}</div>
+          <div style="display:flex; gap:8px;">
+            <button class="icon-btn" data-baixar="${v.id}"><i data-lucide="download"></i></button>
+            <button class="icon-btn" data-reimprimir="${v.id}" title="Reimprimir/reenviar link"><i data-lucide="link"></i></button>
+          </div>
+        </div>
+        ${decisoes}
+      </div>`;
+    }).join('') : '<div class="empty-state">Nenhuma versão enviada ainda.</div>');
+
+    const ultimaVersao = versoes?.[0];
+    const jaDecidida = ultimaVersao && (ultimaVersao.arte_aprovacoes || []).length > 0;
+    document.getElementById('area-decisao').style.display = (ultimaVersao && !jaDecidida) ? 'block' : 'none';
+    versaoAtualId = ultimaVersao?.id ?? null;
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  let versaoAtualId = null;
+
+  document.getElementById('lista-versoes').addEventListener('click', async (e) => {
+    const btnBaixar = e.target.closest('[data-baixar]');
+    if (btnBaixar) {
+      const { data: v } = await supabase.from('arte_versoes').select('arquivo_path').eq('id', btnBaixar.dataset.baixar).single();
+      const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(v.arquivo_path, 300);
+      if (signed?.signedUrl) window.open(signed.signedUrl, '_blank');
+    }
+  });
+
+  // ---------- Enviar versão ----------
+  document.getElementById('btn-enviar-versao').addEventListener('click', () => document.getElementById('input-arquivo-arte').click());
+
+  document.getElementById('input-arquivo-arte').addEventListener('change', async (e) => {
+    const arquivo = e.target.files[0];
+    if (!arquivo) return;
+
+    const { count } = await supabase.from('arte_versoes').select('id', { count: 'exact', head: true }).eq('projeto_id', projetoEmDetalhe);
+    const proximaVersao = (count || 0) + 1;
+
+    const bytes = await arquivo.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+    const hashArquivo = [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const caminho = `${TENANT_ID}/artes/${projetoEmDetalhe}/v${proximaVersao}_${arquivo.name}`;
+    const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivo);
+    if (erroUpload) { alert('Erro ao enviar arquivo: ' + erroUpload.message); return; }
+
+    const { error } = await supabase.from('arte_versoes').insert({
+      tenant_id: TENANT_ID, projeto_id: projetoEmDetalhe, numero_versao: proximaVersao,
+      arquivo_path: caminho, arquivo_nome: arquivo.name, arquivo_tipo: arquivo.type,
+      hash_arquivo: hashArquivo, tamanho_bytes: arquivo.size, enviado_por: usuario?.id,
+    });
+    if (error) { alert('Erro ao registrar versão: ' + error.message); return; }
+
+    await supabase.from('projetos_arte').update({ status: 'aguardando_aprovacao' }).eq('id', projetoEmDetalhe);
+    document.getElementById('input-arquivo-arte').value = '';
+    await carregarVersoes();
+  });
+
+  // ---------- Decisão ----------
+  async function registrarDecisao(decisao) {
+    if (!versaoAtualId) return;
+    const { error } = await supabase.from('arte_aprovacoes').insert({
+      tenant_id: TENANT_ID, versao_id: versaoAtualId, decisao,
+      comentario: document.getElementById('dec_comentario').value.trim() || null,
+      decidido_por: usuario?.id,
+    });
+    if (error) { alert('Erro ao registrar decisão: ' + error.message); return; }
+    document.getElementById('dec_comentario').value = '';
+    await carregarVersoes();
+  }
+  document.getElementById('btn-aprovar').addEventListener('click', () => registrarDecisao('aprovado'));
+  document.getElementById('btn-reprovar').addEventListener('click', () => registrarDecisao('reprovado'));
+  document.getElementById('btn-solicitar-alteracao').addEventListener('click', () => registrarDecisao('solicitar_alteracao'));
+
+  await carregar();
+</script>
+</body>
+</html>
