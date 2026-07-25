@@ -54,18 +54,99 @@
           <span class="eyebrow">Módulo</span>
           <h1>Manutenção</h1>
         </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn ghost" id="btn-novo-equip"><i data-lucide="plus"></i> Novo Equipamento</button>
+          <button class="btn primary" id="btn-nova-ordem"><i data-lucide="plus"></i> Nova Ordem</button>
+        </div>
       </div>
 
-      <section class="card" style="padding:64px 40px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-          <i data-lucide="wrench" style="width:26px; height:26px;"></i>
-        </div>
-        <h2 style="font-size:18px; margin-bottom:8px;">Módulo em construção</h2>
-        <p style="color:var(--ink-soft); font-size:13.5px; max-width:420px; margin:0 auto;">
-          A estrutura de navegação de Manutenção já está pronta. As telas e a lógica de negócio deste módulo entram nas próximas etapas.
-        </p>
+      <section class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Ordens Abertas</div><div class="big valor aberto" id="card-abertas">0</div></div>
+        <div class="card"><div class="label">Equipamentos em Manutenção</div><div class="big valor negativo" id="card-em-manut">0</div></div>
+        <div class="card"><div class="label">Preventivas Vencidas</div><div class="big valor negativo" id="card-vencidas">0</div></div>
+      </section>
+
+      <div class="subnav" id="abas">
+        <button class="active" data-aba="ordens">Ordens de Manutenção</button>
+        <button data-aba="equipamentos">Equipamentos</button>
+      </div>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
       </section>
     </main>
+  </div>
+</div>
+
+<!-- Modal: novo equipamento -->
+<div class="modal-overlay" id="modal-equip">
+  <div class="modal">
+    <h2>Novo Equipamento</h2>
+    <div class="linha-flex">
+      <label class="field f-160"><span class="field-label">Código *</span><input class="input mono" id="eq_codigo"></label>
+      <label class="field f-grow"><span class="field-label">Nome *</span><input class="input" id="eq_nome"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Tipo</span><input class="input" id="eq_tipo" placeholder="Ex: Extrusora, Empilhadeira, Compressor..."></label>
+      <label class="field f-grow"><span class="field-label">Localização</span><input class="input" id="eq_localizacao"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Fabricante</span><input class="input" id="eq_fabricante"></label>
+      <label class="field f-grow"><span class="field-label">Modelo</span><input class="input" id="eq_modelo"></label>
+      <label class="field f-grow"><span class="field-label">Nº de Série</span><input class="input mono" id="eq_serie"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-160"><span class="field-label">Data de Aquisição</span><input class="input" type="date" id="eq_data_aquisicao"></label>
+      <label class="field f-200"><span class="field-label">Periodicidade preventiva (dias)</span><input class="input mono" type="number" min="1" id="eq_periodicidade" placeholder="Ex: 90"></label>
+    </div>
+    <label class="field"><span class="field-label">Observações</span><textarea class="input" id="eq_obs"></textarea></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-equip">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-equip">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nova ordem -->
+<div class="modal-overlay" id="modal-ordem">
+  <div class="modal">
+    <h2>Nova Ordem de Manutenção</h2>
+    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="or_equipamento"></select></label>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Tipo *</span>
+        <select class="input" id="or_tipo"><option value="corretiva">Corretiva</option><option value="preventiva">Preventiva</option></select>
+      </label>
+      <label class="field f-grow"><span class="field-label">Prioridade</span>
+        <select class="input" id="or_prioridade">
+          <option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option>
+        </select>
+      </label>
+      <label class="field f-160"><span class="field-label">Data Prevista</span><input class="input" type="date" id="or_data_prevista"></label>
+    </div>
+    <label class="field"><span class="field-label">Descrição do problema / serviço *</span><textarea class="input" id="or_descricao"></textarea></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-ordem">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-ordem">Abrir Ordem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: concluir ordem -->
+<div class="modal-overlay" id="modal-concluir">
+  <div class="modal">
+    <h2>Concluir Ordem</h2>
+    <label class="field"><span class="field-label">Solução aplicada</span><textarea class="input" id="cc_solucao"></textarea></label>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Custo de Peças (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="cc_custo_pecas" value="0"></label>
+      <label class="field f-grow"><span class="field-label">Custo de Mão de Obra (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="cc_custo_mao_obra" value="0"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-concluir">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-concluir">Concluir Ordem</button>
+    </div>
   </div>
 </div>
 
@@ -76,6 +157,7 @@
 
   const sessao = await exigirSessao();
   const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
   if (usuario) {
     document.getElementById('user-nome').textContent = usuario.nome;
     document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
@@ -83,6 +165,191 @@
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const LABEL_STATUS_EQ = { ativo: 'Ativo', em_manutencao: 'Em Manutenção', inativo: 'Inativo' };
+  const BADGE_STATUS_EQ = { ativo: 'liquidado', em_manutencao: 'inadimplente', inativo: 'aberto' };
+  const LABEL_STATUS_OM = { aberta: 'Aberta', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
+  const BADGE_STATUS_OM = { aberta: 'aberto', em_andamento: 'parcial', concluida: 'liquidado', cancelada: 'inadimplente' };
+  const LABEL_PRIORIDADE = { baixa: 'Baixa', media: 'Média', alta: 'Alta', critica: 'Crítica' };
+
+  let abaAtual = 'ordens';
+  let equipamentosCache = [];
+
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-aba]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    abaAtual = btn.dataset.aba;
+    carregar();
+  });
+
+  async function carregarResumo() {
+    const { count: abertas } = await supabase.from('ordens_manutencao').select('id', { count: 'exact', head: true }).in('status', ['aberta','em_andamento']);
+    const { count: emManut } = await supabase.from('equipamentos').select('id', { count: 'exact', head: true }).eq('status', 'em_manutencao');
+    const { count: vencidas } = await supabase.from('equipamentos').select('id', { count: 'exact', head: true }).lt('proxima_preventiva', new Date().toISOString().slice(0,10));
+    document.getElementById('card-abertas').textContent = abertas || 0;
+    document.getElementById('card-em-manut').textContent = emManut || 0;
+    document.getElementById('card-vencidas').textContent = vencidas || 0;
+  }
+
+  async function carregar() {
+    await carregarResumo();
+    const { data: eqs } = await supabase.from('equipamentos').select('id, codigo, nome').order('nome');
+    equipamentosCache = eqs || [];
+
+    if (abaAtual === 'ordens') return carregarOrdens();
+    return carregarEquipamentos();
+  }
+
+  async function carregarOrdens() {
+    document.getElementById('thead').innerHTML = `<tr><th>Aberta em</th><th>Equipamento</th><th>Tipo</th><th>Prioridade</th><th>Status</th><th>Descrição</th><th style="text-align:right;">Ações</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('ordens_manutencao')
+      .select('id, tipo, prioridade, status, descricao_problema, data_abertura, equipamentos(codigo, nome)')
+      .order('data_abertura', { ascending: false }).limit(200);
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma ordem de manutenção ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(o => {
+      let acoes = '';
+      if (o.status === 'aberta') acoes += `<button class="icon-btn" data-iniciar="${o.id}">Iniciar</button> `;
+      if (o.status === 'aberta' || o.status === 'em_andamento') {
+        acoes += `<button class="icon-btn" data-concluir="${o.id}">Concluir</button> <button class="icon-btn danger" data-cancelar="${o.id}">Cancelar</button>`;
+      }
+      return `<tr>
+        <td>${fmtData(o.data_abertura)}</td>
+        <td>${o.equipamentos?.codigo ?? ''} — ${o.equipamentos?.nome ?? '(removido)'}</td>
+        <td>${o.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}</td>
+        <td>${LABEL_PRIORIDADE[o.prioridade]}</td>
+        <td><span class="badge ${BADGE_STATUS_OM[o.status]}">${LABEL_STATUS_OM[o.status]}</span></td>
+        <td style="max-width:280px; font-size:12.5px; color:var(--ink-soft);">${o.descricao_problema}</td>
+        <td style="text-align:right; white-space:nowrap;">${acoes}</td>
+      </tr>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  async function carregarEquipamentos() {
+    document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Localização</th><th>Status</th><th>Próx. Preventiva</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('equipamentos').select('*').order('nome');
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum equipamento cadastrado ainda.</td></tr>`; return; }
+
+    const hoje = new Date().toISOString().slice(0,10);
+    tbody.innerHTML = data.map(eq => `
+      <tr>
+        <td class="mono">${eq.codigo}</td>
+        <td>${eq.nome}</td>
+        <td>${eq.tipo ?? '—'}</td>
+        <td>${eq.localizacao ?? '—'}</td>
+        <td><span class="badge ${BADGE_STATUS_EQ[eq.status]}">${LABEL_STATUS_EQ[eq.status]}</span></td>
+        <td class="${eq.proxima_preventiva && eq.proxima_preventiva < hoje ? 'valor negativo' : ''}">${fmtData(eq.proxima_preventiva)}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('tbody').addEventListener('click', async (e) => {
+    const btnIniciar = e.target.closest('[data-iniciar]');
+    if (btnIniciar) { await supabase.from('ordens_manutencao').update({ status: 'em_andamento' }).eq('id', btnIniciar.dataset.iniciar); await carregar(); return; }
+
+    const btnCancelar = e.target.closest('[data-cancelar]');
+    if (btnCancelar) { if (confirm('Cancelar esta ordem?')) { await supabase.from('ordens_manutencao').update({ status: 'cancelada' }).eq('id', btnCancelar.dataset.cancelar); await carregar(); } return; }
+
+    const btnConcluir = e.target.closest('[data-concluir]');
+    if (btnConcluir) abrirModalConcluir(btnConcluir.dataset.concluir);
+  });
+
+  // ---------- Modal: novo equipamento ----------
+  const modalEquip = document.getElementById('modal-equip');
+  document.getElementById('btn-novo-equip').addEventListener('click', () => {
+    ['eq_codigo','eq_nome','eq_tipo','eq_localizacao','eq_fabricante','eq_modelo','eq_serie','eq_data_aquisicao','eq_periodicidade','eq_obs'].forEach(id => document.getElementById(id).value = '');
+    modalEquip.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-equip').addEventListener('click', () => modalEquip.classList.remove('open'));
+
+  document.getElementById('btn-salvar-equip').addEventListener('click', async () => {
+    const codigo = document.getElementById('eq_codigo').value.trim();
+    const nome = document.getElementById('eq_nome').value.trim();
+    if (!codigo || !nome) { alert('Preencha código e nome.'); return; }
+
+    const { error } = await supabase.from('equipamentos').insert({
+      tenant_id: TENANT_ID, codigo, nome,
+      tipo: document.getElementById('eq_tipo').value.trim() || null,
+      localizacao: document.getElementById('eq_localizacao').value.trim() || null,
+      fabricante: document.getElementById('eq_fabricante').value.trim() || null,
+      modelo: document.getElementById('eq_modelo').value.trim() || null,
+      numero_serie: document.getElementById('eq_serie').value.trim() || null,
+      data_aquisicao: document.getElementById('eq_data_aquisicao').value || null,
+      periodicidade_preventiva_dias: document.getElementById('eq_periodicidade').value ? Number(document.getElementById('eq_periodicidade').value) : null,
+      observacoes: document.getElementById('eq_obs').value.trim() || null,
+    });
+    if (error) { alert(error.code === '23505' ? 'Já existe um equipamento com esse código.' : 'Erro ao salvar: ' + error.message); return; }
+    modalEquip.classList.remove('open');
+    await carregar();
+  });
+
+  // ---------- Modal: nova ordem ----------
+  const modalOrdem = document.getElementById('modal-ordem');
+  document.getElementById('btn-nova-ordem').addEventListener('click', () => {
+    document.getElementById('or_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
+    document.getElementById('or_descricao').value = '';
+    document.getElementById('or_data_prevista').value = '';
+    modalOrdem.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-ordem').addEventListener('click', () => modalOrdem.classList.remove('open'));
+
+  document.getElementById('btn-salvar-ordem').addEventListener('click', async () => {
+    const equipamentoId = document.getElementById('or_equipamento').value;
+    const descricao = document.getElementById('or_descricao').value.trim();
+    if (!equipamentoId) { alert('Selecione um equipamento.'); return; }
+    if (!descricao) { alert('Descreva o problema ou serviço.'); return; }
+
+    const { error } = await supabase.from('ordens_manutencao').insert({
+      tenant_id: TENANT_ID, equipamento_id: equipamentoId,
+      tipo: document.getElementById('or_tipo').value,
+      prioridade: document.getElementById('or_prioridade').value,
+      descricao_problema: descricao,
+      data_prevista: document.getElementById('or_data_prevista').value || null,
+      criado_por: usuario?.id,
+    });
+    if (error) { alert('Erro ao abrir ordem: ' + error.message); return; }
+    modalOrdem.classList.remove('open');
+    await carregar();
+  });
+
+  // ---------- Modal: concluir ordem ----------
+  const modalConcluir = document.getElementById('modal-concluir');
+  let ordemEmConclusao = null;
+  function abrirModalConcluir(id) {
+    ordemEmConclusao = id;
+    document.getElementById('cc_solucao').value = '';
+    document.getElementById('cc_custo_pecas').value = 0;
+    document.getElementById('cc_custo_mao_obra').value = 0;
+    modalConcluir.classList.add('open');
+  }
+  document.getElementById('btn-cancelar-concluir').addEventListener('click', () => modalConcluir.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-concluir').addEventListener('click', async () => {
+    const { error } = await supabase.from('ordens_manutencao').update({
+      status: 'concluida', data_conclusao: new Date().toISOString().slice(0,10),
+      solucao_aplicada: document.getElementById('cc_solucao').value.trim() || null,
+      custo_pecas: Number(document.getElementById('cc_custo_pecas').value || 0),
+      custo_mao_obra: Number(document.getElementById('cc_custo_mao_obra').value || 0),
+    }).eq('id', ordemEmConclusao);
+    if (error) { alert('Erro ao concluir: ' + error.message); return; }
+    modalConcluir.classList.remove('open');
+    await carregar();
+  });
+
+  await carregar();
 </script>
 </body>
 </html>

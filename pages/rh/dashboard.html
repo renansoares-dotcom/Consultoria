@@ -54,18 +54,71 @@
           <span class="eyebrow">Módulo</span>
           <h1>RH</h1>
         </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn ghost" id="btn-novo-depto">+ Departamento</button>
+          <button class="btn ghost" id="btn-novo-cargo">+ Cargo</button>
+          <button class="btn primary" id="btn-novo"><i data-lucide="plus"></i> Novo Funcionário</button>
+        </div>
       </div>
 
-      <section class="card" style="padding:64px 40px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-          <i data-lucide="users-round" style="width:26px; height:26px;"></i>
-        </div>
-        <h2 style="font-size:18px; margin-bottom:8px;">Módulo em construção</h2>
-        <p style="color:var(--ink-soft); font-size:13.5px; max-width:420px; margin:0 auto;">
-          A estrutura de navegação de RH já está pronta. As telas e a lógica de negócio deste módulo entram nas próximas etapas.
-        </p>
+      <section class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Funcionários Ativos</div><div class="big valor positivo" id="card-ativos">0</div></div>
+        <div class="card"><div class="label">Departamentos</div><div class="big" id="card-deptos">0</div></div>
+        <div class="card"><div class="label">Cargos</div><div class="big" id="card-cargos">0</div></div>
+      </section>
+
+      <div class="subnav" id="abas">
+        <button class="active" data-aba="funcionarios">Funcionários</button>
+        <button data-aba="cargos">Cargos & Departamentos</button>
+      </div>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
       </section>
     </main>
+  </div>
+</div>
+
+<!-- Modal: novo funcionário -->
+<div class="modal-overlay" id="modal-func">
+  <div class="modal">
+    <h2>Novo Funcionário</h2>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Nome *</span><input class="input" id="fn_nome"></label>
+      <label class="field f-160"><span class="field-label">CPF</span><input class="input mono" id="fn_cpf"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Departamento</span><select class="input" id="fn_departamento"></select></label>
+      <label class="field f-grow"><span class="field-label">Cargo</span><select class="input" id="fn_cargo"></select></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-160"><span class="field-label">Data de Admissão</span><input class="input" type="date" id="fn_admissao"></label>
+      <label class="field f-grow"><span class="field-label">Salário (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="fn_salario"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">E-mail</span><input class="input" type="email" id="fn_email"></label>
+      <label class="field f-160"><span class="field-label">Telefone</span><input class="input" id="fn_telefone"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-func">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-func">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: novo departamento/cargo -->
+<div class="modal-overlay" id="modal-cargo">
+  <div class="modal">
+    <h2 id="cargo-titulo">Novo Departamento</h2>
+    <label class="field"><span class="field-label">Nome *</span><input class="input" id="cg_nome"></label>
+    <label class="field" id="campo-depto-do-cargo" style="display:none;"><span class="field-label">Departamento</span><select class="input" id="cg_departamento"></select></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-cargo">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-cargo">Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -76,6 +129,7 @@
 
   const sessao = await exigirSessao();
   const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
   if (usuario) {
     document.getElementById('user-nome').textContent = usuario.nome;
     document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
@@ -83,6 +137,137 @@
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const LABEL_STATUS = { ativo: 'Ativo', desligado: 'Desligado', afastado: 'Afastado' };
+  const BADGE_STATUS = { ativo: 'liquidado', desligado: 'inadimplente', afastado: 'aberto' };
+
+  let abaAtual = 'funcionarios';
+  let departamentosCache = [], cargosCache = [];
+
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-aba]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    abaAtual = btn.dataset.aba;
+    carregar();
+  });
+
+  async function carregarResumo() {
+    const { count: ativos } = await supabase.from('funcionarios').select('id', { count: 'exact', head: true }).eq('status', 'ativo');
+    const { count: deptos } = await supabase.from('departamentos').select('id', { count: 'exact', head: true }).eq('ativo', true);
+    const { count: cargos } = await supabase.from('cargos').select('id', { count: 'exact', head: true }).eq('ativo', true);
+    document.getElementById('card-ativos').textContent = ativos || 0;
+    document.getElementById('card-deptos').textContent = deptos || 0;
+    document.getElementById('card-cargos').textContent = cargos || 0;
+  }
+
+  async function carregar() {
+    await carregarResumo();
+    const { data: deptos } = await supabase.from('departamentos').select('id, nome').eq('ativo', true).order('nome');
+    const { data: cargos } = await supabase.from('cargos').select('id, nome, departamento_id').eq('ativo', true).order('nome');
+    departamentosCache = deptos || [];
+    cargosCache = cargos || [];
+
+    if (abaAtual === 'funcionarios') return carregarFuncionarios();
+    return carregarCargosDeptos();
+  }
+
+  async function carregarFuncionarios() {
+    document.getElementById('thead').innerHTML = `<tr><th>Nome</th><th>Departamento</th><th>Cargo</th><th>Admissão</th><th class="num">Salário</th><th>Status</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('funcionarios')
+      .select('nome, data_admissao, salario, status, cargos(nome), departamentos(nome)').order('nome');
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum funcionário cadastrado ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(f => `
+      <tr>
+        <td>${f.nome}</td>
+        <td>${f.departamentos?.nome ?? '—'}</td>
+        <td>${f.cargos?.nome ?? '—'}</td>
+        <td>${fmtData(f.data_admissao)}</td>
+        <td class="num mono">${f.salario != null ? fmt(f.salario) : '—'}</td>
+        <td><span class="badge ${BADGE_STATUS[f.status]}">${LABEL_STATUS[f.status]}</span></td>
+      </tr>`).join('');
+  }
+
+  async function carregarCargosDeptos() {
+    document.getElementById('thead').innerHTML = `<tr><th>Departamento</th><th>Cargos vinculados</th><th style="text-align:right;">Ações</th></tr>`;
+    const tbody = document.getElementById('tbody');
+
+    if (!departamentosCache.length) { tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nenhum departamento cadastrado ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = departamentosCache.map(d => {
+      const cargosDoDepto = cargosCache.filter(c => c.departamento_id === d.id).map(c => c.nome).join(', ') || '—';
+      return `<tr><td>${d.nome}</td><td>${cargosDoDepto}</td><td></td></tr>`;
+    }).join('');
+  }
+
+  document.getElementById('btn-novo').addEventListener('click', () => {
+    document.getElementById('fn_departamento').innerHTML = '<option value="">Nenhum</option>' + departamentosCache.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
+    document.getElementById('fn_cargo').innerHTML = '<option value="">Nenhum</option>' + cargosCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+    ['fn_nome','fn_cpf','fn_salario','fn_email','fn_telefone'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fn_admissao').value = new Date().toISOString().slice(0,10);
+    document.getElementById('modal-func').classList.add('open');
+  });
+  document.getElementById('btn-cancelar-func').addEventListener('click', () => document.getElementById('modal-func').classList.remove('open'));
+
+  document.getElementById('btn-salvar-func').addEventListener('click', async () => {
+    const nome = document.getElementById('fn_nome').value.trim();
+    if (!nome) { alert('Preencha o nome.'); return; }
+
+    const { error } = await supabase.from('funcionarios').insert({
+      tenant_id: TENANT_ID, nome,
+      cpf: document.getElementById('fn_cpf').value.trim() || null,
+      departamento_id: document.getElementById('fn_departamento').value || null,
+      cargo_id: document.getElementById('fn_cargo').value || null,
+      data_admissao: document.getElementById('fn_admissao').value || null,
+      salario: document.getElementById('fn_salario').value ? Number(document.getElementById('fn_salario').value) : null,
+      email: document.getElementById('fn_email').value.trim() || null,
+      telefone: document.getElementById('fn_telefone').value.trim() || null,
+    });
+    if (error) { alert(error.code === '23505' ? 'Já existe um funcionário com esse CPF.' : 'Erro ao salvar: ' + error.message); return; }
+    document.getElementById('modal-func').classList.remove('open');
+    await carregar();
+  });
+
+  // ---------- Cargo/Departamento (modal compartilhado, muda de tipo) ----------
+  let tipoModalCargo = 'departamento';
+
+  function abrirModalCargo(tipo) {
+    tipoModalCargo = tipo;
+    document.getElementById('cargo-titulo').textContent = tipo === 'departamento' ? 'Novo Departamento' : 'Novo Cargo';
+    document.getElementById('campo-depto-do-cargo').style.display = tipo === 'cargo' ? 'block' : 'none';
+    document.getElementById('cg_nome').value = '';
+    if (tipo === 'cargo') document.getElementById('cg_departamento').innerHTML = departamentosCache.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
+    document.getElementById('modal-cargo').classList.add('open');
+  }
+  document.getElementById('btn-cancelar-cargo').addEventListener('click', () => document.getElementById('modal-cargo').classList.remove('open'));
+
+  document.getElementById('btn-salvar-cargo').addEventListener('click', async () => {
+    const nome = document.getElementById('cg_nome').value.trim();
+    if (!nome) { alert('Preencha o nome.'); return; }
+
+    const tabela = tipoModalCargo === 'departamento' ? 'departamentos' : 'cargos';
+    const payload = { tenant_id: TENANT_ID, nome };
+    if (tipoModalCargo === 'cargo') payload.departamento_id = document.getElementById('cg_departamento').value || null;
+
+    const { error } = await supabase.from(tabela).insert(payload);
+    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+    document.getElementById('modal-cargo').classList.remove('open');
+    await carregar();
+  });
+
+  document.getElementById('btn-novo-depto').addEventListener('click', () => abrirModalCargo('departamento'));
+  document.getElementById('btn-novo-cargo').addEventListener('click', () => abrirModalCargo('cargo'));
+
+  await carregar();
 </script>
 </body>
 </html>

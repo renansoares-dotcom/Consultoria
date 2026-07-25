@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rastreabilidade — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link active"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Produção</span>
+      <h1>Rastreabilidade</h1>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn ghost" id="btn-layouts"><i data-lucide="layout-panel-top"></i> Layouts de Etiqueta</button>
+      <button class="btn ghost" id="btn-novo-pallet"><i data-lucide="package-plus"></i> Novo Pallet</button>
+    </div>
+  </div>
+
+  <div class="linha-flex" style="margin-bottom:18px;">
+    <label class="field f-grow">
+      <span class="field-label">Bipar / Buscar (código da etiqueta, OP ou produto)</span>
+      <input class="input mono" id="busca" placeholder="Cole ou digite o código, número da OP ou nome do produto...">
+    </label>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead><tr><th>Produzida em</th><th>Produto</th><th>OP</th><th class="num">Qtd.</th><th>Qualidade</th><th>Pallet</th><th style="text-align:right;">Ações</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: rastreabilidade detalhada -->
+<div class="modal-overlay" id="modal-detalhe">
+  <div class="modal">
+    <h2>Rastreabilidade da Unidade</h2>
+    <div id="detalhe-conteudo"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-fechar-detalhe">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: imprimir/reimprimir -->
+<div class="modal-overlay" id="modal-imprimir">
+  <div class="modal">
+    <h2 id="imprimir-titulo">Imprimir Etiqueta</h2>
+    <label class="field">
+      <span class="field-label">Layout</span>
+      <select class="input" id="im_layout"></select>
+    </label>
+    <div id="campo-motivo-reimpressao" style="display:none;">
+      <label class="field">
+        <span class="field-label">Motivo da reimpressão *</span>
+        <textarea class="input" id="im_motivo" placeholder="Ex: etiqueta danificada, substituição de pallet..."></textarea>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-imprimir">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-imprimir"><i data-lucide="printer"></i> Abrir para Impressão</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: adicionar ao pallet -->
+<div class="modal-overlay" id="modal-pallet">
+  <div class="modal">
+    <h2>Adicionar ao Pallet</h2>
+    <label class="field"><span class="field-label">Pallet</span><select class="input" id="pl_pallet"></select></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-pallet">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-pallet">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: gerenciar layouts -->
+<div class="modal-overlay" id="modal-layouts">
+  <div class="modal" style="max-width:640px;">
+    <h2>Layouts de Etiqueta</h2>
+    <div id="lista-layouts" style="margin-bottom:18px;"></div>
+    <div class="label" style="margin-bottom:10px;">Novo layout</div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Nome</span><input class="input" id="ly_nome" placeholder="Ex: Padrão bobina 100x60"></label>
+      <label class="field f-100"><span class="field-label">Largura (mm)</span><input class="input mono" type="number" id="ly_largura" value="100"></label>
+      <label class="field f-100"><span class="field-label">Altura (mm)</span><input class="input mono" type="number" id="ly_altura" value="60"></label>
+    </div>
+    <div class="linha-flex" style="flex-wrap:wrap;">
+      <label class="checkbox-field"><input type="checkbox" id="ly_produto" checked><label for="ly_produto">Produto</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_lote" checked><label for="ly_lote">Lote</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_op" checked><label for="ly_op">OP</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_quantidade" checked><label for="ly_quantidade">Quantidade</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_data" checked><label for="ly_data">Data</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_maquina"><label for="ly_maquina">Máquina</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_cliente"><label for="ly_cliente">Cliente</label></label>
+      <label class="checkbox-field"><input type="checkbox" id="ly_qualidade"><label for="ly_qualidade">Qualidade</label></label>
+    </div>
+    <label class="checkbox-field" style="margin-top:8px;"><input type="checkbox" id="ly_padrao"><label for="ly_padrao">Definir como padrão</label></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-fechar-layouts">Fechar</button>
+      <button class="btn primary" type="button" id="btn-salvar-layout">Salvar Layout</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+  const LABEL_QUALIDADE = { nao_aplicavel: 'Não se aplica', aguardando: 'Aguardando', aprovada: 'Aprovada', reprovada: 'Reprovada', aprovada_parcial: 'Aprovada Parcial' };
+  const BADGE_QUALIDADE = { nao_aplicavel: 'aberto', aguardando: 'parcial', aprovada: 'liquidado', reprovada: 'inadimplente', aprovada_parcial: 'parcial' };
+
+  let unidadesCache = [];
+
+  async function carregar() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('vw_rastreabilidade_unidade')
+      .select('*').order('data_producao', { ascending: false }).limit(300);
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    unidadesCache = data || [];
+    desenhar();
+  }
+
+  function desenhar() {
+    const termo = document.getElementById('busca').value.trim().toLowerCase();
+    let filtradas = unidadesCache;
+    if (termo) {
+      filtradas = filtradas.filter(u =>
+        u.codigo_identificador?.toLowerCase().includes(termo) ||
+        u.numero_op?.toLowerCase().includes(termo) ||
+        u.produto_nome?.toLowerCase().includes(termo) ||
+        u.produto_codigo?.toLowerCase().includes(termo));
+    }
+
+    const tbody = document.getElementById('tbody');
+    if (!filtradas.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma unidade encontrada.</td></tr>`; return; }
+
+    tbody.innerHTML = filtradas.slice(0, 100).map(u => `
+      <tr>
+        <td>${fmtDataHora(u.data_producao)}</td>
+        <td>${u.produto_codigo} — ${u.produto_nome}</td>
+        <td class="mono">${u.numero_op ?? '—'}</td>
+        <td class="num mono">${fmtNum(u.quantidade)} ${u.unidade_medida}</td>
+        <td><span class="badge ${BADGE_QUALIDADE[u.situacao_qualidade]}">${LABEL_QUALIDADE[u.situacao_qualidade]}</span></td>
+        <td class="mono" style="font-size:11px;">${u.pallet_codigo ? u.pallet_codigo.slice(0,8) : '—'}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <button class="icon-btn" data-detalhe="${u.unidade_produzida_id}"><i data-lucide="search"></i></button>
+          <button class="icon-btn" data-imprimir="${u.unidade_produzida_id}" data-liberada="${u.liberada}"><i data-lucide="printer"></i></button>
+          <button class="icon-btn" data-pallet="${u.unidade_produzida_id}"><i data-lucide="package"></i></button>
+        </td>
+      </tr>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('busca').addEventListener('input', desenhar);
+
+  // ---------- Detalhe / rastreabilidade completa ----------
+  document.getElementById('tbody').addEventListener('click', (e) => {
+    const btnDet = e.target.closest('[data-detalhe]');
+    if (btnDet) return abrirDetalhe(btnDet.dataset.detalhe);
+    const btnImp = e.target.closest('[data-imprimir]');
+    if (btnImp) return abrirModalImprimir(btnImp.dataset.imprimir, btnImp.dataset.liberada === 'true');
+    const btnPal = e.target.closest('[data-pallet]');
+    if (btnPal) return abrirModalPallet(btnPal.dataset.pallet);
+  });
+
+  function abrirDetalhe(id) {
+    const u = unidadesCache.find(x => x.unidade_produzida_id === id);
+    if (!u) return;
+    document.getElementById('detalhe-conteudo').innerHTML = `
+      <div class="lista-selecao">
+        <div class="lista-selecao-linha"><div class="col-desc">Código (etiqueta)</div><div class="col-valor mono" style="font-size:11px;">${u.codigo_identificador}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Produto</div><div class="col-valor">${u.produto_codigo} — ${u.produto_nome}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Ordem de Produção</div><div class="col-valor mono">${u.numero_op ?? '—'}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Quantidade</div><div class="col-valor">${fmtNum(u.quantidade)} ${u.unidade_medida}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Refugo no apontamento</div><div class="col-valor">${fmtNum(u.quantidade_refugo)}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Data de produção</div><div class="col-valor">${fmtDataHora(u.data_producao)}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Máquina/Linha</div><div class="col-valor">${u.maquina_linha ?? '—'}</div></div>
+        <div class="lista-selecao-linha"><div class="col-desc">Situação de Qualidade</div><div class="col-valor"><span class="badge ${BADGE_QUALIDADE[u.situacao_qualidade]}">${LABEL_QUALIDADE[u.situacao_qualidade]}</span></div></div>
+        ${u.motivo_reprovacao ? `<div class="lista-selecao-linha"><div class="col-desc">Motivo (reprovação)</div><div class="col-valor">${u.motivo_reprovacao}</div></div>` : ''}
+        <div class="lista-selecao-linha"><div class="col-desc">Pallet</div><div class="col-valor mono" style="font-size:11px;">${u.pallet_codigo ?? 'Sem pallet ainda'}</div></div>
+      </div>`;
+    document.getElementById('modal-detalhe').classList.add('open');
+  }
+  document.getElementById('btn-fechar-detalhe').addEventListener('click', () => document.getElementById('modal-detalhe').classList.remove('open'));
+
+  // ---------- Imprimir / reimprimir ----------
+  const modalImprimir = document.getElementById('modal-imprimir');
+  let unidadeEmImpressao = null;
+
+  async function abrirModalImprimir(id, liberada) {
+    unidadeEmImpressao = id;
+    const jaImpressa = false; // rastreamos reimpressão pelo histórico; simplificação: sempre pergunta layout, motivo só se marcar reimpressão
+    document.getElementById('imprimir-titulo').textContent = liberada ? 'Imprimir Etiqueta' : 'Imprimir Etiqueta (⚠ ainda não liberada pela Qualidade)';
+
+    const { data: layouts } = await supabase.from('layouts_etiqueta').select('id, nome, padrao').eq('ativo', true).order('padrao', { ascending: false });
+    document.getElementById('im_layout').innerHTML = (layouts || []).map(l => `<option value="${l.id}">${l.nome}${l.padrao ? ' (padrão)' : ''}</option>`).join('') || '<option value="">Nenhum layout cadastrado — crie um em "Layouts de Etiqueta"</option>';
+
+    document.getElementById('campo-motivo-reimpressao').style.display = 'none';
+    document.getElementById('im_motivo').value = '';
+    modalImprimir.classList.add('open');
+  }
+  document.getElementById('btn-cancelar-imprimir').addEventListener('click', () => modalImprimir.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-imprimir').addEventListener('click', async () => {
+    const layoutId = document.getElementById('im_layout').value;
+    if (!layoutId) { alert('Cadastre um layout de etiqueta primeiro.'); return; }
+
+    // Verifica se já existe impressão anterior — se sim, exige motivo (reimpressão auditável)
+    const { count } = await supabase.from('reimpressoes_etiqueta').select('id', { count: 'exact', head: true }).eq('unidade_produzida_id', unidadeEmImpressao);
+    const jaTemHistorico = (count || 0) > 0;
+
+    if (jaTemHistorico && !document.getElementById('im_motivo').value.trim()) {
+      document.getElementById('campo-motivo-reimpressao').style.display = 'block';
+      alert('Esta etiqueta já foi impressa antes. Preencha o motivo da reimpressão e confirme de novo.');
+      return;
+    }
+
+    if (jaTemHistorico || document.getElementById('im_motivo').value.trim()) {
+      await supabase.from('reimpressoes_etiqueta').insert({
+        tenant_id: TENANT_ID, unidade_produzida_id: unidadeEmImpressao,
+        motivo: document.getElementById('im_motivo').value.trim() || 'Primeira impressão registrada tardiamente',
+        usuario_id: usuario?.id,
+      });
+    } else {
+      // primeira impressão: registra também, sem exigir motivo
+      await supabase.from('reimpressoes_etiqueta').insert({
+        tenant_id: TENANT_ID, unidade_produzida_id: unidadeEmImpressao, motivo: 'Primeira impressão', usuario_id: usuario?.id,
+      });
+    }
+
+    modalImprimir.classList.remove('open');
+    window.open(`etiqueta-imprimir.html?unidade=${unidadeEmImpressao}&layout=${layoutId}`, '_blank');
+  });
+
+  // ---------- Pallet ----------
+  const modalPallet = document.getElementById('modal-pallet');
+  let unidadeEmPallet = null;
+
+  async function carregarPalletsAbertos(selectEl) {
+    const { data } = await supabase.from('unidades_logisticas').select('id, codigo_identificador, tipo').eq('status', 'aberta').order('criado_em', { ascending: false });
+    selectEl.innerHTML = (data || []).map(p => `<option value="${p.id}">${p.tipo} — ${p.codigo_identificador.slice(0,8)}</option>`).join('') || '<option value="">Nenhum pallet aberto — crie um novo</option>';
+  }
+
+  async function abrirModalPallet(id) {
+    unidadeEmPallet = id;
+    await carregarPalletsAbertos(document.getElementById('pl_pallet'));
+    modalPallet.classList.add('open');
+  }
+  document.getElementById('btn-cancelar-pallet').addEventListener('click', () => modalPallet.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-pallet').addEventListener('click', async () => {
+    const palletId = document.getElementById('pl_pallet').value;
+    if (!palletId) { alert('Selecione ou crie um pallet.'); return; }
+    const { error } = await supabase.from('unidades_produzidas').update({ pallet_id: palletId }).eq('id', unidadeEmPallet);
+    if (error) { alert('Erro: ' + error.message); return; }
+    modalPallet.classList.remove('open');
+    await carregar();
+  });
+
+  document.getElementById('btn-novo-pallet').addEventListener('click', async () => {
+    const { error } = await supabase.from('unidades_logisticas').insert({ tenant_id: TENANT_ID, tipo: 'pallet', criado_por: usuario?.id });
+    if (error) { alert('Erro ao criar pallet: ' + error.message); return; }
+    alert('Pallet criado. Use o botão de pacote em cada unidade para adicionar a ele.');
+  });
+
+  // ---------- Layouts ----------
+  const modalLayouts = document.getElementById('modal-layouts');
+  document.getElementById('btn-layouts').addEventListener('click', async () => { await carregarLayouts(); modalLayouts.classList.add('open'); });
+  document.getElementById('btn-fechar-layouts').addEventListener('click', () => modalLayouts.classList.remove('open'));
+
+  async function carregarLayouts() {
+    const { data } = await supabase.from('layouts_etiqueta').select('*').order('criado_em');
+    document.getElementById('lista-layouts').innerHTML = (data?.length ? data.map(l => `
+      <div class="lista-selecao-linha">
+        <div class="col-desc">${l.nome}${l.padrao ? ' <span class="badge liquidado">Padrão</span>' : ''}</div>
+        <div class="col-valor mono">${l.largura_mm}×${l.altura_mm}mm</div>
+      </div>`).join('') : '<div class="empty-state">Nenhum layout cadastrado ainda.</div>');
+  }
+
+  document.getElementById('btn-salvar-layout').addEventListener('click', async () => {
+    const nome = document.getElementById('ly_nome').value.trim();
+    if (!nome) { alert('Dê um nome ao layout.'); return; }
+
+    const { error } = await supabase.from('layouts_etiqueta').insert({
+      tenant_id: TENANT_ID, nome,
+      largura_mm: Number(document.getElementById('ly_largura').value || 100),
+      altura_mm: Number(document.getElementById('ly_altura').value || 60),
+      mostrar_produto: document.getElementById('ly_produto').checked,
+      mostrar_lote: document.getElementById('ly_lote').checked,
+      mostrar_op: document.getElementById('ly_op').checked,
+      mostrar_quantidade: document.getElementById('ly_quantidade').checked,
+      mostrar_data: document.getElementById('ly_data').checked,
+      mostrar_maquina: document.getElementById('ly_maquina').checked,
+      mostrar_cliente: document.getElementById('ly_cliente').checked,
+      mostrar_qualidade: document.getElementById('ly_qualidade').checked,
+      padrao: document.getElementById('ly_padrao').checked,
+    });
+    if (error) { alert('Erro ao salvar layout: ' + error.message); return; }
+    document.getElementById('ly_nome').value = '';
+    await carregarLayouts();
+  });
+
+  await carregar();
+</script>
+</body>
+</html>

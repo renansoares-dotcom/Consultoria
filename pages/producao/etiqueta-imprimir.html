@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etiqueta — Impressão</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; background: #e5e5e5; font-family: -apple-system, "Segoe UI", sans-serif; }
+  .toolbar { max-width: 500px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; }
+  .toolbar button { font-size: 14px; font-weight: 600; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; background: #1f7a5c; color: #fff; }
+  .toolbar a { font-size: 13px; color: #555; text-decoration: none; }
+  #erro { max-width: 500px; margin: 0 auto; color: #c0392b; font-size: 13px; }
+
+  .etiqueta {
+    background: #fff;
+    margin: 0 auto;
+    border: 1px solid #ccc;
+    padding: 3mm;
+    display: flex;
+    gap: 3mm;
+    align-items: flex-start;
+  }
+  .etiqueta .qr { flex-shrink: 0; }
+  .etiqueta .qr canvas { width: 100%; height: auto; display: block; }
+  .etiqueta .campos { flex: 1; min-width: 0; font-size: 9px; line-height: 1.5; color: #000; overflow: hidden; }
+  .etiqueta .campos .produto { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+  .etiqueta .campos .linha { display: flex; gap: 4px; }
+  .etiqueta .campos .linha b { font-weight: 600; }
+  .etiqueta .codigo-texto { font-size: 7px; font-family: monospace; color: #444; margin-top: 2px; word-break: break-all; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .no-print { display: none !important; }
+    .etiqueta { border: none; margin: 0; }
+    @page { margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <a href="rastreabilidade.html">← Voltar</a>
+  <button id="btn-imprimir">🖨 Imprimir</button>
+</div>
+<div id="erro"></div>
+<div class="etiqueta" id="etiqueta" style="display:none;">
+  <div class="qr"><canvas id="qr-canvas"></canvas></div>
+  <div class="campos" id="campos"></div>
+</div>
+
+<script type="module">
+  import { supabase } from '../../js/supabase-client.js';
+
+  const params = new URLSearchParams(location.search);
+  const unidadeId = params.get('unidade');
+  const layoutId = params.get('layout');
+
+  if (!unidadeId || !layoutId) {
+    document.getElementById('erro').textContent = 'Parâmetros inválidos — abra esta página a partir da tela de Rastreabilidade.';
+  } else {
+    await montar();
+  }
+
+  async function montar() {
+    const { data: u, error: erroU } = await supabase.from('vw_rastreabilidade_unidade').select('*').eq('unidade_produzida_id', unidadeId).single();
+    const { data: l, error: erroL } = await supabase.from('layouts_etiqueta').select('*').eq('id', layoutId).single();
+
+    if (erroU || !u) { document.getElementById('erro').textContent = 'Unidade não encontrada.'; return; }
+    if (erroL || !l) { document.getElementById('erro').textContent = 'Layout não encontrado.'; return; }
+
+    const etiqueta = document.getElementById('etiqueta');
+    etiqueta.style.width = l.largura_mm + 'mm';
+    etiqueta.style.height = l.altura_mm + 'mm';
+
+    const qrTamanhoPx = Math.round(l.altura_mm * 3.2); // proporcional à altura física
+    const canvas = document.getElementById('qr-canvas');
+    await QRCode.toCanvas(canvas, u.codigo_identificador, { width: qrTamanhoPx, margin: 0 });
+
+    const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+    const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    const LABEL_QUALIDADE = { nao_aplicavel: '—', aguardando: 'AGUARDANDO INSPEÇÃO', aprovada: 'APROVADO', reprovada: 'REPROVADO', aprovada_parcial: 'APROVADO PARCIAL' };
+
+    let linhas = `<div class="produto">${l.mostrar_produto ? (u.produto_codigo + ' — ' + u.produto_nome) : ''}</div>`;
+    if (l.mostrar_lote) linhas += `<div class="linha"><b>Lote:</b> ${u.lote_interno ?? '—'}</div>`;
+    if (l.mostrar_op) linhas += `<div class="linha"><b>OP:</b> ${u.numero_op ?? '—'}</div>`;
+    if (l.mostrar_quantidade) linhas += `<div class="linha"><b>Qtd:</b> ${fmtNum(u.quantidade)} ${u.unidade_medida}</div>`;
+    if (l.mostrar_data) linhas += `<div class="linha"><b>Data:</b> ${fmtData(u.data_producao)}</div>`;
+    if (l.mostrar_maquina) linhas += `<div class="linha"><b>Máquina:</b> ${u.maquina_linha ?? '—'}</div>`;
+    if (l.mostrar_qualidade) linhas += `<div class="linha"><b>Qualidade:</b> ${LABEL_QUALIDADE[u.situacao_qualidade]}</div>`;
+    linhas += `<div class="codigo-texto">${u.codigo_identificador}</div>`;
+
+    document.getElementById('campos').innerHTML = linhas;
+    etiqueta.style.display = 'flex';
+  }
+
+  document.getElementById('btn-imprimir').addEventListener('click', () => window.print());
+</script>
+</body>
+</html>
