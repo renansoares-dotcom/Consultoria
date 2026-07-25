@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produto — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link active"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Novo Produto</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="dashboard.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="geral">Geral</button>
+      <button data-tab="dimensoes">Dimensões & Peso</button>
+      <button data-tab="estoque">Estoque & Preços</button>
+      <button data-tab="fornecedores">Fornecedores Homologados</button>
+    </nav>
+
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+      <!-- ============================== GERAL ============================== -->
+      <div id="tab-geral">
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Código *</span>
+            <input class="input mono" type="text" id="f_codigo" required>
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Nome *</span>
+            <input class="input" type="text" id="f_nome" required>
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Tipo *</span>
+            <select class="input" id="f_tipo" required>
+              <option value="">Selecione…</option>
+              <option value="materia_prima">Matéria-Prima</option>
+              <option value="produto_acabado">Produto Acabado</option>
+              <option value="insumo">Insumo</option>
+            </select>
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Unidade de Medida *</span>
+            <select class="input" id="f_unidade" required>
+              <option value="UN">UN — Unidade</option>
+              <option value="KG">KG — Quilograma</option>
+              <option value="M">M — Metro</option>
+              <option value="L">L — Litro</option>
+              <option value="PC">PC — Peça</option>
+            </select>
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">Grupo</span>
+            <input class="input" type="text" id="f_grupo" placeholder="Ex: Filmes">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Subgrupo</span>
+            <input class="input" type="text" id="f_subgrupo" placeholder="Ex: Filme PEBD">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Classe</span>
+            <input class="input" type="text" id="f_classe">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Referência</span>
+            <input class="input" type="text" id="f_referencia">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">NCM</span>
+            <input class="input mono" type="text" id="f_ncm" placeholder="0000.00.00">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Código de Barras</span>
+            <input class="input mono" type="text" id="f_codigo_barras">
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_gera_estoque" checked>
+              <label for="f_gera_estoque" style="margin:0;">Gera controle de estoque</label>
+            </span>
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_ativo" checked>
+              <label for="f_ativo" style="margin:0;">Ativo</label>
+            </span>
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">Observações</span>
+          <textarea class="input" id="f_observacoes" style="min-height:80px; resize:vertical;"></textarea>
+        </label>
+      </div>
+
+      <!-- ============================== DIMENSÕES & PESO ============================== -->
+      <div id="tab-dimensoes" style="display:none;">
+        <div class="caixa-info" style="margin-bottom:16px;">
+          <strong>Específico de plásticos flexíveis</strong><br>
+          Largura, espessura e comprimento são usados sobretudo em filmes, sacos e bobinas. Deixe em branco para produtos onde não se aplica.
+        </div>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Largura (mm)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="f_largura_mm">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Espessura (mícrons)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="f_espessura_micras">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Comprimento (m)</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="f_comprimento_m">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Peso Líquido</span>
+            <input class="input mono" type="number" step="0.0001" min="0" id="f_peso_liquido">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Peso Bruto</span>
+            <input class="input mono" type="number" step="0.0001" min="0" id="f_peso_bruto">
+          </label>
+        </div>
+      </div>
+
+      <!-- ============================== ESTOQUE & PREÇOS ============================== -->
+      <div id="tab-estoque" style="display:none;">
+        <div class="saldo-card" style="margin-bottom:18px;">
+          <div class="item"><div class="label">Saldo Atual</div><div class="num" id="disp-saldo-atual">—</div></div>
+          <div class="item"><div class="label">Custo Médio</div><div class="num" id="disp-custo-medio">—</div></div>
+        </div>
+        <p style="font-size:11.5px; color:var(--ink-soft); margin-top:-10px; margin-bottom:16px;">Saldo atual e custo médio são calculados pelo sistema a partir das movimentações de estoque — não são editáveis aqui.</p>
+
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Saldo Mínimo</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="f_saldo_minimo">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Estoque Máximo</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="f_estoque_maximo">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Ponto de Pedido</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="f_ponto_pedido">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Lote Econômico</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="f_lote_economico">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Lote Mínimo</span>
+            <input class="input mono" type="number" step="0.001" min="0" id="f_lote_minimo">
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Localização</span>
+            <input class="input" type="text" id="f_localizacao" placeholder="Ex: Galpão 2, Prateleira A3">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">Preço de Venda (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="f_preco_venda">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Preço de Reposição (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="f_preco_reposicao">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_inspecao_aquisicao">
+              <label for="f_inspecao_aquisicao" style="margin:0;">Exige inspeção na aquisição</label>
+            </span>
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_inspecao_producao">
+              <label for="f_inspecao_producao" style="margin:0;">Exige inspeção na produção</label>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ============================== FORNECEDORES HOMOLOGADOS ============================== -->
+      <div id="tab-fornecedores" style="display:none;">
+        <div id="fornecedores-bloqueado" class="empty-state">Salve o produto na aba Geral antes de cadastrar fornecedores homologados.</div>
+        <div id="fornecedores-conteudo" style="display:none;">
+          <div class="lista-selecao" id="lista-fornecedores" style="margin-bottom:18px;">
+            <div class="empty-state">Carregando…</div>
+          </div>
+          <div class="linha-flex">
+            <label class="field f-grow">
+              <span class="field-label">Fornecedor</span>
+              <select class="input" id="nf_fornecedor"></select>
+            </label>
+            <label class="field f-160">
+              <span class="field-label">Código no fornecedor</span>
+              <input class="input" id="nf_codigo">
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Preço última compra</span>
+              <input class="input mono" type="number" step="0.01" min="0" id="nf_preco">
+            </label>
+            <label class="field f-130">
+              <span class="field-label">Data última compra</span>
+              <input class="input" type="date" id="nf_data">
+            </label>
+            <button class="btn primary" type="button" id="btn-add-fornecedor"><i data-lucide="plus"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:18px;">
+        <button class="btn primary" type="button" id="btn-salvar">Salvar Produto</button>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['geral','dimensoes','estoque','fornecedores'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+}));
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------- Carregar em modo edição ----------
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+
+const CAMPOS_TEXTO = ['codigo', 'nome', 'tipo', 'unidade_medida', 'grupo', 'subgrupo', 'classe', 'referencia', 'ncm', 'codigo_barras', 'observacoes', 'localizacao'];
+const CAMPOS_NUMERO = ['saldo_minimo', 'estoque_maximo', 'ponto_pedido', 'lote_economico', 'lote_minimo', 'preco_venda', 'preco_reposicao', 'largura_mm', 'espessura_micras', 'comprimento_m', 'peso_liquido', 'peso_bruto'];
+const CAMPOS_CHECKBOX = ['gera_estoque', 'ativo', 'inspecao_aquisicao', 'inspecao_producao'];
+
+if (idEdicao) {
+  document.getElementById('titulo-janela').textContent = 'Editar Produto';
+  const { data: p, error } = await supabase.from('produtos').select('*').eq('id', idEdicao).single();
+  if (error || !p) {
+    mostrarErro('Produto não encontrado.');
+  } else {
+    CAMPOS_TEXTO.forEach(campo => {
+      const el = document.getElementById('f_' + campo);
+      if (el && p[campo] !== null && p[campo] !== undefined) el.value = p[campo];
+    });
+    CAMPOS_NUMERO.forEach(campo => {
+      const el = document.getElementById('f_' + campo);
+      if (el && p[campo] !== null && p[campo] !== undefined) el.value = p[campo];
+    });
+    document.getElementById('f_unidade').value = p.unidade_medida ?? 'UN';
+    CAMPOS_CHECKBOX.forEach(campo => {
+      const el = document.getElementById('f_' + campo);
+      if (el) el.checked = p[campo] !== false;
+    });
+    document.getElementById('disp-saldo-atual').textContent = `${fmtNum(p.saldo_atual)} ${p.unidade_medida}`;
+    document.getElementById('disp-custo-medio').textContent = p.custo_medio != null ? fmt(p.custo_medio) : '—';
+
+    document.getElementById('fornecedores-bloqueado').style.display = 'none';
+    document.getElementById('fornecedores-conteudo').style.display = 'block';
+    await inicializarFornecedores();
+  }
+} else {
+  document.getElementById('disp-saldo-atual').textContent = '0,00';
+  document.getElementById('disp-custo-medio').textContent = '—';
+}
+
+// ---------- Salvar ----------
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  const codigo = document.getElementById('f_codigo').value.trim();
+  const nome = document.getElementById('f_nome').value.trim();
+  const tipo = document.getElementById('f_tipo').value;
+  if (!codigo) { mostrarErro('Preencha o Código (aba Geral).'); return; }
+  if (!nome) { mostrarErro('Preencha o Nome (aba Geral).'); return; }
+  if (!tipo) { mostrarErro('Selecione o Tipo (aba Geral).'); return; }
+
+  const payload = { tenant_id: TENANT_ID, unidade_medida: document.getElementById('f_unidade').value };
+  CAMPOS_TEXTO.forEach(campo => {
+    if (campo === 'unidade_medida') return;
+    const el = document.getElementById('f_' + campo);
+    if (!el) return;
+    const valor = el.value.trim();
+    payload[campo] = valor === '' ? null : valor;
+  });
+  CAMPOS_NUMERO.forEach(campo => {
+    const el = document.getElementById('f_' + campo);
+    if (!el) return;
+    const valor = el.value.trim();
+    payload[campo] = valor === '' ? null : Number(valor);
+  });
+  CAMPOS_CHECKBOX.forEach(campo => {
+    payload[campo] = document.getElementById('f_' + campo).checked;
+  });
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const query = idEdicao
+    ? supabase.from('produtos').update(payload).eq('id', idEdicao)
+    : supabase.from('produtos').insert(payload).select('id').single();
+  const { data, error } = await query;
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Salvar Produto';
+    mostrarErro('Erro ao salvar: ' + (error.code === '23505' ? 'já existe um produto com esse código.' : error.message));
+    return;
+  }
+
+  const novoId = idEdicao || data?.id;
+  window.location.href = `produto-novo.html?id=${novoId}`;
+});
+
+// ---------- Fornecedores Homologados ----------
+async function inicializarFornecedores() {
+  const { data: fornecedoresLista } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'fornecedores').eq('ativo', true).order('nome');
+  document.getElementById('nf_fornecedor').innerHTML = (fornecedoresLista || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+  await carregarFornecedores();
+}
+
+async function carregarFornecedores() {
+  const lista = document.getElementById('lista-fornecedores');
+  const { data, error } = await supabase
+    .from('produto_fornecedores')
+    .select('id, codigo_no_fornecedor, preco_ultima_compra, data_ultima_compra, ativo, favorecidos:fornecedor_id(nome)')
+    .eq('produto_id', idEdicao)
+    .order('ativo', { ascending: false });
+
+  if (error) { lista.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
+  if (!data?.length) { lista.innerHTML = `<div class="empty-state">Nenhum fornecedor homologado ainda.</div>`; return; }
+
+  lista.innerHTML = data.map(f => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">
+        <div>${f.favorecidos?.nome ?? '(fornecedor removido)'}${!f.ativo ? ' <span class="badge inadimplente">Inativo</span>' : ''}</div>
+        <div style="font-size:11px; color:var(--ink-soft);">${f.codigo_no_fornecedor ? 'Cód: ' + f.codigo_no_fornecedor + ' · ' : ''}Última compra: ${fmtData(f.data_ultima_compra)}</div>
+      </div>
+      <div class="col-valor">${f.preco_ultima_compra != null ? fmt(f.preco_ultima_compra) : '—'}</div>
+      <button class="icon-btn danger" data-remover-fornecedor="${f.id}" style="margin-left:8px;"><i data-lucide="trash-2"></i></button>
+    </div>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-add-fornecedor').addEventListener('click', async () => {
+  const fornecedorId = document.getElementById('nf_fornecedor').value;
+  if (!fornecedorId) { alert('Selecione um fornecedor.'); return; }
+
+  const { error } = await supabase.from('produto_fornecedores').insert({
+    tenant_id: TENANT_ID,
+    produto_id: idEdicao,
+    fornecedor_id: fornecedorId,
+    codigo_no_fornecedor: document.getElementById('nf_codigo').value.trim() || null,
+    preco_ultima_compra: document.getElementById('nf_preco').value ? Number(document.getElementById('nf_preco').value) : null,
+    data_ultima_compra: document.getElementById('nf_data').value || null,
+  });
+  if (error) { alert('Erro ao adicionar fornecedor: ' + error.message); return; }
+
+  document.getElementById('nf_codigo').value = '';
+  document.getElementById('nf_preco').value = '';
+  document.getElementById('nf_data').value = '';
+  await carregarFornecedores();
+});
+
+document.getElementById('lista-fornecedores').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-remover-fornecedor]');
+  if (!btn) return;
+  if (!confirm('Remover este fornecedor homologado?')) return;
+  await supabase.from('produto_fornecedores').delete().eq('id', btn.dataset.removerFornecedor);
+  await carregarFornecedores();
+});
+</script>
+</body>
+</html>

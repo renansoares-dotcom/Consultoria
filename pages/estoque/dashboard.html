@@ -54,7 +54,7 @@
       <span class="eyebrow">Estoque</span>
       <h1>Produtos</h1>
     </div>
-    <button class="btn primary" id="btn-novo"><i data-lucide="plus"></i> Novo Produto</button>
+    <a href="produto-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo Produto</a>
   </div>
 
   <div class="toolbar">
@@ -78,45 +78,6 @@
     </table>
   </section>
 </main>
-  </div>
-</div>
-
-<!-- Modal: novo/editar produto -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal">
-    <h2 id="modal-titulo">Novo Produto</h2>
-    <div class="modal-sub">Preencha os campos abaixo.</div>
-    <form id="form-produto">
-      <div class="row-2">
-        <label class="field"><span class="field-label">Código *</span><input class="input mono" id="f_codigo" required></label>
-        <label class="field"><span class="field-label">Unidade de Medida *</span>
-          <select class="input" id="f_unidade" required>
-            <option value="UN">UN — Unidade</option>
-            <option value="KG">KG — Quilograma</option>
-            <option value="M">M — Metro</option>
-            <option value="L">L — Litro</option>
-            <option value="PC">PC — Peça</option>
-          </select>
-        </label>
-      </div>
-      <label class="field"><span class="field-label">Nome *</span><input class="input" id="f_nome" required></label>
-      <div class="row-2">
-        <label class="field"><span class="field-label">Tipo *</span>
-          <select class="input" id="f_tipo_produto" required>
-            <option value="">Selecione…</option>
-            <option value="materia_prima">Matéria-Prima</option>
-            <option value="produto_acabado">Produto Acabado</option>
-            <option value="insumo">Insumo</option>
-          </select>
-        </label>
-        <label class="field"><span class="field-label">Saldo Mínimo</span><input class="input mono" type="number" step="0.001" id="f_saldo_minimo"></label>
-      </div>
-      <div class="checkbox-field"><input type="checkbox" id="f_ativo" checked><label for="f_ativo">Ativo</label></div>
-    </form>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar">Cancelar</button>
-      <button class="btn primary" type="submit" form="form-produto">Salvar</button>
-    </div>
   </div>
 </div>
 
@@ -193,7 +154,7 @@ function desenhar() {
       <td>${r.unidade_medida}</td>
       <td class="num mono ${r.saldo_minimo != null && Number(r.saldo_atual) < Number(r.saldo_minimo) ? 'valor negativo' : ''}">${Number(r.saldo_atual).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
       <td class="num mono">${r.saldo_minimo != null ? Number(r.saldo_minimo).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'}</td>
-      <td class="num"><button class="icon-btn" data-editar="${r.id}">Editar</button>${r.tipo === 'produto_acabado' ? ` <button class="icon-btn" data-estrutura="${r.id}" data-nome="${r.nome.replace(/"/g,'&quot;')}"><i data-lucide="list-tree"></i> Estrutura</button>` : ''}</td>
+      <td class="num"><a class="icon-btn" href="produto-novo.html?id=${r.id}">Editar</a>${r.tipo === 'produto_acabado' ? ` <button class="icon-btn" data-estrutura="${r.id}" data-nome="${r.nome.replace(/"/g,'&quot;')}"><i data-lucide="list-tree"></i> Estrutura</button>` : ''}</td>
     </tr>`).join('');
 
   if (window.lucide) lucide.createIcons();
@@ -202,46 +163,8 @@ function desenhar() {
 document.getElementById('busca').addEventListener('input', desenhar);
 document.getElementById('f_tipo').addEventListener('change', desenhar);
 document.getElementById('tbody').addEventListener('click', e => {
-  const idEditar = e.target.closest('[data-editar]')?.dataset?.editar;
-  if (idEditar) { abrirModal(registros.find(r => r.id === idEditar)); return; }
   const btnEstrutura = e.target.closest('[data-estrutura]');
   if (btnEstrutura) abrirEstrutura(btnEstrutura.dataset.estrutura, btnEstrutura.dataset.nome);
-});
-
-const overlay = document.getElementById('modal-overlay');
-let editandoId = null;
-function abrirModal(registro = null) {
-  editandoId = registro?.id ?? null;
-  document.getElementById('modal-titulo').textContent = registro ? 'Editar Produto' : 'Novo Produto';
-  document.getElementById('form-produto').reset();
-  document.getElementById('f_codigo').value = registro?.codigo ?? '';
-  document.getElementById('f_nome').value = registro?.nome ?? '';
-  document.getElementById('f_tipo_produto').value = registro?.tipo ?? '';
-  document.getElementById('f_unidade').value = registro?.unidade_medida ?? 'UN';
-  document.getElementById('f_saldo_minimo').value = registro?.saldo_minimo ?? '';
-  document.getElementById('f_ativo').checked = registro?.ativo !== false;
-  overlay.classList.add('open');
-}
-document.getElementById('btn-novo').addEventListener('click', () => abrirModal());
-document.getElementById('btn-cancelar').addEventListener('click', () => overlay.classList.remove('open'));
-overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
-
-document.getElementById('form-produto').addEventListener('submit', async e => {
-  e.preventDefault();
-  const payload = {
-    tenant_id: TENANT_ID,
-    codigo: document.getElementById('f_codigo').value.trim(),
-    nome: document.getElementById('f_nome').value.trim(),
-    tipo: document.getElementById('f_tipo_produto').value,
-    unidade_medida: document.getElementById('f_unidade').value,
-    saldo_minimo: document.getElementById('f_saldo_minimo').value ? Number(document.getElementById('f_saldo_minimo').value) : null,
-    ativo: document.getElementById('f_ativo').checked,
-  };
-  const query = editandoId ? supabase.from('produtos').update(payload).eq('id', editandoId) : supabase.from('produtos').insert(payload);
-  const { error } = await query;
-  if (error) { alert('Erro ao salvar: ' + error.message); return; }
-  overlay.classList.remove('open');
-  await carregar();
 });
 
 // ---------- Estrutura de Produto (BOM) ----------
