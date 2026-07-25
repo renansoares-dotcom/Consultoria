@@ -56,16 +56,54 @@
         </div>
       </div>
 
-      <section class="card" style="padding:64px 40px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-          <i data-lucide="badge-check" style="width:26px; height:26px;"></i>
-        </div>
-        <h2 style="font-size:18px; margin-bottom:8px;">Módulo em construção</h2>
-        <p style="color:var(--ink-soft); font-size:13.5px; max-width:420px; margin:0 auto;">
-          A estrutura de navegação de Qualidade já está pronta. As telas e a lógica de negócio deste módulo entram nas próximas etapas.
-        </p>
+      <section class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Inspeções Pendentes</div><div class="big valor aberto" id="card-pendentes">0</div></div>
+        <div class="card"><div class="label">Aprovadas (últimos 30 dias)</div><div class="big valor positivo" id="card-aprovadas">0</div></div>
+        <div class="card"><div class="label">Reprovadas (últimos 30 dias)</div><div class="big valor negativo" id="card-reprovadas">0</div></div>
+      </section>
+
+      <div class="subnav" id="abas">
+        <button class="active" data-aba="pendente">Pendentes</button>
+        <button data-aba="decidida">Histórico</button>
+      </div>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
       </section>
     </main>
+  </div>
+</div>
+
+<!-- Modal: decidir inspeção -->
+<div class="modal-overlay" id="modal-inspecao">
+  <div class="modal">
+    <h2>Inspecionar</h2>
+    <p class="modal-sub" id="insp-produto-nome">—</p>
+    <div class="caixa-info" style="margin-bottom:16px;">
+      <strong>Quantidade total sob inspeção: <span id="insp-quantidade-total"></span></strong><br>
+      A soma de aprovado + reprovado precisa bater com o total. O que for aprovado libera pro estoque disponível na hora; o reprovado sai do bloqueio e não volta — é perda/descarte.
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow">
+        <span class="field-label">Quantidade Aprovada</span>
+        <input class="input mono" type="number" step="0.0001" min="0" id="insp_aprovada">
+      </label>
+      <label class="field f-grow">
+        <span class="field-label">Quantidade Reprovada</span>
+        <input class="input mono" type="number" step="0.0001" min="0" id="insp_reprovada">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">Motivo (obrigatório se houver reprovação)</span>
+      <textarea class="input" id="insp_motivo" placeholder="Ex: fora de especificação, embalagem violada..."></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-insp">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-insp">Confirmar Inspeção</button>
+    </div>
   </div>
 </div>
 
@@ -83,6 +121,126 @@
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
+
+  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
+  const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+  const LABEL_ORIGEM = { recebimento_compra: 'Recebimento de Compra', apontamento_producao: 'Apontamento de Produção' };
+  const LABEL_STATUS = { pendente: 'Pendente', aprovada: 'Aprovada', reprovada: 'Reprovada', aprovada_parcial: 'Aprovada Parcial' };
+  const BADGE_STATUS = { pendente: 'aberto', aprovada: 'liquidado', reprovada: 'inadimplente', aprovada_parcial: 'parcial' };
+
+  let abaAtual = 'pendente';
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-aba]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    abaAtual = btn.dataset.aba;
+    carregar();
+  });
+
+  async function carregarResumo() {
+    const { count: pendentes } = await supabase.from('inspecoes_qualidade').select('id', { count: 'exact', head: true }).eq('status', 'pendente');
+    const trintaDiasAtras = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+    const { count: aprovadas } = await supabase.from('inspecoes_qualidade').select('id', { count: 'exact', head: true }).in('status', ['aprovada','aprovada_parcial']).gte('inspecionado_em', trintaDiasAtras);
+    const { count: reprovadas } = await supabase.from('inspecoes_qualidade').select('id', { count: 'exact', head: true }).eq('status', 'reprovada').gte('inspecionado_em', trintaDiasAtras);
+    document.getElementById('card-pendentes').textContent = pendentes || 0;
+    document.getElementById('card-aprovadas').textContent = aprovadas || 0;
+    document.getElementById('card-reprovadas').textContent = reprovadas || 0;
+  }
+
+  async function carregar() {
+    await carregarResumo();
+    const tbody = document.getElementById('tbody');
+
+    if (abaAtual === 'pendente') {
+      document.getElementById('thead').innerHTML = `<tr><th>Criada em</th><th>Produto</th><th>Origem</th><th class="num">Quantidade</th><th style="text-align:right;">Ações</th></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Carregando…</td></tr>`;
+
+      const { data, error } = await supabase.from('inspecoes_qualidade')
+        .select('id, quantidade, origem, criado_em, produtos(codigo, nome, unidade_medida)')
+        .eq('status', 'pendente').order('criado_em');
+
+      if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhuma inspeção pendente.</td></tr>`; return; }
+
+      tbody.innerHTML = data.map(i => `
+        <tr>
+          <td>${fmtDataHora(i.criado_em)}</td>
+          <td>${i.produtos?.codigo ?? ''} — ${i.produtos?.nome ?? '(produto removido)'}</td>
+          <td>${LABEL_ORIGEM[i.origem]}</td>
+          <td class="num mono">${fmtNum(i.quantidade)} ${i.produtos?.unidade_medida ?? ''}</td>
+          <td style="text-align:right;"><button class="icon-btn" data-inspecionar="${i.id}" data-nome="${(i.produtos?.nome ?? '').replace(/"/g,'&quot;')}" data-quantidade="${i.quantidade}" data-unidade="${i.produtos?.unidade_medida ?? ''}"><i data-lucide="clipboard-check"></i> Inspecionar</button></td>
+        </tr>`).join('');
+    } else {
+      document.getElementById('thead').innerHTML = `<tr><th>Decidida em</th><th>Produto</th><th>Origem</th><th class="num">Aprovado</th><th class="num">Reprovado</th><th>Status</th></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+      const { data, error } = await supabase.from('inspecoes_qualidade')
+        .select('quantidade_aprovada, quantidade_reprovada, status, inspecionado_em, origem, produtos(codigo, nome, unidade_medida)')
+        .neq('status', 'pendente').order('inspecionado_em', { ascending: false }).limit(200);
+
+      if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma inspeção no histórico ainda.</td></tr>`; return; }
+
+      tbody.innerHTML = data.map(i => `
+        <tr>
+          <td>${fmtDataHora(i.inspecionado_em)}</td>
+          <td>${i.produtos?.codigo ?? ''} — ${i.produtos?.nome ?? '(produto removido)'}</td>
+          <td>${LABEL_ORIGEM[i.origem]}</td>
+          <td class="num mono valor positivo">${fmtNum(i.quantidade_aprovada)} ${i.produtos?.unidade_medida ?? ''}</td>
+          <td class="num mono valor negativo">${fmtNum(i.quantidade_reprovada)} ${i.produtos?.unidade_medida ?? ''}</td>
+          <td><span class="badge ${BADGE_STATUS[i.status]}">${LABEL_STATUS[i.status]}</span></td>
+        </tr>`).join('');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-inspecionar]');
+    if (btn) abrirModalInspecao(btn.dataset.inspecionar, btn.dataset.nome, btn.dataset.quantidade, btn.dataset.unidade);
+  });
+
+  // ---------- Modal de decisão ----------
+  const modal = document.getElementById('modal-inspecao');
+  let inspecaoEmDecisao = null, quantidadeTotalEmDecisao = 0;
+
+  function abrirModalInspecao(id, nome, quantidade, unidade) {
+    inspecaoEmDecisao = id;
+    quantidadeTotalEmDecisao = Number(quantidade);
+    document.getElementById('insp-produto-nome').textContent = nome;
+    document.getElementById('insp-quantidade-total').textContent = `${fmtNum(quantidade)} ${unidade}`;
+    document.getElementById('insp_aprovada').value = quantidade;
+    document.getElementById('insp_reprovada').value = 0;
+    document.getElementById('insp_motivo').value = '';
+    modal.classList.add('open');
+  }
+
+  document.getElementById('btn-cancelar-insp').addEventListener('click', () => modal.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-insp').addEventListener('click', async () => {
+    const aprovada = parseFloat(document.getElementById('insp_aprovada').value || 0);
+    const reprovada = parseFloat(document.getElementById('insp_reprovada').value || 0);
+    const motivo = document.getElementById('insp_motivo').value.trim();
+
+    if (Math.abs((aprovada + reprovada) - quantidadeTotalEmDecisao) > 0.0001) {
+      alert(`A soma de aprovado + reprovado (${fmtNum(aprovada + reprovada)}) precisa ser igual ao total sob inspeção (${fmtNum(quantidadeTotalEmDecisao)}).`);
+      return;
+    }
+    if (reprovada > 0 && !motivo) { alert('Informe o motivo da reprovação.'); return; }
+
+    const status = reprovada === 0 ? 'aprovada' : (aprovada === 0 ? 'reprovada' : 'aprovada_parcial');
+
+    const { error } = await supabase.from('inspecoes_qualidade').update({
+      status, quantidade_aprovada: aprovada, quantidade_reprovada: reprovada,
+      motivo_reprovacao: motivo || null, inspecionado_por: usuario?.id, inspecionado_em: new Date().toISOString(),
+    }).eq('id', inspecaoEmDecisao);
+
+    if (error) { alert('Erro ao registrar inspeção: ' + error.message); return; }
+    modal.classList.remove('open');
+    await carregar();
+  });
+
+  await carregar();
 </script>
 </body>
 </html>
