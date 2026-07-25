@@ -134,22 +134,76 @@
       <span class="eyebrow">Contabilidade</span>
       <h1>Conciliação Bancária</h1>
     </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <select class="input" id="f_conta" style="width:220px;"></select>
+      <input type="file" id="input-ofx" accept=".ofx,.qfx" style="display:none;">
+      <button class="btn primary" id="btn-importar"><i data-lucide="upload"></i> Importar extrato (.OFX)</button>
+    </div>
   </div>
 
-  <section class="card" style="padding:64px 40px; text-align:center;">
-    <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-      <i data-lucide="landmark-check" style="width:26px; height:26px;"></i>
+  <section class="grid grid-4" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="label">Pendentes</div>
+      <div class="big valor aberto" id="card-pendentes">0</div>
     </div>
-    <h2 style="font-size:18px; margin-bottom:8px;">Em construção</h2>
-    <p style="color:var(--ink-soft); font-size:13.5px; max-width:460px; margin:0 auto;">Aqui você vai importar o extrato bancário em .OFX e o sistema vai sugerir a conferência automática com os lançamentos já registrados — sempre com sua confirmação antes de baixar.</p>
+    <div class="card">
+      <div class="label">Conciliados</div>
+      <div class="big valor positivo" id="card-conciliados">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Ignorados</div>
+      <div class="big valor" id="card-ignorados">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Último extrato importado</div>
+      <div class="big" id="card-ultimo-import" style="font-size:15px;">—</div>
+    </div>
+  </section>
+
+  <div class="subnav" id="abas-conciliacao">
+    <button class="active" data-aba="pendente">Pendentes</button>
+    <button data-aba="conciliado">Conciliados</button>
+    <button data-aba="ignorado">Ignorados</button>
+  </div>
+
+  <section class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th><th>Descrição (extrato)</th><th class="num">Valor</th><th>Sugestão de lançamento</th><th style="text-align:right;">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-conciliacao">
+        <tr><td colspan="5" style="text-align:center; color:var(--ink-soft); padding:24px;">Selecione uma conta bancária para começar.</td></tr>
+      </tbody>
+    </table>
   </section>
 </main>
+  </div>
+</div>
+
+<!-- Modal: busca manual de lançamento para conciliar -->
+<div class="modal-overlay" id="modal-busca">
+  <div class="modal" style="max-width:640px;">
+    <h2>Conciliar manualmente</h2>
+    <p class="modal-sub" id="modal-busca-linha-info">—</p>
+    <label class="field">
+      <span class="field-label">Buscar por descrição, favorecido ou valor</span>
+      <input class="input" id="busca-lancamento-texto" placeholder="Digite para filtrar...">
+    </label>
+    <div class="lista-selecao" id="lista-baixas-candidatas" style="max-height:280px;">
+      <div class="empty-state">Carregando lançamentos da conta…</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="btn-cancelar-busca">Cancelar</button>
+    </div>
   </div>
 </div>
 
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
   import { initNav } from '../../js/nav.js';
+  import { parseOFX } from '../../js/ofx-parser.js';
   initNav();
 
   const sessao = await exigirSessao();
@@ -160,6 +214,279 @@
   }
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+  const selConta = document.getElementById('f_conta');
+  const inputOfx = document.getElementById('input-ofx');
+  const tbody = document.getElementById('tabela-conciliacao');
+  let abaAtual = 'pendente';
+  let linhaEmBusca = null; // guarda a linha de extrato sendo conciliada manualmente no modal
+
+  // ---------- Contas bancárias ----------
+  const { data: contas, error: erroContas } = await supabase.from('contas_bancarias').select('id, nome').eq('ativo', true).order('nome');
+  if (erroContas) console.error(erroContas);
+  selConta.innerHTML = '<option value="">Selecione a conta…</option>' + (contas || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  selConta.addEventListener('change', () => { carregarResumo(); carregarLinhas(); });
+
+  // ---------- Abas ----------
+  document.getElementById('abas-conciliacao').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-aba]');
+    if (!btn) return;
+    document.querySelectorAll('#abas-conciliacao button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    abaAtual = btn.dataset.aba;
+    carregarLinhas();
+  });
+
+  // ---------- Resumo (cards) ----------
+  async function carregarResumo() {
+    const contaId = selConta.value;
+    if (!contaId) {
+      document.getElementById('card-pendentes').textContent = '0';
+      document.getElementById('card-conciliados').textContent = '0';
+      document.getElementById('card-ignorados').textContent = '0';
+      document.getElementById('card-ultimo-import').textContent = '—';
+      return;
+    }
+    const { data } = await supabase.from('extrato_linhas').select('status').eq('conta_bancaria_id', contaId);
+    const contagem = { pendente: 0, conciliado: 0, ignorado: 0 };
+    (data || []).forEach(l => { contagem[l.status] = (contagem[l.status] || 0) + 1; });
+    document.getElementById('card-pendentes').textContent = contagem.pendente;
+    document.getElementById('card-conciliados').textContent = contagem.conciliado;
+    document.getElementById('card-ignorados').textContent = contagem.ignorado;
+
+    const { data: ultimoImport } = await supabase.from('extratos_importados').select('nome_arquivo, criado_em').eq('conta_bancaria_id', contaId).order('criado_em', { ascending: false }).limit(1).maybeSingle();
+    document.getElementById('card-ultimo-import').textContent = ultimoImport ? new Date(ultimoImport.criado_em).toLocaleDateString('pt-BR') : 'Nenhum ainda';
+  }
+
+  // ---------- Importação de OFX ----------
+  document.getElementById('btn-importar').addEventListener('click', () => {
+    if (!selConta.value) { alert('Selecione a conta bancária antes de importar o extrato.'); return; }
+    inputOfx.click();
+  });
+
+  inputOfx.addEventListener('change', async () => {
+    const arquivo = inputOfx.files[0];
+    if (!arquivo) return;
+    const contaId = selConta.value;
+
+    let resultado;
+    try {
+      const texto = await arquivo.text();
+      resultado = parseOFX(texto);
+    } catch (erro) {
+      alert('Não consegui ler esse arquivo: ' + erro.message);
+      inputOfx.value = '';
+      return;
+    }
+
+    const { transacoes, saldoFinal } = resultado;
+    const datas = transacoes.map(t => t.data).sort();
+
+    const { data: cabecalho, error: erroCabecalho } = await supabase.from('extratos_importados').insert({
+      conta_bancaria_id: contaId,
+      nome_arquivo: arquivo.name,
+      periodo_inicio: datas[0],
+      periodo_fim: datas[datas.length - 1],
+      saldo_final_informado: saldoFinal,
+      total_linhas: transacoes.length,
+      criado_por: usuario?.id,
+    }).select('id').single();
+
+    if (erroCabecalho) { alert('Erro ao registrar a importação: ' + erroCabecalho.message); inputOfx.value = ''; return; }
+
+    const linhas = transacoes.map(t => ({
+      extrato_importado_id: cabecalho.id,
+      conta_bancaria_id: contaId,
+      fitid: t.fitid,
+      data: t.data,
+      valor: t.valor,
+      descricao: t.descricao,
+      tipo_ofx: t.tipoOfx,
+    }));
+
+    // Insere uma a uma pra não perder o lote inteiro se uma linha duplicada (mesmo FITID) rejeitar por causa da constraint única
+    let importadas = 0, duplicadas = 0;
+    for (const linha of linhas) {
+      const { error } = await supabase.from('extrato_linhas').insert(linha);
+      if (error) {
+        if (error.code === '23505') duplicadas++; // unique_violation — já importada antes
+        else console.error(error);
+      } else {
+        importadas++;
+      }
+    }
+
+    inputOfx.value = '';
+    alert(`Importação concluída: ${importadas} transação(ões) nova(s)` + (duplicadas ? `, ${duplicadas} já importada(s) anteriormente (ignoradas).` : '.'));
+    await carregarResumo();
+    await carregarLinhas();
+  });
+
+  // ---------- Tabela principal ----------
+  async function carregarLinhas() {
+    const contaId = selConta.value;
+    if (!contaId) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--ink-soft); padding:24px;">Selecione uma conta bancária para começar.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--ink-soft); padding:24px;">Carregando…</td></tr>`;
+
+    const { data: linhas, error } = await supabase
+      .from('extrato_linhas')
+      .select('id, data, descricao, valor, status, baixa_id, baixas(data, valor_pago, juros, multa, desconto, lancamentos(descricao))')
+      .eq('conta_bancaria_id', contaId)
+      .eq('status', abaAtual)
+      .order('data', { ascending: false });
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--red); padding:24px;">Erro ao carregar: ${error.message}</td></tr>`; return; }
+    if (!linhas?.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--ink-soft); padding:24px;">Nenhuma linha nesta aba.</td></tr>`; return; }
+
+    let sugestoesPorLinha = {};
+    if (abaAtual === 'pendente') {
+      const { data: sugestoes } = await supabase.from('vw_conciliacao_sugestoes').select('*').eq('conta_bancaria_id', contaId);
+      (sugestoes || []).forEach(s => {
+        if (!sugestoesPorLinha[s.extrato_linha_id] || s.diferenca_dias < sugestoesPorLinha[s.extrato_linha_id].diferenca_dias) {
+          sugestoesPorLinha[s.extrato_linha_id] = s;
+        }
+      });
+    }
+
+    tbody.innerHTML = linhas.map(l => {
+      const sugestao = sugestoesPorLinha[l.id];
+      let colSugestao = '<span style="color:var(--ink-faint);">—</span>';
+      let colAcoes = '';
+
+      if (abaAtual === 'pendente') {
+        if (sugestao) {
+          colSugestao = `<div style="font-size:12.5px;">${sugestao.descricao_lancamento ?? '(sem descrição)'} <span style="color:var(--ink-soft);">· ${fmtData(sugestao.data_baixa)} · ${fmt(sugestao.valor_baixa_liquido)}</span></div>`;
+          colAcoes = `<button class="icon-btn" data-acao="confirmar" data-linha="${l.id}" data-baixa="${sugestao.baixa_id}"><i data-lucide="check"></i> Conciliar</button>`;
+        } else {
+          colAcoes = `<button class="icon-btn" data-acao="buscar" data-linha="${l.id}"><i data-lucide="search"></i> Buscar</button>`;
+        }
+        colAcoes += ` <button class="icon-btn danger" data-acao="ignorar" data-linha="${l.id}"><i data-lucide="eye-off"></i> Ignorar</button>`;
+      } else if (abaAtual === 'conciliado') {
+        const b = l.baixas;
+        colSugestao = b ? `<div style="font-size:12.5px;">${b.lancamentos?.descricao ?? '(sem descrição)'} <span style="color:var(--ink-soft);">· ${fmtData(b.data)} · ${fmt(b.valor_pago + b.juros + b.multa - b.desconto)}</span></div>` : '—';
+        colAcoes = `<button class="icon-btn" data-acao="reverter" data-linha="${l.id}"><i data-lucide="undo-2"></i> Reverter</button>`;
+      } else {
+        colAcoes = `<button class="icon-btn" data-acao="reabrir" data-linha="${l.id}"><i data-lucide="rotate-ccw"></i> Reabrir</button>`;
+      }
+
+      return `
+        <tr>
+          <td>${fmtData(l.data)}</td>
+          <td>${l.descricao ?? '(sem descrição)'}</td>
+          <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">${fmt(l.valor)}</td>
+          <td>${colSugestao}</td>
+          <td style="text-align:right; white-space:nowrap;">${colAcoes}</td>
+        </tr>`;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ---------- Ações da tabela (delegação de evento) ----------
+  tbody.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-acao]');
+    if (!btn) return;
+    const linhaId = btn.dataset.linha;
+    const acao = btn.dataset.acao;
+
+    if (acao === 'confirmar') {
+      await conciliarLinha(linhaId, btn.dataset.baixa);
+    } else if (acao === 'ignorar') {
+      if (!confirm('Marcar esta linha como ignorada? Ela não vai mais aparecer como pendente.')) return;
+      await supabase.from('extrato_linhas').update({ status: 'ignorado' }).eq('id', linhaId);
+      await carregarResumo(); await carregarLinhas();
+    } else if (acao === 'reabrir' || acao === 'reverter') {
+      await supabase.from('extrato_linhas').update({ status: 'pendente', baixa_id: null, conciliado_por: null, conciliado_em: null }).eq('id', linhaId);
+      await carregarResumo(); await carregarLinhas();
+    } else if (acao === 'buscar') {
+      abrirModalBusca(linhaId);
+    }
+  });
+
+  async function conciliarLinha(linhaId, baixaId) {
+    const { error } = await supabase.from('extrato_linhas').update({
+      status: 'conciliado', baixa_id: baixaId, conciliado_por: usuario?.id, conciliado_em: new Date().toISOString(),
+    }).eq('id', linhaId);
+    if (error) { alert('Erro ao conciliar: ' + error.message + (error.code === '23505' ? ' (esse lançamento já foi conciliado com outra linha)' : '')); return; }
+    await carregarResumo(); await carregarLinhas();
+  }
+
+  // ---------- Modal de busca manual ----------
+  const modalBusca = document.getElementById('modal-busca');
+  const listaCandidatas = document.getElementById('lista-baixas-candidatas');
+  const buscaTexto = document.getElementById('busca-lancamento-texto');
+  let baixasDisponiveis = [];
+
+  async function abrirModalBusca(linhaId) {
+    const { data: linha } = await supabase.from('extrato_linhas').select('data, descricao, valor').eq('id', linhaId).single();
+    linhaEmBusca = linhaId;
+    document.getElementById('modal-busca-linha-info').textContent = `Extrato: ${fmtData(linha.data)} · ${linha.descricao ?? ''} · ${fmt(linha.valor)}`;
+
+    listaCandidatas.innerHTML = `<div class="empty-state">Carregando lançamentos da conta…</div>`;
+    modalBusca.classList.add('open');
+
+    const contaId = selConta.value;
+    const { data: jaConciliadas } = await supabase.from('extrato_linhas').select('baixa_id').not('baixa_id', 'is', null);
+    const idsExcluidos = (jaConciliadas || []).map(x => x.baixa_id);
+
+    // baixa.conta_bancaria_id pode ser nula — nesse caso ela herda a conta do
+    // lançamento (mesma regra da view vw_conciliacao_sugestoes). Por isso
+    // buscamos nos dois casos e juntamos o resultado.
+    const camposSelect = 'id, data, valor_pago, juros, multa, desconto, conta_bancaria_id, lancamentos!inner(descricao, conta_bancaria_id, favorecidos(nome))';
+
+    let queryDireta = supabase.from('baixas').select(camposSelect).eq('conta_bancaria_id', contaId).order('data', { ascending: false }).limit(200);
+    let queryHerdada = supabase.from('baixas').select(camposSelect).is('conta_bancaria_id', null).eq('lancamentos.conta_bancaria_id', contaId).order('data', { ascending: false }).limit(200);
+    if (idsExcluidos.length) {
+      const filtro = `(${idsExcluidos.join(',')})`;
+      queryDireta = queryDireta.not('id', 'in', filtro);
+      queryHerdada = queryHerdada.not('id', 'in', filtro);
+    }
+    const [{ data: diretas }, { data: herdadas }] = await Promise.all([queryDireta, queryHerdada]);
+    const data = [...(diretas || []), ...(herdadas || [])];
+
+    baixasDisponiveis = data || [];
+    renderizarCandidatas();
+  }
+
+  function renderizarCandidatas() {
+    const termo = buscaTexto.value.trim().toLowerCase();
+    const filtradas = !termo ? baixasDisponiveis : baixasDisponiveis.filter(b => {
+      const alvo = `${b.lancamentos?.descricao ?? ''} ${b.lancamentos?.favorecidos?.nome ?? ''} ${b.valor_pago}`.toLowerCase();
+      return alvo.includes(termo);
+    });
+
+    if (!filtradas.length) { listaCandidatas.innerHTML = `<div class="empty-state">Nenhum lançamento encontrado.</div>`; return; }
+
+    listaCandidatas.innerHTML = filtradas.map(b => `
+      <div class="lista-selecao-linha" style="cursor:pointer;" data-baixa="${b.id}">
+        <div class="col-desc">
+          <div>${b.lancamentos?.descricao ?? '(sem descrição)'}</div>
+          <div style="font-size:11px; color:var(--ink-soft);">${fmtData(b.data)} · ${b.lancamentos?.favorecidos?.nome ?? ''}</div>
+        </div>
+        <div class="col-valor">${fmt(b.valor_pago + b.juros + b.multa - b.desconto)}</div>
+      </div>`).join('');
+  }
+
+  buscaTexto.addEventListener('input', renderizarCandidatas);
+
+  listaCandidatas.addEventListener('click', async (e) => {
+    const linha = e.target.closest('.lista-selecao-linha');
+    if (!linha || !linhaEmBusca) return;
+    await conciliarLinha(linhaEmBusca, linha.dataset.baixa);
+    modalBusca.classList.remove('open');
+    linhaEmBusca = null;
+  });
+
+  document.getElementById('btn-cancelar-busca').addEventListener('click', () => {
+    modalBusca.classList.remove('open');
+    linhaEmBusca = null;
   });
 </script>
 </body>
