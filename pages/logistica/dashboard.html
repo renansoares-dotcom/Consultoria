@@ -56,16 +56,42 @@
         </div>
       </div>
 
-      <section class="card" style="padding:64px 40px; text-align:center;">
-        <div style="width:52px; height:52px; border-radius:14px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-          <i data-lucide="truck" style="width:26px; height:26px;"></i>
-        </div>
-        <h2 style="font-size:18px; margin-bottom:8px;">Módulo em construção</h2>
-        <p style="color:var(--ink-soft); font-size:13.5px; max-width:420px; margin:0 auto;">
-          A estrutura de navegação de Logística/Expedição já está pronta. As telas e a lógica de negócio deste módulo entram nas próximas etapas.
-        </p>
+      <section class="grid grid-2" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Pedidos Aguardando Expedição</div><div class="big valor aberto" id="card-pedidos">0</div></div>
+        <div class="card"><div class="label">Itens Prontos, Ainda no Estoque</div><div class="big" id="card-itens">0</div></div>
+      </section>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Itens pendentes</th><th style="text-align:right;">Ações</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="4" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
       </section>
     </main>
+  </div>
+</div>
+
+<!-- Modal: expedir pedido -->
+<div class="modal-overlay" id="modal-expedir">
+  <div class="modal" style="max-width:640px;">
+    <h2>Expedir Pedido</h2>
+    <p class="modal-sub" id="exp-pedido-info">—</p>
+    <div class="linha-flex">
+      <label class="field f-160">
+        <span class="field-label">Data da Expedição</span>
+        <input class="input" type="date" id="exp_data">
+      </label>
+      <label class="field f-grow">
+        <span class="field-label">Transportadora</span>
+        <input class="input" id="exp_transportadora" placeholder="Opcional">
+      </label>
+    </div>
+    <div class="label" style="margin:14px 0 8px;">Itens a expedir</div>
+    <div id="exp-itens"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-exp">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-exp"><i data-lucide="truck"></i> Confirmar Expedição</button>
+    </div>
   </div>
 </div>
 
@@ -76,6 +102,7 @@
 
   const sessao = await exigirSessao();
   const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
   if (usuario) {
     document.getElementById('user-nome').textContent = usuario.nome;
     document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
@@ -83,6 +110,106 @@
   document.getElementById('user-chip').addEventListener('click', async () => {
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
+
+  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
+
+  async function carregar() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('vw_pedido_venda_a_expedir')
+      .select('pedido_venda_id, numero_pedido, cliente_id, quantidade_disponivel_expedir, favorecidos:cliente_id(nome)')
+      .gt('quantidade_disponivel_expedir', 0);
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Nenhum pedido com itens prontos aguardando expedição.</td></tr>`;
+      document.getElementById('card-pedidos').textContent = 0;
+      document.getElementById('card-itens').textContent = 0;
+      return;
+    }
+
+    const porPedido = {};
+    data.forEach(r => {
+      if (!porPedido[r.pedido_venda_id]) porPedido[r.pedido_venda_id] = { numero: r.numero_pedido, cliente: r.favorecidos?.nome, itens: 0 };
+      porPedido[r.pedido_venda_id].itens++;
+    });
+
+    document.getElementById('card-pedidos').textContent = Object.keys(porPedido).length;
+    document.getElementById('card-itens').textContent = data.length;
+
+    tbody.innerHTML = Object.entries(porPedido).map(([id, p]) => `
+      <tr>
+        <td class="mono">${p.numero || id.slice(0,8)}</td>
+        <td>${p.cliente ?? '—'}</td>
+        <td>${p.itens} ite${p.itens===1?'m':'ns'}</td>
+        <td style="text-align:right;"><button class="btn primary" data-expedir="${id}"><i data-lucide="truck"></i> Expedir</button></td>
+      </tr>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-expedir]');
+    if (btn) abrirModalExpedir(btn.dataset.expedir);
+  });
+
+  const modal = document.getElementById('modal-expedir');
+  let pedidoEmExpedicao = null;
+
+  async function abrirModalExpedir(pedidoId) {
+    pedidoEmExpedicao = pedidoId;
+    document.getElementById('exp_data').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('exp_transportadora').value = '';
+
+    const { data: itens } = await supabase.from('vw_pedido_venda_a_expedir')
+      .select('pedido_venda_item_id, numero_pedido, produto_id, codigo, nome, unidade_medida, quantidade_disponivel_expedir')
+      .eq('pedido_venda_id', pedidoId).gt('quantidade_disponivel_expedir', 0);
+
+    document.getElementById('exp-pedido-info').textContent = `Pedido ${itens?.[0]?.numero_pedido || pedidoId.slice(0,8)}`;
+    document.getElementById('exp-itens').innerHTML = (itens || []).map(i => `
+      <div class="linha-flex" style="align-items:flex-end;">
+        <div class="field f-grow" style="margin-bottom:16px;">${i.codigo} — ${i.nome}</div>
+        <label class="field f-130">
+          <span class="field-label">Quantidade (${i.unidade_medida})</span>
+          <input class="input mono" type="number" step="0.001" min="0" max="${i.quantidade_disponivel_expedir}"
+                 data-item="${i.pedido_venda_item_id}" data-produto="${i.produto_id}" value="${i.quantidade_disponivel_expedir}">
+        </label>
+      </div>`).join('');
+
+    modal.classList.add('open');
+  }
+
+  document.getElementById('btn-cancelar-exp').addEventListener('click', () => modal.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-exp').addEventListener('click', async () => {
+    const inputs = [...document.querySelectorAll('#exp-itens input[data-item]')].filter(el => Number(el.value) > 0);
+    if (!inputs.length) { alert('Informe ao menos uma quantidade maior que zero.'); return; }
+
+    const btn = document.getElementById('btn-confirmar-exp');
+    btn.disabled = true; btn.textContent = 'Expedindo…';
+
+    const { data: expedicao, error: erroExp } = await supabase.from('expedicoes').insert({
+      tenant_id: TENANT_ID,
+      pedido_venda_id: pedidoEmExpedicao,
+      data_expedicao: document.getElementById('exp_data').value || new Date().toISOString().slice(0, 10),
+      transportadora: document.getElementById('exp_transportadora').value.trim() || null,
+      criado_por: usuario?.id,
+    }).select('id').single();
+
+    if (erroExp) { btn.disabled = false; btn.textContent = 'Confirmar Expedição'; alert('Erro ao criar expedição: ' + erroExp.message); return; }
+
+    const itens = inputs.map(el => ({
+      tenant_id: TENANT_ID, expedicao_id: expedicao.id, pedido_venda_item_id: el.dataset.item, produto_id: el.dataset.produto, quantidade: Number(el.value),
+    }));
+
+    const { error: erroItens } = await supabase.from('expedicao_itens').insert(itens);
+    if (erroItens) { btn.disabled = false; btn.textContent = 'Confirmar Expedição'; alert('Erro ao registrar itens: ' + erroItens.message); return; }
+
+    modal.classList.remove('open');
+    await carregar();
+  });
+
+  await carregar();
 </script>
 </body>
 </html>
