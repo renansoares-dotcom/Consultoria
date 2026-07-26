@@ -75,6 +75,12 @@
         <button data-aba="solicitacoes">Solicitações</button>
         <button data-aba="planos">Planos Preventivos</button>
         <button data-aba="equipamentos">Equipamentos</button>
+        <button data-aba="confiabilidade">Confiabilidade</button>
+      </div>
+
+      <div id="toolbar-confiabilidade" style="display:none; gap:10px; margin-bottom:14px;">
+        <button class="btn ghost" id="btn-catalogo-falhas"><i data-lucide="list"></i> Catálogo de Falhas</button>
+        <button class="btn primary" id="btn-registrar-parada"><i data-lucide="octagon-pause"></i> Registrar Parada</button>
       </div>
 
       <section class="card" style="padding:0; overflow:hidden;">
@@ -83,6 +89,11 @@
           <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
         </table>
       </section>
+
+      <div id="paradas-abertas-wrap" style="display:none; margin-top:18px;">
+        <div class="label" style="margin-bottom:10px;">Paradas em Aberto</div>
+        <div id="lista-paradas-abertas"></div>
+      </div>
     </main>
   </div>
 </div>
@@ -234,6 +245,54 @@
   </div>
 </div>
 
+<!-- Modal: catálogo de falhas -->
+<div class="modal-overlay" id="modal-falhas">
+  <div class="modal" style="max-width:560px;">
+    <h2>Catálogo de Falhas</h2>
+    <div id="lista-falhas" style="margin-bottom:18px;"></div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Nome</span><input class="input" id="fa_nome" placeholder="Ex: Falha elétrica no motor"></label>
+      <label class="field f-grow"><span class="field-label">Categoria</span><input class="input" id="fa_categoria" placeholder="Ex: Elétrica, Mecânica..."></label>
+      <button class="btn primary" type="button" id="btn-salvar-falha"><i data-lucide="plus"></i></button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-fechar-falhas">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: registrar parada -->
+<div class="modal-overlay" id="modal-parada">
+  <div class="modal">
+    <h2>Registrar Parada de Produção</h2>
+    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="pp_equipamento"></select></label>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Falha (catálogo)</span><select class="input" id="pp_falha"><option value="">Nenhuma</option></select></label>
+      <label class="field f-grow"><span class="field-label">Ordem de Manutenção vinculada</span><select class="input" id="pp_ordem"><option value="">Nenhuma</option></select></label>
+    </div>
+    <label class="field"><span class="field-label">Causa</span><input class="input" id="pp_causa" placeholder="Descrição livre da causa"></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-parada">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-parada">Registrar Início</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: encerrar parada -->
+<div class="modal-overlay" id="modal-encerrar-parada">
+  <div class="modal">
+    <h2>Encerrar Parada</h2>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Quantidade Perdida</span><input class="input mono" type="number" step="0.001" min="0" id="ep_quantidade"></label>
+      <label class="field f-grow"><span class="field-label">Impacto Estimado (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="ep_impacto"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-encerrar-parada">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-encerrar-parada">Encerrar Agora</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
   import { initNav } from '../../js/nav.js';
@@ -268,6 +327,8 @@
     document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     abaAtual = btn.dataset.aba;
+    document.getElementById('toolbar-confiabilidade').style.display = abaAtual === 'confiabilidade' ? 'flex' : 'none';
+    if (abaAtual !== 'confiabilidade') document.getElementById('paradas-abertas-wrap').style.display = 'none';
     carregar();
   });
 
@@ -288,6 +349,7 @@
     if (abaAtual === 'ordens') return carregarOrdens();
     if (abaAtual === 'solicitacoes') return carregarSolicitacoes();
     if (abaAtual === 'planos') return carregarPlanos();
+    if (abaAtual === 'confiabilidade') return carregarConfiabilidade();
     return carregarEquipamentos();
   }
 
@@ -662,6 +724,110 @@
     if (window.lucide) lucide.createIcons();
     if (error) { alert('Erro ao gerar: ' + error.message); return; }
     alert(data?.length ? `${data.length} nova(s) OS preventiva(s) gerada(s): ${data.map(d => d.plano_nome).join(', ')}` : 'Nenhum plano vencido no momento.');
+    await carregar();
+  });
+
+  // ---------- Confiabilidade ----------
+  async function carregarConfiabilidade() {
+    document.getElementById('thead').innerHTML = `<tr><th>Equipamento</th><th class="num">Paradas</th><th class="num">MTTR (h)</th><th class="num">MTBF (h)</th><th class="num">Qtd. Perdida</th><th class="num">Impacto Total</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+    document.getElementById('paradas-abertas-wrap').style.display = 'block';
+
+    const { data, error } = await supabase.from('vw_confiabilidade_equipamento').select('*').order('codigo');
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum equipamento cadastrado ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(c => `
+      <tr>
+        <td>${c.codigo} — ${c.nome}</td>
+        <td class="num mono">${c.total_paradas ?? 0}</td>
+        <td class="num mono">${c.mttr_horas != null ? fmtNum(c.mttr_horas) : '—'}</td>
+        <td class="num mono">${c.mtbf_horas != null ? fmtNum(c.mtbf_horas) : '—'}</td>
+        <td class="num mono">${c.quantidade_total_perdida != null ? fmtNum(c.quantidade_total_perdida) : '—'}</td>
+        <td class="num mono">${c.impacto_total_estimado != null ? 'R$ ' + fmtNum(c.impacto_total_estimado) : '—'}</td>
+      </tr>`).join('');
+
+    await carregarParadasAbertas();
+  }
+
+  async function carregarParadasAbertas() {
+    const { data } = await supabase.from('paradas_producao').select('id, inicio, causa, equipamentos(codigo, nome)').is('fim', null).order('inicio');
+    document.getElementById('lista-paradas-abertas').innerHTML = (data?.length ? data.map(p => `
+      <div class="lista-selecao-linha">
+        <div class="col-desc">${p.equipamentos?.codigo ?? ''} — ${p.equipamentos?.nome ?? ''}${p.causa ? ': ' + p.causa : ''}</div>
+        <div class="col-valor" style="font-size:11px;">desde ${fmtDataHora(p.inicio)}</div>
+        <button class="icon-btn" data-encerrar-parada="${p.id}" style="margin-left:8px;">Encerrar</button>
+      </div>`).join('') : '<div class="empty-state">Nenhuma parada em aberto.</div>');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ---------- Catálogo de Falhas ----------
+  document.getElementById('btn-catalogo-falhas').addEventListener('click', async () => { await carregarFalhas(); document.getElementById('modal-falhas').classList.add('open'); });
+  document.getElementById('btn-fechar-falhas').addEventListener('click', () => document.getElementById('modal-falhas').classList.remove('open'));
+
+  async function carregarFalhas() {
+    const { data } = await supabase.from('falhas_ativos').select('id, nome, categoria').eq('ativo', true).order('nome');
+    document.getElementById('lista-falhas').innerHTML = (data?.length ? data.map(f => `
+      <div class="lista-selecao-linha"><div class="col-desc">${f.nome}</div><div class="col-valor" style="font-size:11px; color:var(--ink-soft);">${f.categoria ?? '—'}</div></div>`).join('') : '<div class="empty-state">Nenhuma falha cadastrada ainda.</div>');
+  }
+
+  document.getElementById('btn-salvar-falha').addEventListener('click', async () => {
+    const nome = document.getElementById('fa_nome').value.trim();
+    if (!nome) { alert('Dê um nome à falha.'); return; }
+    const { error } = await supabase.from('falhas_ativos').insert({ tenant_id: TENANT_ID, nome, categoria: document.getElementById('fa_categoria').value.trim() || null });
+    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+    document.getElementById('fa_nome').value = ''; document.getElementById('fa_categoria').value = '';
+    await carregarFalhas();
+  });
+
+  // ---------- Registrar / Encerrar Parada ----------
+  const modalParada = document.getElementById('modal-parada');
+  document.getElementById('btn-registrar-parada').addEventListener('click', async () => {
+    document.getElementById('pp_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
+    const { data: falhas } = await supabase.from('falhas_ativos').select('id, nome').eq('ativo', true).order('nome');
+    document.getElementById('pp_falha').innerHTML = '<option value="">Nenhuma</option>' + (falhas || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+    const { data: ordensAbertas } = await supabase.from('ordens_manutencao').select('id, descricao_problema').in('status', ['aberta','em_andamento']).order('data_abertura', { ascending: false }).limit(50);
+    document.getElementById('pp_ordem').innerHTML = '<option value="">Nenhuma</option>' + (ordensAbertas || []).map(o => `<option value="${o.id}">${o.descricao_problema}</option>`).join('');
+    document.getElementById('pp_causa').value = '';
+    modalParada.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-parada').addEventListener('click', () => modalParada.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-parada').addEventListener('click', async () => {
+    const { error } = await supabase.from('paradas_producao').insert({
+      tenant_id: TENANT_ID, equipamento_id: document.getElementById('pp_equipamento').value,
+      falha_id: document.getElementById('pp_falha').value || null,
+      ordem_manutencao_id: document.getElementById('pp_ordem').value || null,
+      causa: document.getElementById('pp_causa').value.trim() || null,
+      registrado_por: usuario?.id,
+    });
+    if (error) { alert('Erro ao registrar: ' + error.message); return; }
+    modalParada.classList.remove('open');
+    await carregar();
+  });
+
+  const modalEncerrarParada = document.getElementById('modal-encerrar-parada');
+  let paradaEmEncerramento = null;
+
+  document.getElementById('tbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-encerrar-parada]');
+    if (!btn) return;
+    paradaEmEncerramento = btn.dataset.encerrarParada;
+    document.getElementById('ep_quantidade').value = '';
+    document.getElementById('ep_impacto').value = '';
+    modalEncerrarParada.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-encerrar-parada').addEventListener('click', () => modalEncerrarParada.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-encerrar-parada').addEventListener('click', async () => {
+    const { error } = await supabase.from('paradas_producao').update({
+      fim: new Date().toISOString(),
+      quantidade_perdida: document.getElementById('ep_quantidade').value ? Number(document.getElementById('ep_quantidade').value) : null,
+      impacto_estimado: document.getElementById('ep_impacto').value ? Number(document.getElementById('ep_impacto').value) : null,
+    }).eq('id', paradaEmEncerramento);
+    if (error) { alert('Erro ao encerrar: ' + error.message); return; }
+    modalEncerrarParada.classList.remove('open');
     await carregar();
   });
 

@@ -76,6 +76,7 @@
         <button data-tab="pecas">Peças (MRO)</button>
         <button data-tab="mao-obra">Mão de Obra</button>
         <button data-tab="anexos">Anexos</button>
+        <button data-tab="causa-raiz">Causa Raiz</button>
         <button data-tab="historico">Histórico</button>
       </nav>
 
@@ -115,6 +116,17 @@
         <div id="lista-anexos" style="margin-bottom:18px;"></div>
         <input type="file" id="an_arquivo" style="display:none;">
         <button class="btn primary" type="button" id="btn-enviar-anexo"><i data-lucide="upload"></i> Enviar Anexo</button>
+      </div>
+
+      <!-- ============================== CAUSA RAIZ ============================== -->
+      <div id="tab-causa-raiz" style="display:none;">
+        <div id="area-nova-analise">
+          <label class="field"><span class="field-label">Método</span><input class="input" id="cr_metodo" placeholder="Ex: 5 Porquês, Ishikawa..."></label>
+          <label class="field"><span class="field-label">Descrição da análise *</span><textarea class="input" id="cr_descricao"></textarea></label>
+          <label class="field"><span class="field-label">Causa raiz identificada</span><textarea class="input" id="cr_causa_raiz"></textarea></label>
+          <button class="btn primary" type="button" id="btn-salvar-analise">Registrar Análise</button>
+        </div>
+        <div id="lista-analises" style="margin-top:20px;"></div>
       </div>
 
       <!-- ============================== HISTÓRICO ============================== -->
@@ -189,10 +201,11 @@ async function carregarCabecalho() {
 document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
-  ['checklist','pecas','mao-obra','anexos','historico'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+  ['checklist','pecas','mao-obra','anexos','causa-raiz','historico'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
   if (b.dataset.tab === 'pecas') carregarPecas();
   if (b.dataset.tab === 'mao-obra') carregarApontamentos();
   if (b.dataset.tab === 'anexos') carregarAnexos();
+  if (b.dataset.tab === 'causa-raiz') carregarAnalises();
   if (b.dataset.tab === 'historico') carregarHistorico();
 }));
 
@@ -329,6 +342,71 @@ document.getElementById('lista-anexos').addEventListener('click', async (e) => {
   if (!btn) return;
   const { data } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.baixarAnexo, 300);
   if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+});
+
+// ---------- Causa Raiz ----------
+const LABEL_STATUS_ACAO = { pendente: 'Pendente', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
+const BADGE_STATUS_ACAO = { pendente: 'aberto', em_andamento: 'parcial', concluida: 'liquidado', cancelada: 'inadimplente' };
+
+async function carregarAnalises() {
+  const { data } = await supabase.from('analises_causa_raiz')
+    .select('*, acoes_confiabilidade(*)').eq('ordem_manutencao_id', ordemId).order('criado_em', { ascending: false });
+
+  document.getElementById('lista-analises').innerHTML = (data?.length ? data.map(a => `
+    <div class="card" style="margin-bottom:14px; padding:14px;">
+      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:6px;">${a.metodo ?? 'Análise'} — ${fmtData(a.data_analise)}</div>
+      <div style="margin-bottom:6px;">${a.descricao_analise}</div>
+      ${a.causa_raiz_identificada ? `<div style="font-size:12.5px; margin-bottom:10px;"><b>Causa raiz:</b> ${a.causa_raiz_identificada}</div>` : ''}
+      <div class="label" style="margin-bottom:8px;">Ações de acompanhamento</div>
+      <div id="acoes-${a.id}">
+        ${(a.acoes_confiabilidade || []).map(ac => `
+          <div class="lista-selecao-linha">
+            <div class="col-desc">${ac.descricao}${ac.prazo ? ' · prazo ' + fmtData(ac.prazo) : ''}</div>
+            <select class="input" style="max-width:150px;" data-status-acao="${ac.id}">
+              ${Object.entries(LABEL_STATUS_ACAO).map(([v,l]) => `<option value="${v}" ${ac.status===v?'selected':''}>${l}</option>`).join('')}
+            </select>
+          </div>`).join('') || '<div class="empty-state">Nenhuma ação registrada.</div>'}
+      </div>
+      <div class="linha-flex" style="margin-top:10px;">
+        <input class="input f-grow" placeholder="Nova ação de acompanhamento" data-nova-acao-desc="${a.id}">
+        <input class="input" type="date" style="max-width:150px;" data-nova-acao-prazo="${a.id}">
+        <button class="btn ghost" type="button" data-nova-acao-btn="${a.id}">Adicionar</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">Nenhuma análise de causa raiz registrada ainda.</div>');
+}
+
+document.getElementById('btn-salvar-analise').addEventListener('click', async () => {
+  const descricao = document.getElementById('cr_descricao').value.trim();
+  if (!descricao) { alert('Descreva a análise.'); return; }
+  const { error } = await supabase.from('analises_causa_raiz').insert({
+    tenant_id: TENANT_ID, ordem_manutencao_id: ordemId,
+    metodo: document.getElementById('cr_metodo').value.trim() || null,
+    descricao_analise: descricao,
+    causa_raiz_identificada: document.getElementById('cr_causa_raiz').value.trim() || null,
+    responsavel_id: usuario?.id,
+  });
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  ['cr_metodo','cr_descricao','cr_causa_raiz'].forEach(id => document.getElementById(id).value = '');
+  await carregarAnalises();
+});
+
+document.getElementById('lista-analises').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-nova-acao-btn]');
+  if (!btn) return;
+  const analiseId = btn.dataset.novaAcaoBtn;
+  const descricao = document.querySelector(`[data-nova-acao-desc="${analiseId}"]`).value.trim();
+  if (!descricao) return;
+  const prazo = document.querySelector(`[data-nova-acao-prazo="${analiseId}"]`).value || null;
+  await supabase.from('acoes_confiabilidade').insert({ tenant_id: TENANT_ID, analise_id: analiseId, descricao, prazo });
+  await carregarAnalises();
+});
+
+document.getElementById('lista-analises').addEventListener('change', async (e) => {
+  const sel = e.target.closest('[data-status-acao]');
+  if (!sel) return;
+  const payload = { status: sel.value };
+  if (sel.value === 'concluida') payload.data_conclusao = new Date().toISOString().slice(0,10);
+  await supabase.from('acoes_confiabilidade').update(payload).eq('id', sel.dataset.statusAcao);
 });
 
 // ---------- Histórico ----------
