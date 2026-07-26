@@ -69,8 +69,8 @@
 
       <section class="card" style="padding:0; overflow:hidden;">
         <table>
-          <thead><tr><th>Número/Série</th><th>Emissão</th><th>Destinatário</th><th>Tipo</th><th>Status</th><th class="num">Valor</th><th>Pedido Vinculado</th></tr></thead>
-          <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+          <thead><tr><th>Número/Série</th><th>Emissão</th><th>Destinatário</th><th>Tipo</th><th>Status</th><th class="num">Valor</th><th>Pedido Vinculado</th><th>Docs</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="8" class="empty-state">Carregando…</td></tr></tbody>
         </table>
       </section>
     </main>
@@ -99,6 +99,10 @@
     </div>
     <label class="field"><span class="field-label">Natureza da Operação</span><input class="input" id="nf_natureza" placeholder="Ex: Venda de mercadoria"></label>
     <label class="field"><span class="field-label">Observações</span><textarea class="input" id="nf_obs"></textarea></label>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">DANFE (PDF)</span><input class="input" type="file" id="nf_danfe" accept=".pdf"></label>
+      <label class="field f-grow"><span class="field-label">XML</span><input class="input" type="file" id="nf_xml" accept=".xml"></label>
+    </div>
     <div class="modal-actions">
       <button class="btn ghost" type="button" id="btn-cancelar-nota">Cancelar</button>
       <button class="btn primary" type="button" id="btn-salvar-nota">Registrar</button>
@@ -129,13 +133,13 @@
 
   async function carregar() {
     const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
 
     const { data, error } = await supabase.from('notas_fiscais')
-      .select('id, numero, serie, data_emissao, tipo, status, valor_total, favorecidos:favorecido_id(nome), pedidos_venda:pedido_venda_id(numero_pedido)')
+      .select('id, numero, serie, data_emissao, tipo, status, valor_total, danfe_path, xml_path, favorecidos:favorecido_id(nome), pedidos_venda:pedido_venda_id(numero_pedido)')
       .order('data_emissao', { ascending: false }).limit(200);
 
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
 
     const inicioMes = new Date(); inicioMes.setDate(1);
     const doMes = (data || []).filter(n => new Date(n.data_emissao) >= inicioMes && n.status === 'emitida');
@@ -143,7 +147,7 @@
     document.getElementById('card-valor').textContent = fmt(doMes.reduce((s,n) => s + Number(n.valor_total), 0));
     document.getElementById('card-rascunhos').textContent = (data || []).filter(n => n.status === 'rascunho').length;
 
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma nota fiscal registrada ainda.</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhuma nota fiscal registrada ainda.</td></tr>`; return; }
 
     tbody.innerHTML = data.map(n => `
       <tr>
@@ -154,13 +158,21 @@
         <td><span class="badge ${BADGE_STATUS[n.status]}">${LABEL_STATUS[n.status]}</span></td>
         <td class="num mono">${fmt(n.valor_total)}</td>
         <td>${n.pedidos_venda?.numero_pedido ?? '—'}</td>
+        <td style="white-space:nowrap;">${n.danfe_path ? `<button class="icon-btn" data-baixar="${n.danfe_path}" title="DANFE">DANFE</button>` : ''} ${n.xml_path ? `<button class="icon-btn" data-baixar="${n.xml_path}" title="XML">XML</button>` : ''}</td>
       </tr>`).join('');
   }
+
+  document.getElementById('tbody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-baixar]');
+    if (!btn) return;
+    const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.baixar, 300);
+    if (signed?.signedUrl) window.open(signed.signedUrl, '_blank');
+  });
 
   // ---------- Modal ----------
   const modal = document.getElementById('modal-nota');
   document.getElementById('btn-nova-nota').addEventListener('click', async () => {
-    ['nf_numero','nf_chave','nf_valor','nf_natureza','nf_obs'].forEach(id => document.getElementById(id).value = '');
+    ['nf_numero','nf_chave','nf_valor','nf_natureza','nf_obs','nf_danfe','nf_xml'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('nf_serie').value = '1';
     document.getElementById('nf_data').value = new Date().toISOString().slice(0,10);
     document.getElementById('nf_tipo').value = 'saida';
@@ -179,7 +191,7 @@
     const chave = document.getElementById('nf_chave').value.trim();
     if (chave && chave.length !== 44) { alert('A chave de acesso, se preenchida, precisa ter exatamente 44 dígitos.'); return; }
 
-    const { error } = await supabase.from('notas_fiscais').insert({
+    const { data: nota, error } = await supabase.from('notas_fiscais').insert({
       tenant_id: TENANT_ID,
       numero: document.getElementById('nf_numero').value.trim() || null,
       serie: document.getElementById('nf_serie').value.trim() || null,
@@ -193,8 +205,24 @@
       observacoes: document.getElementById('nf_obs').value.trim() || null,
       status: 'emitida',
       criado_por: usuario?.id,
-    });
+    }).select('id').single();
     if (error) { alert(error.code === '23505' ? 'Já existe uma nota com essa chave de acesso.' : 'Erro ao registrar: ' + error.message); return; }
+
+    const arquivoDanfe = document.getElementById('nf_danfe').files[0];
+    const arquivoXml = document.getElementById('nf_xml').files[0];
+    const patches = {};
+
+    if (arquivoDanfe) {
+      const caminho = `${TENANT_ID}/fiscal/${nota.id}_danfe.pdf`;
+      const { error: erroDanfe } = await supabase.storage.from('anexos').upload(caminho, arquivoDanfe, { upsert: true });
+      if (!erroDanfe) patches.danfe_path = caminho;
+    }
+    if (arquivoXml) {
+      const caminho = `${TENANT_ID}/fiscal/${nota.id}_xml.xml`;
+      const { error: erroXml } = await supabase.storage.from('anexos').upload(caminho, arquivoXml, { upsert: true });
+      if (!erroXml) patches.xml_path = caminho;
+    }
+    if (Object.keys(patches).length) await supabase.from('notas_fiscais').update(patches).eq('id', nota.id);
     modal.classList.remove('open');
     await carregar();
   });

@@ -270,12 +270,24 @@ if (window.lucide) lucide.createIcons();
     if (grupoId) queryRealizado = queryRealizado.eq('grupo_empresarial_id', grupoId);
     const { data: realizados, error: erroRealizado } = await queryRealizado;
 
-    // Em aberto / inadimplência: saldo que ainda falta pagar, por status
-    let querySaldo = supabase.from('vw_saldo_lancamento').select('saldo_aberto, status, lancamento_id, lancamentos!inner(grupo_empresarial_id, plano_contas(tipo))');
-    if (grupoId) querySaldo = querySaldo.eq('lancamentos.grupo_empresarial_id', grupoId);
-    const { data: saldos, error: erroSaldo } = await querySaldo;
+    // Em aberto / inadimplência: saldo que ainda falta pagar, por status.
+    // vw_saldo_lancamento é uma view agregada (GROUP BY) — o PostgREST não
+    // consegue montar embed de FK através dela (não é tabela real), então
+    // buscamos o saldo cru e os dados do lançamento (grupo/tipo) separados,
+    // e juntamos aqui no navegador pelo lancamento_id.
+    let querySaldo = supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto, status');
+    const { data: saldosRaw, error: erroSaldo } = await querySaldo;
 
-    if (erroRealizado || erroSaldo) { console.error(erroRealizado || erroSaldo); return; }
+    let queryLancInfo = supabase.from('lancamentos').select('id, grupo_empresarial_id, plano_contas(tipo)');
+    if (grupoId) queryLancInfo = queryLancInfo.eq('grupo_empresarial_id', grupoId);
+    const { data: lancInfo, error: erroLancInfo } = await queryLancInfo;
+
+    if (erroRealizado || erroSaldo || erroLancInfo) { console.error(erroRealizado || erroSaldo || erroLancInfo); return; }
+
+    const infoPorLancamento = new Map((lancInfo || []).map(l => [l.id, l]));
+    const saldos = (saldosRaw || [])
+      .filter(s => infoPorLancamento.has(s.lancamento_id))
+      .map(s => ({ ...s, lancamentos: infoPorLancamento.get(s.lancamento_id) }));
 
     let realizado = saldoInicialContas;
     (realizados || []).forEach(r => {
@@ -302,7 +314,7 @@ if (window.lucide) lucide.createIcons();
     document.getElementById('card-inadimplencia').textContent = fmt(inadimplencia);
     document.getElementById('saldo-topo').textContent = fmt(realizado);
   }
-  await carregarCards();
+  try { await carregarCards(); } catch (e) { console.error('Erro ao carregar cards do dashboard:', e); }
 
   // ============================================================================
   // BI — donuts, fluxo mensal e rankings (tudo em CSS puro, sem biblioteca)
@@ -375,9 +387,18 @@ if (window.lucide) lucide.createIcons();
   // ---------- Aging de Contas a Receber ----------
   async function carregarDonutAging() {
     const grupoId = selGrupo.value;
-    let q = supabase.from('vw_saldo_lancamento').select('saldo_aberto, lancamentos!inner(data_vencimento, grupo_empresarial_id, plano_contas!inner(tipo))').eq('lancamentos.plano_contas.tipo', 'entrada');
-    if (grupoId) q = q.eq('lancamentos.grupo_empresarial_id', grupoId);
-    const { data } = await q;
+
+    let querySaldo = supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto');
+    const { data: saldosRaw } = await querySaldo;
+
+    let queryLancInfo = supabase.from('lancamentos').select('id, data_vencimento, grupo_empresarial_id, plano_contas!inner(tipo)').eq('plano_contas.tipo', 'entrada');
+    if (grupoId) queryLancInfo = queryLancInfo.eq('grupo_empresarial_id', grupoId);
+    const { data: lancInfo } = await queryLancInfo;
+
+    const infoPorLancamento = new Map((lancInfo || []).map(l => [l.id, l]));
+    const data = (saldosRaw || [])
+      .filter(s => infoPorLancamento.has(s.lancamento_id))
+      .map(s => ({ saldo_aberto: s.saldo_aberto, lancamentos: infoPorLancamento.get(s.lancamento_id) }));
 
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const buckets = { atual: 0, d30: 0, d60: 0, d90: 0, vencido: 0 };
@@ -499,15 +520,18 @@ if (window.lucide) lucide.createIcons();
   }
 
   async function carregarBI() {
-    await Promise.all([
+    // Promise.allSettled (não Promise.all): se um gráfico falhar, os outros
+    // e o que vem depois no script (Últimos Lançamentos) continuam normalmente.
+    const resultados = await Promise.allSettled([
       carregarDonutContas(),
       carregarDonutAging(),
       carregarFluxoMensal(),
       carregarTopFavorecidos(),
       carregarDistPlanoContas(),
     ]);
+    resultados.forEach(r => { if (r.status === 'rejected') console.error('Erro ao carregar gráfico do dashboard:', r.reason); });
   }
-  await carregarBI();
+  try { await carregarBI(); } catch (e) { console.error('Erro ao carregar gráficos do dashboard:', e); }
   selGrupo.addEventListener('change', carregarBI);
 
   // Exemplo de carga real: últimos 10 lançamentos do tenant (RLS filtra automaticamente)
