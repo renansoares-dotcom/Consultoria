@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordem de Manutenção — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link active"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-os">Ordem de Manutenção</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="dashboard.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <div class="janela-corpo">
+      <div id="erro" style="display:none; color:var(--red); font-size:13px; margin-bottom:16px;"></div>
+
+      <div class="saldo-card" style="margin-bottom:18px;">
+        <div class="item"><div class="label">Status</div><div class="num" id="disp-status" style="font-size:15px;">—</div></div>
+        <div class="item"><div class="label">Prioridade</div><div class="num" id="disp-prioridade" style="font-size:15px;">—</div></div>
+        <div class="item"><div class="label">SLA</div><div class="num" id="disp-sla" style="font-size:15px;">—</div></div>
+        <div class="item"><div class="label">Horas Apontadas</div><div class="num" id="disp-horas" style="font-size:15px;">—</div></div>
+      </div>
+
+      <nav class="subnav janela-abas">
+        <button class="active" data-tab="checklist">Checklist</button>
+        <button data-tab="mao-obra">Mão de Obra</button>
+        <button data-tab="anexos">Anexos</button>
+        <button data-tab="historico">Histórico</button>
+      </nav>
+
+      <!-- ============================== CHECKLIST ============================== -->
+      <div id="tab-checklist">
+        <div id="lista-tarefas" style="margin-bottom:18px;"></div>
+        <div class="linha-flex">
+          <label class="field f-grow"><span class="field-label">Nova tarefa</span><input class="input" id="tf_descricao" placeholder="Ex: Verificar tensão da correia"></label>
+          <button class="btn primary" type="button" id="btn-add-tarefa"><i data-lucide="plus"></i></button>
+        </div>
+      </div>
+
+      <!-- ============================== MÃO DE OBRA ============================== -->
+      <div id="tab-mao-obra" style="display:none;">
+        <div id="lista-apontamentos" style="margin-bottom:18px;"></div>
+        <div class="linha-flex">
+          <label class="field f-160"><span class="field-label">Data</span><input class="input" type="date" id="ap_data"></label>
+          <label class="field f-130"><span class="field-label">Horas</span><input class="input mono" type="number" step="0.25" min="0.25" id="ap_horas"></label>
+          <label class="field f-grow"><span class="field-label">Descrição</span><input class="input" id="ap_descricao" placeholder="Opcional"></label>
+          <button class="btn primary" type="button" id="btn-add-apontamento"><i data-lucide="plus"></i></button>
+        </div>
+      </div>
+
+      <!-- ============================== ANEXOS ============================== -->
+      <div id="tab-anexos" style="display:none;">
+        <div id="lista-anexos" style="margin-bottom:18px;"></div>
+        <input type="file" id="an_arquivo" style="display:none;">
+        <button class="btn primary" type="button" id="btn-enviar-anexo"><i data-lucide="upload"></i> Enviar Anexo</button>
+      </div>
+
+      <!-- ============================== HISTÓRICO ============================== -->
+      <div id="tab-historico" style="display:none;">
+        <div id="lista-historico"></div>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+const TENANT_ID = usuario?.tenant_id;
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+const LABEL_STATUS = { aberta: 'Aberta', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
+const LABEL_PRIORIDADE = { baixa: 'Baixa', media: 'Média', alta: 'Alta', critica: 'Crítica' };
+
+const params = new URLSearchParams(location.search);
+const ordemId = params.get('id');
+
+if (!ordemId) {
+  document.getElementById('erro').textContent = 'Nenhuma ordem informada — volte e clique em "Detalhes" a partir da lista.';
+  document.getElementById('erro').style.display = 'block';
+} else {
+  await carregarCabecalho();
+  await carregarTarefas();
+}
+
+async function carregarCabecalho() {
+  const { data: os, error } = await supabase.from('ordens_manutencao')
+    .select('status, prioridade, sla_previsto, descricao_problema, equipamentos(codigo, nome)')
+    .eq('id', ordemId).single();
+  if (error || !os) { document.getElementById('erro').textContent = 'Ordem não encontrada.'; document.getElementById('erro').style.display = 'block'; return; }
+
+  document.getElementById('titulo-os').textContent = `${os.equipamentos?.codigo ?? ''} — ${os.descricao_problema}`;
+  document.getElementById('disp-status').textContent = LABEL_STATUS[os.status] ?? os.status;
+  document.getElementById('disp-prioridade').textContent = LABEL_PRIORIDADE[os.prioridade] ?? os.prioridade;
+
+  if (os.sla_previsto && (os.status === 'aberta' || os.status === 'em_andamento')) {
+    const vencido = new Date(os.sla_previsto) < new Date();
+    document.getElementById('disp-sla').innerHTML = `<span class="${vencido ? 'valor negativo' : 'valor positivo'}">${fmtDataHora(os.sla_previsto)}</span>`;
+  } else {
+    document.getElementById('disp-sla').textContent = '—';
+  }
+
+  const { data: apontamentos } = await supabase.from('apontamentos_manutencao').select('horas_trabalhadas').eq('ordem_manutencao_id', ordemId);
+  const totalHoras = (apontamentos || []).reduce((s, a) => s + Number(a.horas_trabalhadas), 0);
+  document.getElementById('disp-horas').textContent = `${fmtNum(totalHoras)} h`;
+}
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['checklist','mao-obra','anexos','historico'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+  if (b.dataset.tab === 'mao-obra') carregarApontamentos();
+  if (b.dataset.tab === 'anexos') carregarAnexos();
+  if (b.dataset.tab === 'historico') carregarHistorico();
+}));
+
+// ---------- Checklist ----------
+async function carregarTarefas() {
+  const { data } = await supabase.from('tarefas_os').select('*').eq('ordem_manutencao_id', ordemId).order('ordem');
+  document.getElementById('lista-tarefas').innerHTML = (data?.length ? data.map(t => `
+    <div class="lista-selecao-linha">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; flex:1;">
+        <input type="checkbox" data-concluir-tarefa="${t.id}" ${t.concluida ? 'checked' : ''}>
+        <span style="${t.concluida ? 'text-decoration:line-through; color:var(--ink-faint);' : ''}">${t.descricao}</span>
+      </label>
+    </div>`).join('') : '<div class="empty-state">Nenhuma tarefa no checklist ainda.</div>');
+}
+
+document.getElementById('btn-add-tarefa').addEventListener('click', async () => {
+  const descricao = document.getElementById('tf_descricao').value.trim();
+  if (!descricao) return;
+  const { data: existentes } = await supabase.from('tarefas_os').select('id', { count: 'exact', head: true }).eq('ordem_manutencao_id', ordemId);
+  await supabase.from('tarefas_os').insert({ tenant_id: TENANT_ID, ordem_manutencao_id: ordemId, descricao, ordem: existentes?.length || 0 });
+  document.getElementById('tf_descricao').value = '';
+  await carregarTarefas();
+});
+
+document.getElementById('lista-tarefas').addEventListener('change', async (e) => {
+  const chk = e.target.closest('[data-concluir-tarefa]');
+  if (!chk) return;
+  await supabase.from('tarefas_os').update({
+    concluida: chk.checked,
+    concluida_por: chk.checked ? usuario?.id : null,
+    concluida_em: chk.checked ? new Date().toISOString() : null,
+  }).eq('id', chk.dataset.concluirTarefa);
+  await carregarTarefas();
+});
+
+// ---------- Mão de Obra ----------
+async function carregarApontamentos() {
+  const { data } = await supabase.from('apontamentos_manutencao').select('*, usuarios(nome)').eq('ordem_manutencao_id', ordemId).order('data', { ascending: false });
+  document.getElementById('lista-apontamentos').innerHTML = (data?.length ? data.map(a => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">${fmtData(a.data)} — ${a.usuarios?.nome ?? 'Executante'}${a.descricao ? ': ' + a.descricao : ''}</div>
+      <div class="col-valor mono">${fmtNum(a.horas_trabalhadas)} h</div>
+    </div>`).join('') : '<div class="empty-state">Nenhum apontamento registrado ainda.</div>');
+  await carregarCabecalho();
+}
+
+document.getElementById('ap_data').value = new Date().toISOString().slice(0,10);
+document.getElementById('btn-add-apontamento').addEventListener('click', async () => {
+  const horas = document.getElementById('ap_horas').value;
+  if (!horas) { alert('Informe as horas trabalhadas.'); return; }
+  const { error } = await supabase.from('apontamentos_manutencao').insert({
+    tenant_id: TENANT_ID, ordem_manutencao_id: ordemId, executante_id: usuario?.id,
+    data: document.getElementById('ap_data').value || new Date().toISOString().slice(0,10),
+    horas_trabalhadas: Number(horas), descricao: document.getElementById('ap_descricao').value.trim() || null,
+  });
+  if (error) { alert('Erro ao registrar: ' + error.message); return; }
+  document.getElementById('ap_horas').value = ''; document.getElementById('ap_descricao').value = '';
+  await carregarApontamentos();
+});
+
+// ---------- Anexos ----------
+async function carregarAnexos() {
+  const { data } = await supabase.from('ordens_manutencao_anexos').select('*').eq('ordem_manutencao_id', ordemId).order('criado_em', { ascending: false });
+  document.getElementById('lista-anexos').innerHTML = (data?.length ? data.map(a => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">${a.arquivo_nome}</div>
+      <button class="icon-btn" data-baixar-anexo="${a.arquivo_path}"><i data-lucide="download"></i></button>
+    </div>`).join('') : '<div class="empty-state">Nenhum anexo enviado ainda.</div>');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-enviar-anexo').addEventListener('click', () => document.getElementById('an_arquivo').click());
+document.getElementById('an_arquivo').addEventListener('change', async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  const caminho = `${TENANT_ID}/manutencao/${ordemId}/${Date.now()}_${arquivo.name}`;
+  const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivo);
+  if (erroUpload) { alert('Erro ao enviar: ' + erroUpload.message); return; }
+  await supabase.from('ordens_manutencao_anexos').insert({ tenant_id: TENANT_ID, ordem_manutencao_id: ordemId, arquivo_path: caminho, arquivo_nome: arquivo.name, enviado_por: usuario?.id });
+  document.getElementById('an_arquivo').value = '';
+  await carregarAnexos();
+});
+
+document.getElementById('lista-anexos').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-baixar-anexo]');
+  if (!btn) return;
+  const { data } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.baixarAnexo, 300);
+  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+});
+
+// ---------- Histórico ----------
+async function carregarHistorico() {
+  const { data } = await supabase.from('ordens_manutencao_historico')
+    .select('*, alterado:usuarios!alterado_por(nome)').eq('ordem_manutencao_id', ordemId).order('criado_em', { ascending: false });
+  document.getElementById('lista-historico').innerHTML = (data?.length ? data.map(h => `
+    <div class="lista-selecao-linha" style="flex-direction:column; align-items:flex-start;">
+      <div style="font-size:12.5px;">${fmtDataHora(h.criado_em)} — ${h.alterado?.nome ?? 'Sistema'}</div>
+      <div style="font-size:11px; color:var(--ink-soft);">
+        ${h.status_anterior !== h.status_novo ? `Status: ${LABEL_STATUS[h.status_anterior] ?? '—'} → ${LABEL_STATUS[h.status_novo] ?? '—'}` : ''}
+        ${h.responsavel_anterior !== h.responsavel_novo ? ' · Responsável alterado' : ''}
+      </div>
+    </div>`).join('') : '<div class="empty-state">Nenhuma alteração registrada ainda.</div>');
+}
+</script>
+</body>
+</html>

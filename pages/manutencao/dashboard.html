@@ -57,6 +57,9 @@
         <div style="display:flex; gap:10px;">
           <button class="btn ghost" id="btn-locais"><i data-lucide="map"></i> Locais Funcionais</button>
           <button class="btn ghost" id="btn-novo-equip"><i data-lucide="plus"></i> Novo Equipamento</button>
+          <button class="btn ghost" id="btn-nova-solicitacao"><i data-lucide="plus"></i> Nova Solicitação</button>
+          <button class="btn ghost" id="btn-novo-plano"><i data-lucide="plus"></i> Novo Plano</button>
+          <button class="btn ghost" id="btn-gerar-preventivas"><i data-lucide="refresh-cw"></i> Gerar OS Preventivas</button>
           <button class="btn primary" id="btn-nova-ordem"><i data-lucide="plus"></i> Nova Ordem</button>
         </div>
       </div>
@@ -69,6 +72,8 @@
 
       <div class="subnav" id="abas">
         <button class="active" data-aba="ordens">Ordens de Manutenção</button>
+        <button data-aba="solicitacoes">Solicitações</button>
+        <button data-aba="planos">Planos Preventivos</button>
         <button data-aba="equipamentos">Equipamentos</button>
       </div>
 
@@ -184,6 +189,51 @@
   </div>
 </div>
 
+<!-- Modal: nova solicitação -->
+<div class="modal-overlay" id="modal-solicitacao">
+  <div class="modal">
+    <h2>Nova Solicitação de Manutenção</h2>
+    <p class="modal-sub">Etapa informal — vira Ordem de Serviço depois de triada.</p>
+    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="sl_equipamento"></select></label>
+    <label class="field"><span class="field-label">Prioridade sugerida</span>
+      <select class="input" id="sl_prioridade"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option></select>
+    </label>
+    <label class="field"><span class="field-label">Descrição *</span><textarea class="input" id="sl_descricao"></textarea></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-solicitacao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-solicitacao">Enviar Solicitação</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: novo plano preventivo -->
+<div class="modal-overlay" id="modal-plano">
+  <div class="modal">
+    <h2>Novo Plano Preventivo</h2>
+    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="pl_equipamento"></select></label>
+    <label class="field"><span class="field-label">Nome do plano *</span><input class="input" id="pl_nome" placeholder="Ex: Lubrificação Trimestral"></label>
+    <label class="field"><span class="field-label">Prioridade</span>
+      <select class="input" id="pl_prioridade"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option></select>
+    </label>
+    <label class="field"><span class="field-label">Gatilho</span>
+      <select class="input" id="pl_gatilho"><option value="calendario">Por calendário</option><option value="medidor">Por medidor</option></select>
+    </label>
+    <div id="pl-campos-calendario" class="linha-flex">
+      <label class="field f-grow"><span class="field-label">A cada quantos dias</span><input class="input mono" type="number" min="1" id="pl_periodicidade" placeholder="Ex: 90"></label>
+      <label class="field f-grow"><span class="field-label">Próxima execução</span><input class="input" type="date" id="pl_proxima_data"></label>
+    </div>
+    <div id="pl-campos-medidor" class="linha-flex" style="display:none;">
+      <label class="field f-grow"><span class="field-label">Medidor</span><select class="input" id="pl_medidor"></select></label>
+      <label class="field f-grow"><span class="field-label">A cada quantas unidades</span><input class="input mono" type="number" min="0.01" step="0.01" id="pl_intervalo" placeholder="Ex: 4000"></label>
+    </div>
+    <label class="field"><span class="field-label">Checklist (uma tarefa por linha, opcional)</span><textarea class="input" id="pl_tarefas" placeholder="Trocar óleo&#10;Verificar correias"></textarea></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-plano">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-plano">Salvar Plano</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
   import { initNav } from '../../js/nav.js';
@@ -202,6 +252,7 @@
 
   const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
   const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
   const LABEL_STATUS_EQ = { ativo: 'Ativo', em_manutencao: 'Em Manutenção', inativo: 'Inativo' };
   const BADGE_STATUS_EQ = { ativo: 'liquidado', em_manutencao: 'inadimplente', inativo: 'aberto' };
   const LABEL_STATUS_OM = { aberta: 'Aberta', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
@@ -235,26 +286,34 @@
     equipamentosCache = eqs || [];
 
     if (abaAtual === 'ordens') return carregarOrdens();
+    if (abaAtual === 'solicitacoes') return carregarSolicitacoes();
+    if (abaAtual === 'planos') return carregarPlanos();
     return carregarEquipamentos();
   }
 
   async function carregarOrdens() {
-    document.getElementById('thead').innerHTML = `<tr><th>Aberta em</th><th>Equipamento</th><th>Tipo</th><th>Prioridade</th><th>Status</th><th>Descrição</th><th style="text-align:right;">Ações</th></tr>`;
+    document.getElementById('thead').innerHTML = `<tr><th>Aberta em</th><th>Equipamento</th><th>Tipo</th><th>Prioridade</th><th>Status</th><th>SLA</th><th>Descrição</th><th style="text-align:right;">Ações</th></tr>`;
     const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
 
     const { data, error } = await supabase.from('ordens_manutencao')
-      .select('id, tipo, prioridade, status, descricao_problema, data_abertura, equipamentos(codigo, nome)')
+      .select('id, tipo, prioridade, status, descricao_problema, data_abertura, sla_previsto, equipamentos(codigo, nome)')
       .order('data_abertura', { ascending: false }).limit(200);
 
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma ordem de manutenção ainda.</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhuma ordem de manutenção ainda.</td></tr>`; return; }
 
+    const agora = new Date();
     tbody.innerHTML = data.map(o => {
-      let acoes = '';
+      let acoes = `<a class="icon-btn" href="ordem-detalhe.html?id=${o.id}">Detalhes</a> `;
       if (o.status === 'aberta') acoes += `<button class="icon-btn" data-iniciar="${o.id}">Iniciar</button> `;
       if (o.status === 'aberta' || o.status === 'em_andamento') {
         acoes += `<button class="icon-btn" data-concluir="${o.id}">Concluir</button> <button class="icon-btn danger" data-cancelar="${o.id}">Cancelar</button>`;
+      }
+      let sla = '—';
+      if (o.sla_previsto && (o.status === 'aberta' || o.status === 'em_andamento')) {
+        const vencido = new Date(o.sla_previsto) < agora;
+        sla = `<span class="${vencido ? 'valor negativo' : ''}">${fmtDataHora(o.sla_previsto)}</span>`;
       }
       return `<tr>
         <td>${fmtData(o.data_abertura)}</td>
@@ -262,7 +321,8 @@
         <td>${o.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}</td>
         <td>${LABEL_PRIORIDADE[o.prioridade]}</td>
         <td><span class="badge ${BADGE_STATUS_OM[o.status]}">${LABEL_STATUS_OM[o.status]}</span></td>
-        <td style="max-width:280px; font-size:12.5px; color:var(--ink-soft);">${o.descricao_problema}</td>
+        <td style="font-size:11.5px;">${sla}</td>
+        <td style="max-width:220px; font-size:12.5px; color:var(--ink-soft);">${o.descricao_problema}</td>
         <td style="text-align:right; white-space:nowrap;">${acoes}</td>
       </tr>`;
     }).join('');
@@ -348,7 +408,10 @@
   // ---------- Modal: nova ordem ----------
   const modalOrdem = document.getElementById('modal-ordem');
   document.getElementById('btn-nova-ordem').addEventListener('click', () => {
+    solicitacaoEmConversao = null;
     document.getElementById('or_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
+    document.getElementById('or_tipo').value = 'corretiva';
+    document.getElementById('or_prioridade').value = 'media';
     document.getElementById('or_descricao').value = '';
     document.getElementById('or_data_prevista').value = '';
     modalOrdem.classList.add('open');
@@ -361,15 +424,21 @@
     if (!equipamentoId) { alert('Selecione um equipamento.'); return; }
     if (!descricao) { alert('Descreva o problema ou serviço.'); return; }
 
-    const { error } = await supabase.from('ordens_manutencao').insert({
+    const { data: novaOrdem, error } = await supabase.from('ordens_manutencao').insert({
       tenant_id: TENANT_ID, equipamento_id: equipamentoId,
       tipo: document.getElementById('or_tipo').value,
       prioridade: document.getElementById('or_prioridade').value,
       descricao_problema: descricao,
       data_prevista: document.getElementById('or_data_prevista').value || null,
+      solicitacao_id: solicitacaoEmConversao || null,
       criado_por: usuario?.id,
-    });
+    }).select('id').single();
     if (error) { alert('Erro ao abrir ordem: ' + error.message); return; }
+
+    if (solicitacaoEmConversao) {
+      await supabase.from('solicitacoes_manutencao').update({ status: 'convertida', ordem_manutencao_id: novaOrdem.id }).eq('id', solicitacaoEmConversao);
+      solicitacaoEmConversao = null;
+    }
     modalOrdem.classList.remove('open');
     await carregar();
   });
@@ -431,6 +500,169 @@
     if (error) { alert('Erro ao salvar: ' + error.message); return; }
     document.getElementById('lf_nome').value = '';
     await carregarLocais();
+  });
+
+  // ---------- Solicitações ----------
+  const LABEL_STATUS_SOL = { aberta: 'Aberta', triada: 'Triada', convertida: 'Convertida em OS', rejeitada: 'Rejeitada' };
+  const BADGE_STATUS_SOL = { aberta: 'aberto', triada: 'parcial', convertida: 'liquidado', rejeitada: 'inadimplente' };
+
+  async function carregarSolicitacoes() {
+    document.getElementById('thead').innerHTML = `<tr><th>Aberta em</th><th>Equipamento</th><th>Prioridade sugerida</th><th>Status</th><th>Descrição</th><th style="text-align:right;">Ações</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('solicitacoes_manutencao')
+      .select('id, descricao, prioridade_sugerida, status, criado_em, equipamentos(id, codigo, nome)')
+      .order('criado_em', { ascending: false }).limit(200);
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma solicitação registrada ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(s => `
+      <tr>
+        <td>${fmtDataHora(s.criado_em)}</td>
+        <td>${s.equipamentos?.codigo ?? ''} — ${s.equipamentos?.nome ?? '(removido)'}</td>
+        <td>${LABEL_PRIORIDADE[s.prioridade_sugerida]}</td>
+        <td><span class="badge ${BADGE_STATUS_SOL[s.status]}">${LABEL_STATUS_SOL[s.status]}</span></td>
+        <td style="max-width:280px; font-size:12.5px; color:var(--ink-soft);">${s.descricao}</td>
+        <td style="text-align:right; white-space:nowrap;">${s.status === 'aberta' ? `
+          <button class="icon-btn" data-converter="${s.id}" data-equipamento="${s.equipamentos?.id}" data-descricao="${s.descricao.replace(/"/g,'&quot;')}" data-prioridade="${s.prioridade_sugerida}">Converter em OS</button>
+          <button class="icon-btn danger" data-rejeitar-solicitacao="${s.id}">Rejeitar</button>` : ''}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('tbody').addEventListener('click', async (e) => {
+    const btnRejeitar = e.target.closest('[data-rejeitar-solicitacao]');
+    if (btnRejeitar) {
+      const motivo = prompt('Motivo da rejeição:');
+      if (motivo === null) return;
+      await supabase.from('solicitacoes_manutencao').update({ status: 'rejeitada', motivo_rejeicao: motivo || null }).eq('id', btnRejeitar.dataset.rejeitarSolicitacao);
+      await carregar();
+      return;
+    }
+    const btnConverter = e.target.closest('[data-converter]');
+    if (btnConverter) abrirNovaOrdemDeSolicitacao(btnConverter.dataset.converter, btnConverter.dataset.equipamento, btnConverter.dataset.descricao, btnConverter.dataset.prioridade);
+  });
+
+  document.getElementById('btn-nova-solicitacao').addEventListener('click', () => {
+    document.getElementById('sl_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
+    document.getElementById('sl_descricao').value = '';
+    document.getElementById('sl_prioridade').value = 'media';
+    document.getElementById('modal-solicitacao').classList.add('open');
+  });
+  document.getElementById('btn-cancelar-solicitacao').addEventListener('click', () => document.getElementById('modal-solicitacao').classList.remove('open'));
+
+  document.getElementById('btn-salvar-solicitacao').addEventListener('click', async () => {
+    const descricao = document.getElementById('sl_descricao').value.trim();
+    if (!descricao) { alert('Descreva o problema.'); return; }
+    const { error } = await supabase.from('solicitacoes_manutencao').insert({
+      tenant_id: TENANT_ID,
+      equipamento_id: document.getElementById('sl_equipamento').value,
+      descricao, prioridade_sugerida: document.getElementById('sl_prioridade').value,
+      solicitante_id: usuario?.id,
+    });
+    if (error) { alert('Erro ao enviar: ' + error.message); return; }
+    document.getElementById('modal-solicitacao').classList.remove('open');
+    await carregar();
+  });
+
+  // "Converter em OS" pré-preenche e abre o modal de Nova Ordem já existente
+  let solicitacaoEmConversao = null;
+  async function abrirNovaOrdemDeSolicitacao(solicitacaoId, equipamentoId, descricao, prioridade) {
+    solicitacaoEmConversao = solicitacaoId;
+    document.getElementById('or_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}" ${eq.id === equipamentoId ? 'selected' : ''}>${eq.codigo} — ${eq.nome}</option>`).join('');
+    document.getElementById('or_tipo').value = 'corretiva';
+    document.getElementById('or_prioridade').value = prioridade;
+    document.getElementById('or_descricao').value = descricao;
+    document.getElementById('or_data_prevista').value = '';
+    document.getElementById('modal-ordem').classList.add('open');
+  }
+
+  // ---------- Planos Preventivos ----------
+  async function carregarPlanos() {
+    document.getElementById('thead').innerHTML = `<tr><th>Equipamento</th><th>Plano</th><th>Gatilho</th><th>Próxima Execução</th><th>Prioridade</th></tr>`;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('planos_manutencao')
+      .select('id, nome, tipo_gatilho, periodicidade_dias, proxima_execucao_data, intervalo_leitura, proxima_execucao_leitura, prioridade, equipamentos(codigo, nome), medidores(nome, unidade, leitura_atual)')
+      .eq('ativo', true).order('nome');
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhum plano preventivo cadastrado ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td>${p.equipamentos?.codigo ?? ''} — ${p.equipamentos?.nome ?? ''}</td>
+        <td>${p.nome}</td>
+        <td>${p.tipo_gatilho === 'calendario' ? `A cada ${p.periodicidade_dias} dias` : `A cada ${fmtNum(p.intervalo_leitura)} ${p.medidores?.unidade ?? ''}`}</td>
+        <td>${p.tipo_gatilho === 'calendario' ? fmtData(p.proxima_execucao_data) : `${fmtNum(p.proxima_execucao_leitura)} ${p.medidores?.unidade ?? ''} (atual: ${fmtNum(p.medidores?.leitura_atual)})`}</td>
+        <td>${LABEL_PRIORIDADE[p.prioridade]}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('pl_gatilho').addEventListener('change', (e) => {
+    document.getElementById('pl-campos-calendario').style.display = e.target.value === 'calendario' ? 'flex' : 'none';
+    document.getElementById('pl-campos-medidor').style.display = e.target.value === 'medidor' ? 'flex' : 'none';
+  });
+
+  document.getElementById('btn-novo-plano').addEventListener('click', async () => {
+    document.getElementById('pl_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
+    const { data: medidores } = await supabase.from('medidores').select('id, nome, unidade, equipamento_id').eq('ativo', true).order('nome');
+    document.getElementById('pl_medidor').innerHTML = (medidores || []).map(m => `<option value="${m.id}" data-equipamento="${m.equipamento_id}">${m.nome} (${m.unidade})</option>`).join('');
+    ['pl_nome','pl_periodicidade','pl_intervalo','pl_tarefas'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('pl_proxima_data').value = new Date().toISOString().slice(0,10);
+    document.getElementById('pl_gatilho').value = 'calendario';
+    document.getElementById('pl-campos-calendario').style.display = 'flex';
+    document.getElementById('pl-campos-medidor').style.display = 'none';
+    document.getElementById('modal-plano').classList.add('open');
+  });
+  document.getElementById('btn-cancelar-plano').addEventListener('click', () => document.getElementById('modal-plano').classList.remove('open'));
+
+  document.getElementById('btn-salvar-plano').addEventListener('click', async () => {
+    const nome = document.getElementById('pl_nome').value.trim();
+    if (!nome) { alert('Dê um nome ao plano.'); return; }
+    const gatilho = document.getElementById('pl_gatilho').value;
+
+    const payload = {
+      tenant_id: TENANT_ID,
+      equipamento_id: document.getElementById('pl_equipamento').value,
+      nome, tipo_gatilho: gatilho,
+      prioridade: document.getElementById('pl_prioridade').value,
+    };
+    if (gatilho === 'calendario') {
+      payload.periodicidade_dias = Number(document.getElementById('pl_periodicidade').value || 0);
+      payload.proxima_execucao_data = document.getElementById('pl_proxima_data').value;
+      if (!payload.periodicidade_dias || !payload.proxima_execucao_data) { alert('Preencha periodicidade e próxima execução.'); return; }
+    } else {
+      payload.medidor_id = document.getElementById('pl_medidor').value;
+      payload.intervalo_leitura = Number(document.getElementById('pl_intervalo').value || 0);
+      if (!payload.medidor_id || !payload.intervalo_leitura) { alert('Selecione o medidor e o intervalo.'); return; }
+      const { data: medidorAtual } = await supabase.from('medidores').select('leitura_atual').eq('id', payload.medidor_id).single();
+      payload.proxima_execucao_leitura = Number(medidorAtual?.leitura_atual || 0) + payload.intervalo_leitura;
+    }
+
+    const { data: plano, error } = await supabase.from('planos_manutencao').insert(payload).select('id').single();
+    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+
+    const tarefas = document.getElementById('pl_tarefas').value.split('\n').map(t => t.trim()).filter(Boolean);
+    if (tarefas.length) {
+      await supabase.from('tarefas_plano_manutencao').insert(tarefas.map((descricao, i) => ({ tenant_id: TENANT_ID, plano_id: plano.id, descricao, ordem: i })));
+    }
+
+    document.getElementById('modal-plano').classList.remove('open');
+    await carregar();
+  });
+
+  document.getElementById('btn-gerar-preventivas').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-gerar-preventivas');
+    btn.disabled = true; btn.textContent = 'Gerando…';
+    const { data, error } = await supabase.rpc('fn_gerar_os_preventivas_vencidas');
+    btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw"></i> Gerar OS Preventivas';
+    if (window.lucide) lucide.createIcons();
+    if (error) { alert('Erro ao gerar: ' + error.message); return; }
+    alert(data?.length ? `${data.length} nova(s) OS preventiva(s) gerada(s): ${data.map(d => d.plano_nome).join(', ')}` : 'Nenhum plano vencido no momento.');
+    await carregar();
   });
 
   await carregar();
