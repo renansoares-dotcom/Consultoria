@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equipamento — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link active"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-equip">Equipamento</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="dashboard.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="componentes">Componentes</button>
+      <button data-tab="documentos">Documentos</button>
+      <button data-tab="medidores">Medidores</button>
+    </nav>
+
+    <div class="janela-corpo">
+      <div id="erro" style="display:none; color:var(--red); font-size:13px; margin-bottom:16px;"></div>
+
+      <!-- ============================== COMPONENTES ============================== -->
+      <div id="tab-componentes">
+        <div id="lista-componentes" style="margin-bottom:18px;"></div>
+        <div class="linha-flex">
+          <label class="field f-grow"><span class="field-label">Nome do componente</span><input class="input" id="cp_nome" placeholder="Ex: Rosca de extrusão"></label>
+          <label class="field f-160"><span class="field-label">Nº de Série</span><input class="input mono" id="cp_serie"></label>
+          <label class="field f-160"><span class="field-label">Vida útil (horas)</span><input class="input mono" type="number" step="0.01" id="cp_vida_util"></label>
+          <button class="btn primary" type="button" id="btn-add-componente"><i data-lucide="plus"></i></button>
+        </div>
+      </div>
+
+      <!-- ============================== DOCUMENTOS ============================== -->
+      <div id="tab-documentos" style="display:none;">
+        <div id="lista-documentos" style="margin-bottom:18px;"></div>
+        <div class="linha-flex">
+          <label class="field f-grow"><span class="field-label">Tipo</span>
+            <select class="input" id="dc_tipo">
+              <option value="manual">Manual</option><option value="foto">Foto</option><option value="garantia">Garantia</option><option value="nota_fiscal">Nota Fiscal</option><option value="outro">Outro</option>
+            </select>
+          </label>
+          <input type="file" id="dc_arquivo" style="display:none;">
+          <button class="btn primary" type="button" id="btn-enviar-documento"><i data-lucide="upload"></i> Enviar Arquivo</button>
+        </div>
+      </div>
+
+      <!-- ============================== MEDIDORES ============================== -->
+      <div id="tab-medidores" style="display:none;">
+        <div id="lista-medidores" style="margin-bottom:18px;"></div>
+        <div class="linha-flex">
+          <label class="field f-grow"><span class="field-label">Nome do medidor</span><input class="input" id="md_nome" placeholder="Ex: Horímetro"></label>
+          <label class="field f-100"><span class="field-label">Unidade</span><input class="input" id="md_unidade" placeholder="h, ciclos, kWh..."></label>
+          <button class="btn primary" type="button" id="btn-add-medidor"><i data-lucide="plus"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<!-- Modal: registrar leitura -->
+<div class="modal-overlay" id="modal-leitura">
+  <div class="modal">
+    <h2>Registrar Leitura</h2>
+    <p class="modal-sub" id="leitura-medidor-info">—</p>
+    <label class="field"><span class="field-label">Nova leitura</span><input class="input mono" type="number" step="0.001" id="lt_valor"></label>
+    <label class="field"><span class="field-label">Data</span><input class="input" type="date" id="lt_data"></label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-leitura">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-leitura">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+const TENANT_ID = usuario?.tenant_id;
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+const LABEL_TIPO_DOC = { manual: 'Manual', foto: 'Foto', garantia: 'Garantia', nota_fiscal: 'Nota Fiscal', outro: 'Outro' };
+
+const params = new URLSearchParams(location.search);
+const equipamentoId = params.get('id');
+
+if (!equipamentoId) {
+  document.getElementById('erro').textContent = 'Nenhum equipamento informado — volte e clique em "Detalhes" a partir da lista.';
+  document.getElementById('erro').style.display = 'block';
+} else {
+  const { data: eq, error } = await supabase.from('equipamentos').select('codigo, nome').eq('id', equipamentoId).single();
+  if (error || !eq) {
+    document.getElementById('erro').textContent = 'Equipamento não encontrado.';
+    document.getElementById('erro').style.display = 'block';
+  } else {
+    document.getElementById('titulo-equip').textContent = `${eq.codigo} — ${eq.nome}`;
+  }
+  await carregarComponentes();
+}
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['componentes','documentos','medidores'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+  if (b.dataset.tab === 'documentos') carregarDocumentos();
+  if (b.dataset.tab === 'medidores') carregarMedidores();
+}));
+
+// ---------- Componentes ----------
+async function carregarComponentes() {
+  const { data } = await supabase.from('ativos_componentes').select('*').eq('equipamento_id', equipamentoId).eq('ativo', true).order('criado_em');
+  document.getElementById('lista-componentes').innerHTML = (data?.length ? data.map(c => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">${c.nome}${c.numero_serie ? ' · Nº ' + c.numero_serie : ''}</div>
+      <div class="col-valor">${c.vida_util_estimada_horas ? fmtNum(c.vida_util_estimada_horas) + ' h' : '—'}</div>
+      <button class="icon-btn danger" data-remover-componente="${c.id}" style="margin-left:8px;"><i data-lucide="trash-2"></i></button>
+    </div>`).join('') : '<div class="empty-state">Nenhum componente cadastrado ainda.</div>');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-add-componente').addEventListener('click', async () => {
+  const nome = document.getElementById('cp_nome').value.trim();
+  if (!nome) { alert('Dê um nome ao componente.'); return; }
+  const { error } = await supabase.from('ativos_componentes').insert({
+    tenant_id: TENANT_ID, equipamento_id: equipamentoId, nome,
+    numero_serie: document.getElementById('cp_serie').value.trim() || null,
+    vida_util_estimada_horas: document.getElementById('cp_vida_util').value ? Number(document.getElementById('cp_vida_util').value) : null,
+  });
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  ['cp_nome','cp_serie','cp_vida_util'].forEach(id => document.getElementById(id).value = '');
+  await carregarComponentes();
+});
+
+document.getElementById('lista-componentes').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-remover-componente]');
+  if (!btn) return;
+  await supabase.from('ativos_componentes').update({ ativo: false }).eq('id', btn.dataset.removerComponente);
+  await carregarComponentes();
+});
+
+// ---------- Documentos ----------
+async function carregarDocumentos() {
+  const { data } = await supabase.from('ativos_documentos').select('*').eq('equipamento_id', equipamentoId).order('criado_em', { ascending: false });
+  document.getElementById('lista-documentos').innerHTML = (data?.length ? data.map(d => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">${LABEL_TIPO_DOC[d.tipo] ?? d.tipo ?? 'Documento'} — ${d.arquivo_nome}</div>
+      <div class="col-valor">${fmtData(d.criado_em?.slice(0,10))}</div>
+      <button class="icon-btn" data-baixar-doc="${d.arquivo_path}" style="margin-left:8px;"><i data-lucide="download"></i></button>
+    </div>`).join('') : '<div class="empty-state">Nenhum documento enviado ainda.</div>');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-enviar-documento').addEventListener('click', () => document.getElementById('dc_arquivo').click());
+
+document.getElementById('dc_arquivo').addEventListener('change', async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+  const caminho = `${TENANT_ID}/ativos/${equipamentoId}/${Date.now()}_${arquivo.name}`;
+  const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivo);
+  if (erroUpload) { alert('Erro ao enviar: ' + erroUpload.message); return; }
+
+  const { error } = await supabase.from('ativos_documentos').insert({
+    tenant_id: TENANT_ID, equipamento_id: equipamentoId,
+    tipo: document.getElementById('dc_tipo').value, arquivo_path: caminho, arquivo_nome: arquivo.name, enviado_por: usuario?.id,
+  });
+  if (error) { alert('Erro ao registrar: ' + error.message); return; }
+  document.getElementById('dc_arquivo').value = '';
+  await carregarDocumentos();
+});
+
+document.getElementById('lista-documentos').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-baixar-doc]');
+  if (!btn) return;
+  const { data } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.baixarDoc, 300);
+  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+});
+
+// ---------- Medidores ----------
+async function carregarMedidores() {
+  const { data } = await supabase.from('medidores').select('*').eq('equipamento_id', equipamentoId).eq('ativo', true).order('criado_em');
+  document.getElementById('lista-medidores').innerHTML = (data?.length ? data.map(m => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">${m.nome}</div>
+      <div class="col-valor mono">${fmtNum(m.leitura_atual)} ${m.unidade}</div>
+      <button class="icon-btn" data-registrar-leitura="${m.id}" data-nome="${m.nome.replace(/"/g,'&quot;')}" data-unidade="${m.unidade}" style="margin-left:8px;"><i data-lucide="plus"></i> Leitura</button>
+    </div>`).join('') : '<div class="empty-state">Nenhum medidor cadastrado ainda.</div>');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-add-medidor').addEventListener('click', async () => {
+  const nome = document.getElementById('md_nome').value.trim();
+  const unidade = document.getElementById('md_unidade').value.trim();
+  if (!nome || !unidade) { alert('Preencha nome e unidade do medidor.'); return; }
+  const { error } = await supabase.from('medidores').insert({ tenant_id: TENANT_ID, equipamento_id: equipamentoId, nome, unidade });
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  document.getElementById('md_nome').value = ''; document.getElementById('md_unidade').value = '';
+  await carregarMedidores();
+});
+
+const modalLeitura = document.getElementById('modal-leitura');
+let medidorEmLeitura = null;
+
+document.getElementById('lista-medidores').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-registrar-leitura]');
+  if (!btn) return;
+  medidorEmLeitura = btn.dataset.registrarLeitura;
+  document.getElementById('leitura-medidor-info').textContent = `${btn.dataset.nome} (${btn.dataset.unidade})`;
+  document.getElementById('lt_valor').value = '';
+  document.getElementById('lt_data').value = new Date().toISOString().slice(0,10);
+  modalLeitura.classList.add('open');
+});
+document.getElementById('btn-cancelar-leitura').addEventListener('click', () => modalLeitura.classList.remove('open'));
+
+document.getElementById('btn-confirmar-leitura').addEventListener('click', async () => {
+  const valor = document.getElementById('lt_valor').value;
+  if (!valor) { alert('Informe o valor da leitura.'); return; }
+  const { error } = await supabase.from('leituras_medidores').insert({
+    tenant_id: TENANT_ID, medidor_id: medidorEmLeitura, leitura: Number(valor),
+    data_leitura: document.getElementById('lt_data').value || new Date().toISOString().slice(0,10),
+    registrado_por: usuario?.id,
+  });
+  if (error) { alert('Erro ao registrar: ' + error.message); return; }
+  modalLeitura.classList.remove('open');
+  await carregarMedidores();
+});
+</script>
+</body>
+</html>

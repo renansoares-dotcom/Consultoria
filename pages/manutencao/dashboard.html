@@ -55,6 +55,7 @@
           <h1>Manutenção</h1>
         </div>
         <div style="display:flex; gap:10px;">
+          <button class="btn ghost" id="btn-locais"><i data-lucide="map"></i> Locais Funcionais</button>
           <button class="btn ghost" id="btn-novo-equip"><i data-lucide="plus"></i> Novo Equipamento</button>
           <button class="btn primary" id="btn-nova-ordem"><i data-lucide="plus"></i> Nova Ordem</button>
         </div>
@@ -102,6 +103,19 @@
       <label class="field f-160"><span class="field-label">Data de Aquisição</span><input class="input" type="date" id="eq_data_aquisicao"></label>
       <label class="field f-200"><span class="field-label">Periodicidade preventiva (dias)</span><input class="input mono" type="number" min="1" id="eq_periodicidade" placeholder="Ex: 90"></label>
     </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Local Funcional</span><select class="input" id="eq_local_funcional"><option value="">Nenhum</option></select></label>
+      <label class="field f-160"><span class="field-label">Criticidade</span>
+        <select class="input" id="eq_criticidade">
+          <option value="">Não definida</option>
+          <option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="critica">Crítica</option>
+        </select>
+      </label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Centro de Custo</span><select class="input" id="eq_centro_custo"><option value="">Nenhum</option></select></label>
+      <label class="field f-grow"><span class="field-label">Responsável</span><select class="input" id="eq_responsavel"><option value="">Nenhum</option></select></label>
+    </div>
     <label class="field"><span class="field-label">Observações</span><textarea class="input" id="eq_obs"></textarea></label>
     <div class="modal-actions">
       <button class="btn ghost" type="button" id="btn-cancelar-equip">Cancelar</button>
@@ -146,6 +160,26 @@
     <div class="modal-actions">
       <button class="btn ghost" type="button" id="btn-cancelar-concluir">Cancelar</button>
       <button class="btn primary" type="button" id="btn-confirmar-concluir">Concluir Ordem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: locais funcionais -->
+<div class="modal-overlay" id="modal-locais">
+  <div class="modal" style="max-width:560px;">
+    <h2>Locais Funcionais</h2>
+    <p class="modal-sub">Hierarquia: planta &gt; área &gt; linha.</p>
+    <div id="lista-locais" style="margin-bottom:18px;"></div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Nome</span><input class="input" id="lf_nome" placeholder="Ex: Linha de Extrusão 1"></label>
+      <label class="field f-130"><span class="field-label">Tipo</span>
+        <select class="input" id="lf_tipo"><option value="planta">Planta</option><option value="area">Área</option><option value="linha" selected>Linha</option></select>
+      </label>
+      <label class="field f-grow"><span class="field-label">Dentro de</span><select class="input" id="lf_parent"><option value="">Nível raiz</option></select></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-fechar-locais">Fechar</button>
+      <button class="btn primary" type="button" id="btn-salvar-local">Adicionar</button>
     </div>
   </div>
 </div>
@@ -236,13 +270,13 @@
   }
 
   async function carregarEquipamentos() {
-    document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Localização</th><th>Status</th><th>Próx. Preventiva</th></tr>`;
+    document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Localização</th><th>Status</th><th>Próx. Preventiva</th><th style="text-align:right;">Ações</th></tr>`;
     const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
 
     const { data, error } = await supabase.from('equipamentos').select('*').order('nome');
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum equipamento cadastrado ainda.</td></tr>`; return; }
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum equipamento cadastrado ainda.</td></tr>`; return; }
 
     const hoje = new Date().toISOString().slice(0,10);
     tbody.innerHTML = data.map(eq => `
@@ -253,6 +287,7 @@
         <td>${eq.localizacao ?? '—'}</td>
         <td><span class="badge ${BADGE_STATUS_EQ[eq.status]}">${LABEL_STATUS_EQ[eq.status]}</span></td>
         <td class="${eq.proxima_preventiva && eq.proxima_preventiva < hoje ? 'valor negativo' : ''}">${fmtData(eq.proxima_preventiva)}</td>
+        <td style="text-align:right;"><a class="icon-btn" href="equipamento-detalhe.html?id=${eq.id}">Detalhes</a></td>
       </tr>`).join('');
   }
 
@@ -269,8 +304,18 @@
 
   // ---------- Modal: novo equipamento ----------
   const modalEquip = document.getElementById('modal-equip');
-  document.getElementById('btn-novo-equip').addEventListener('click', () => {
-    ['eq_codigo','eq_nome','eq_tipo','eq_localizacao','eq_fabricante','eq_modelo','eq_serie','eq_data_aquisicao','eq_periodicidade','eq_obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('btn-novo-equip').addEventListener('click', async () => {
+    ['eq_codigo','eq_nome','eq_tipo','eq_localizacao','eq_fabricante','eq_modelo','eq_serie','eq_data_aquisicao','eq_periodicidade','eq_obs','eq_criticidade'].forEach(id => document.getElementById(id).value = '');
+
+    const { data: locais } = await supabase.from('locais_funcionais').select('id, nome, tipo').eq('ativo', true).order('nome');
+    document.getElementById('eq_local_funcional').innerHTML = '<option value="">Nenhum</option>' + (locais || []).map(l => `<option value="${l.id}">${l.nome}</option>`).join('');
+
+    const { data: centros } = await supabase.from('centros_custo').select('id, nome').eq('ativo', true).order('nome');
+    document.getElementById('eq_centro_custo').innerHTML = '<option value="">Nenhum</option>' + (centros || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+    const { data: usuarios } = await supabase.from('usuarios').select('id, nome').order('nome');
+    document.getElementById('eq_responsavel').innerHTML = '<option value="">Nenhum</option>' + (usuarios || []).map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
+
     modalEquip.classList.add('open');
   });
   document.getElementById('btn-cancelar-equip').addEventListener('click', () => modalEquip.classList.remove('open'));
@@ -290,6 +335,10 @@
       data_aquisicao: document.getElementById('eq_data_aquisicao').value || null,
       periodicidade_preventiva_dias: document.getElementById('eq_periodicidade').value ? Number(document.getElementById('eq_periodicidade').value) : null,
       observacoes: document.getElementById('eq_obs').value.trim() || null,
+      local_funcional_id: document.getElementById('eq_local_funcional').value || null,
+      criticidade: document.getElementById('eq_criticidade').value || null,
+      centro_custo_id: document.getElementById('eq_centro_custo').value || null,
+      responsavel_id: document.getElementById('eq_responsavel').value || null,
     });
     if (error) { alert(error.code === '23505' ? 'Já existe um equipamento com esse código.' : 'Erro ao salvar: ' + error.message); return; }
     modalEquip.classList.remove('open');
@@ -347,6 +396,41 @@
     if (error) { alert('Erro ao concluir: ' + error.message); return; }
     modalConcluir.classList.remove('open');
     await carregar();
+  });
+
+  // ---------- Locais Funcionais ----------
+  const modalLocais = document.getElementById('modal-locais');
+
+  document.getElementById('btn-locais').addEventListener('click', async () => { await carregarLocais(); modalLocais.classList.add('open'); });
+  document.getElementById('btn-fechar-locais').addEventListener('click', () => modalLocais.classList.remove('open'));
+
+  async function carregarLocais() {
+    const { data } = await supabase.from('locais_funcionais').select('id, nome, tipo, parent_id').eq('ativo', true).order('tipo').order('nome');
+    const porId = new Map((data || []).map(l => [l.id, l]));
+    const LABEL_TIPO_LOCAL = { planta: 'Planta', area: 'Área', linha: 'Linha' };
+
+    document.getElementById('lista-locais').innerHTML = (data?.length ? data.map(l => {
+      const pai = l.parent_id ? porId.get(l.parent_id)?.nome : null;
+      return `<div class="lista-selecao-linha">
+        <div class="col-desc">${l.nome} <span style="color:var(--ink-soft); font-size:11px;">(${LABEL_TIPO_LOCAL[l.tipo] ?? l.tipo}${pai ? ' · dentro de ' + pai : ''})</span></div>
+      </div>`;
+    }).join('') : '<div class="empty-state">Nenhum local funcional cadastrado ainda.</div>');
+
+    document.getElementById('lf_parent').innerHTML = '<option value="">Nível raiz</option>' + (data || []).map(l => `<option value="${l.id}">${l.nome}</option>`).join('');
+  }
+
+  document.getElementById('btn-salvar-local').addEventListener('click', async () => {
+    const nome = document.getElementById('lf_nome').value.trim();
+    if (!nome) { alert('Dê um nome ao local.'); return; }
+
+    const { error } = await supabase.from('locais_funcionais').insert({
+      tenant_id: TENANT_ID, nome,
+      tipo: document.getElementById('lf_tipo').value,
+      parent_id: document.getElementById('lf_parent').value || null,
+    });
+    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+    document.getElementById('lf_nome').value = '';
+    await carregarLocais();
   });
 
   await carregar();
