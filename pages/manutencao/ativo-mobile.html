@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ativo — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { background: var(--bg); }
+  .mobile-wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
+  .mobile-header { text-align: center; padding: 20px 0 12px; }
+  .mobile-header .mark { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; margin: 0 auto 8px; }
+  .mobile-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .mobile-card h3 { margin: 0 0 10px; font-size: 15px; }
+  .assinatura-canvas { border: 1px dashed var(--border); border-radius: 8px; touch-action: none; width: 100%; height: 140px; background: #fff; }
+  .btn-full { width: 100%; justify-content: center; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="mobile-wrap">
+  <div class="mobile-header">
+    <div class="mark">D</div>
+    <div style="font-size:13px; color:var(--ink-soft);">Datativo Industrial · Manutenção</div>
+  </div>
+
+  <div id="erro" style="display:none; color:var(--red); font-size:13px; text-align:center; margin-bottom:16px;"></div>
+
+  <div class="mobile-card" id="card-equipamento">
+    <h3 id="eq-nome">Carregando…</h3>
+    <div style="font-size:12.5px; color:var(--ink-soft);" id="eq-info"></div>
+  </div>
+
+  <!-- OS aberta, se houver -->
+  <div class="mobile-card" id="card-os" style="display:none;">
+    <h3>Ordem de Manutenção em Aberto</h3>
+    <div id="os-info" style="font-size:13px; margin-bottom:12px;"></div>
+    <div id="os-checklist" style="margin-bottom:12px;"></div>
+
+    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px;">Foto (opcional)</label>
+    <input type="file" accept="image/*" capture="environment" id="os-foto" style="margin-bottom:10px;">
+
+    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px;">Assinatura do executor</label>
+    <canvas class="assinatura-canvas" id="assinatura"></canvas>
+    <button class="btn ghost btn-full" type="button" id="btn-limpar-assinatura" style="margin-top:6px;">Limpar assinatura</button>
+
+    <button class="btn primary btn-full" type="button" id="btn-encerrar-os"><i data-lucide="check"></i> Encerrar Ordem</button>
+  </div>
+
+  <!-- Nenhuma OS aberta: abrir solicitação -->
+  <div class="mobile-card" id="card-solicitar" style="display:none;">
+    <h3>Nenhuma ordem em aberto</h3>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin-bottom:12px;">Encontrou um problema neste equipamento? Abra uma solicitação.</p>
+    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px;">Prioridade</label>
+    <select class="input" id="sl_prioridade" style="margin-bottom:10px;">
+      <option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option>
+    </select>
+    <label style="font-size:12px; font-weight:600; display:block; margin-bottom:6px;">Descrição do problema</label>
+    <textarea class="input" id="sl_descricao" rows="4" style="margin-bottom:10px;"></textarea>
+    <button class="btn primary btn-full" type="button" id="btn-abrir-solicitacao"><i data-lucide="send"></i> Enviar Solicitação</button>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+const TENANT_ID = usuario?.tenant_id;
+
+const params = new URLSearchParams(location.search);
+const equipamentoId = params.get('id');
+
+if (!equipamentoId) {
+  mostrarErro('Nenhum equipamento informado — escaneie o QR Code no equipamento.');
+} else {
+  await carregar();
+}
+
+function mostrarErro(msg) {
+  document.getElementById('erro').textContent = msg;
+  document.getElementById('erro').style.display = 'block';
+}
+
+async function carregar() {
+  const { data: eq, error } = await supabase.from('equipamentos').select('codigo, nome, status, localizacao').eq('id', equipamentoId).single();
+  if (error || !eq) { mostrarErro('Equipamento não encontrado.'); return; }
+
+  document.getElementById('eq-nome').textContent = `${eq.codigo} — ${eq.nome}`;
+  document.getElementById('eq-info').textContent = eq.localizacao ? `Local: ${eq.localizacao}` : '';
+
+  const { data: osAberta } = await supabase.from('ordens_manutencao')
+    .select('id, tipo, prioridade, descricao_problema, status')
+    .eq('equipamento_id', equipamentoId).in('status', ['aberta','em_andamento'])
+    .order('data_abertura', { ascending: false }).limit(1).maybeSingle();
+
+  if (osAberta) {
+    await montarOS(osAberta);
+  } else {
+    document.getElementById('card-solicitar').style.display = 'block';
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+let osAtualId = null;
+
+async function montarOS(os) {
+  osAtualId = os.id;
+  document.getElementById('card-os').style.display = 'block';
+  document.getElementById('os-info').innerHTML = `<b>${os.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}</b> · ${os.descricao_problema}`;
+
+  const { data: tarefas } = await supabase.from('tarefas_os').select('*').eq('ordem_manutencao_id', os.id).order('ordem');
+  document.getElementById('os-checklist').innerHTML = (tarefas?.length ? tarefas.map(t => `
+    <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;">
+      <input type="checkbox" data-tarefa="${t.id}" ${t.concluida ? 'checked' : ''}>
+      <span style="${t.concluida ? 'text-decoration:line-through; color:var(--ink-faint);' : ''}">${t.descricao}</span>
+    </label>`).join('') : '<div style="font-size:12.5px; color:var(--ink-soft);">Sem checklist nesta ordem.</div>');
+
+  document.getElementById('os-checklist').querySelectorAll('[data-tarefa]').forEach(chk => {
+    chk.addEventListener('change', async () => {
+      await supabase.from('tarefas_os').update({
+        concluida: chk.checked, concluida_por: chk.checked ? usuario?.id : null, concluida_em: chk.checked ? new Date().toISOString() : null,
+      }).eq('id', chk.dataset.tarefa);
+    });
+  });
+
+  configurarAssinatura();
+}
+
+// ---------- Assinatura (canvas) ----------
+let desenhando = false, ctx;
+function configurarAssinatura() {
+  const canvas = document.getElementById('assinatura');
+  canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+  ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+
+  const pos = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  };
+  const iniciar = (e) => { desenhando = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  const desenhar = (e) => { if (!desenhando) return; e.preventDefault(); const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+  const parar = () => { desenhando = false; };
+
+  canvas.addEventListener('mousedown', iniciar); canvas.addEventListener('mousemove', desenhar); canvas.addEventListener('mouseup', parar);
+  canvas.addEventListener('touchstart', iniciar); canvas.addEventListener('touchmove', desenhar); canvas.addEventListener('touchend', parar);
+}
+
+document.getElementById('btn-limpar-assinatura').addEventListener('click', () => {
+  const canvas = document.getElementById('assinatura');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+// ---------- Encerrar OS (com foto + assinatura) ----------
+document.getElementById('btn-encerrar-os').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-encerrar-os');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  const arquivoFoto = document.getElementById('os-foto').files[0];
+  if (arquivoFoto) {
+    const caminho = `${TENANT_ID}/manutencao/${osAtualId}/${Date.now()}_foto.jpg`;
+    const { error } = await supabase.storage.from('anexos').upload(caminho, arquivoFoto);
+    if (!error) await supabase.from('ordens_manutencao_anexos').insert({ tenant_id: TENANT_ID, ordem_manutencao_id: osAtualId, arquivo_path: caminho, arquivo_nome: arquivoFoto.name, enviado_por: usuario?.id });
+  }
+
+  const canvas = document.getElementById('assinatura');
+  const assinaturaVazia = !ctx.getImageData(0, 0, canvas.width, canvas.height).data.some(v => v !== 0);
+  if (!assinaturaVazia) {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    const caminhoAssinatura = `${TENANT_ID}/manutencao/${osAtualId}/${Date.now()}_assinatura.png`;
+    const { error } = await supabase.storage.from('anexos').upload(caminhoAssinatura, blob);
+    if (!error) await supabase.from('ordens_manutencao_anexos').insert({ tenant_id: TENANT_ID, ordem_manutencao_id: osAtualId, arquivo_path: caminhoAssinatura, arquivo_nome: 'assinatura_executor.png', enviado_por: usuario?.id });
+  }
+
+  const { error } = await supabase.from('ordens_manutencao').update({
+    status: 'concluida', data_conclusao: new Date().toISOString().slice(0,10), ultima_alteracao_por: usuario?.id,
+  }).eq('id', osAtualId);
+
+  btn.disabled = false; btn.innerHTML = '<i data-lucide="check"></i> Encerrar Ordem';
+  if (window.lucide) lucide.createIcons();
+  if (error) { alert('Erro ao encerrar: ' + error.message); return; }
+
+  alert('Ordem encerrada com sucesso!');
+  location.reload();
+});
+
+// ---------- Abrir solicitação ----------
+document.getElementById('btn-abrir-solicitacao').addEventListener('click', async () => {
+  const descricao = document.getElementById('sl_descricao').value.trim();
+  if (!descricao) { alert('Descreva o problema.'); return; }
+  const { error } = await supabase.from('solicitacoes_manutencao').insert({
+    tenant_id: TENANT_ID, equipamento_id: equipamentoId,
+    descricao, prioridade_sugerida: document.getElementById('sl_prioridade').value,
+    solicitante_id: usuario?.id,
+  });
+  if (error) { alert('Erro ao enviar: ' + error.message); return; }
+  alert('Solicitação enviada com sucesso!');
+  document.getElementById('sl_descricao').value = '';
+});
+</script>
+</body>
+</html>

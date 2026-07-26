@@ -240,15 +240,38 @@ document.getElementById('lista-documentos').addEventListener('click', async (e) 
 
 // ---------- Medidores ----------
 async function carregarMedidores() {
-  const { data } = await supabase.from('medidores').select('*').eq('equipamento_id', equipamentoId).eq('ativo', true).order('criado_em');
-  document.getElementById('lista-medidores').innerHTML = (data?.length ? data.map(m => `
+  const { data } = await supabase.from('medidores').select('*, limites_medidor(limite_minimo, limite_maximo)').eq('equipamento_id', equipamentoId).eq('ativo', true).order('criado_em');
+  document.getElementById('lista-medidores').innerHTML = (data?.length ? data.map(m => {
+    const limite = (m.limites_medidor || [])[0];
+    const textoLimite = limite ? `Limite: ${limite.limite_minimo ?? '—'} a ${limite.limite_maximo ?? '—'}` : 'Sem limite definido';
+    return `
     <div class="lista-selecao-linha">
-      <div class="col-desc">${m.nome}</div>
+      <div class="col-desc">${m.nome}<div style="font-size:11px; color:var(--ink-soft);">${textoLimite}</div></div>
       <div class="col-valor mono">${fmtNum(m.leitura_atual)} ${m.unidade}</div>
-      <button class="icon-btn" data-registrar-leitura="${m.id}" data-nome="${m.nome.replace(/"/g,'&quot;')}" data-unidade="${m.unidade}" style="margin-left:8px;"><i data-lucide="plus"></i> Leitura</button>
-    </div>`).join('') : '<div class="empty-state">Nenhum medidor cadastrado ainda.</div>');
+      <button class="icon-btn" data-limite="${m.id}" data-nome="${m.nome.replace(/"/g,'&quot;')}" style="margin-left:8px;"><i data-lucide="bell"></i> Limite</button>
+      <button class="icon-btn" data-registrar-leitura="${m.id}" data-nome="${m.nome.replace(/"/g,'&quot;')}" data-unidade="${m.unidade}" style="margin-left:6px;"><i data-lucide="plus"></i> Leitura</button>
+    </div>`;
+  }).join('') : '<div class="empty-state">Nenhum medidor cadastrado ainda.</div>');
   if (window.lucide) lucide.createIcons();
 }
+
+document.getElementById('lista-medidores').addEventListener('click', async (e) => {
+  const btnLimite = e.target.closest('[data-limite]');
+  if (!btnLimite) return;
+  const minimo = prompt(`Limite MÍNIMO para "${btnLimite.dataset.nome}" (deixe vazio pra não definir):`);
+  if (minimo === null) return;
+  const maximo = prompt(`Limite MÁXIMO para "${btnLimite.dataset.nome}" (deixe vazio pra não definir):`);
+  if (maximo === null) return;
+  if (!minimo && !maximo) { alert('Informe ao menos um limite.'); return; }
+
+  await supabase.from('limites_medidor').update({ ativo: false }).eq('medidor_id', btnLimite.dataset.limite).eq('ativo', true);
+  const { error } = await supabase.from('limites_medidor').insert({
+    tenant_id: TENANT_ID, medidor_id: btnLimite.dataset.limite,
+    limite_minimo: minimo ? Number(minimo) : null, limite_maximo: maximo ? Number(maximo) : null,
+  });
+  if (error) { alert('Erro ao definir limite: ' + error.message); return; }
+  await carregarMedidores();
+});
 
 document.getElementById('btn-add-medidor').addEventListener('click', async () => {
   const nome = document.getElementById('md_nome').value.trim();
