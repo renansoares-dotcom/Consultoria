@@ -68,6 +68,7 @@
     <button class="active" data-aba="insumos">Insumos</button>
     <button data-aba="cores">Cores</button>
     <button data-aba="receitas">Receitas</button>
+    <button data-aba="ordens">Ordens de Preparação</button>
     <button data-aba="sistemas">Sistemas de Tinta</button>
   </div>
 
@@ -78,6 +79,7 @@
     <a href="casa-tintas-insumo-novo.html" class="btn primary" id="btn-novo-insumo"><i data-lucide="plus"></i> Novo Insumo</a>
     <a href="casa-tintas-cor-nova.html" class="btn primary" id="btn-nova-cor" style="display:none;"><i data-lucide="plus"></i> Nova Cor</a>
     <a href="casa-tintas-receita-nova.html" class="btn primary" id="btn-nova-receita" style="display:none;"><i data-lucide="plus"></i> Nova Receita</a>
+    <a href="casa-tintas-ordem-nova.html" class="btn primary" id="btn-nova-ordem" style="display:none;"><i data-lucide="plus"></i> Nova Ordem</a>
     <button class="btn primary" id="btn-novo-sistema" style="display:none;"><i data-lucide="plus"></i> Novo Sistema</button>
   </div>
 
@@ -216,6 +218,9 @@
   const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
   const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
+  const LABEL_STATUS_ORDEM = { aberta: 'Aberta', pesada: 'Pesada', cancelada: 'Cancelada' };
+  const BADGE_STATUS_ORDEM = { aberta: 'parcial', pesada: 'liquidado', cancelada: 'inadimplente' };
+
   const LABEL_STATUS_RECEITA = { rascunho: 'Rascunho', em_teste: 'Em Teste', aprovada: 'Aprovada', bloqueada: 'Bloqueada', obsoleta: 'Obsoleta' };
   const BADGE_STATUS_RECEITA = { rascunho: '', em_teste: 'parcial', aprovada: 'liquidado', bloqueada: 'inadimplente', obsoleta: 'inadimplente' };
 
@@ -247,6 +252,7 @@
     document.getElementById('btn-novo-insumo').style.display = abaAtual === 'insumos' ? 'inline-flex' : 'none';
     document.getElementById('btn-nova-cor').style.display = abaAtual === 'cores' ? 'inline-flex' : 'none';
     document.getElementById('btn-nova-receita').style.display = abaAtual === 'receitas' ? 'inline-flex' : 'none';
+    document.getElementById('btn-nova-ordem').style.display = abaAtual === 'ordens' ? 'inline-flex' : 'none';
     document.getElementById('btn-novo-sistema').style.display = abaAtual === 'sistemas' ? 'inline-flex' : 'none';
     carregar();
   });
@@ -343,6 +349,46 @@
           <td>${uv ? 'v' + uv.numero_versao : '—'}</td>
           <td>${uv ? `<span class="badge ${BADGE_STATUS_RECEITA[uv.status]}">${LABEL_STATUS_RECEITA[uv.status]}</span>` : '<span class="badge">Sem versão</span>'}</td>
           <td style="text-align:right;"><a href="casa-tintas-receita-nova.html?id=${r.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a></td>
+        </tr>`;
+      }).join('');
+
+    } else if (abaAtual === 'ordens') {
+      document.getElementById('thead').innerHTML = `<tr><th>Nº Ordem</th><th>Receita</th><th>Versão</th><th class="num">Qtd. Planejada</th><th>Progresso Pesagem</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+      let query = supabase.from('ordens_preparacao_tinta')
+        .select('id, numero_ordem, quantidade_planejada, status, receitas_tinta_versoes(id, numero_versao, receitas_tinta(codigo, nome))')
+        .order('criado_em', { ascending: false });
+      if (termo) query = query.ilike('numero_ordem', `%${termo}%`);
+      const { data, error } = await query;
+
+      if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+      document.getElementById('contador').textContent = `${data?.length || 0} ordem(ns)`;
+      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma ordem de preparação criada ainda.</td></tr>`; return; }
+
+      // Progresso (itens pesados / itens da receita), cruzado no navegador.
+      const { data: totalItens } = await supabase.from('receitas_tinta_itens').select('id, versao_id');
+      const { data: pesagens } = await supabase.from('pesagens_preparacao_tinta').select('ordem_id, receita_item_id');
+      const itensPorVersao = new Map();
+      (totalItens || []).forEach(it => itensPorVersao.set(it.versao_id, (itensPorVersao.get(it.versao_id) || 0) + 1));
+      const pesadosPorOrdem = new Map();
+      (pesagens || []).forEach(p => {
+        if (!pesadosPorOrdem.has(p.ordem_id)) pesadosPorOrdem.set(p.ordem_id, new Set());
+        pesadosPorOrdem.get(p.ordem_id).add(p.receita_item_id);
+      });
+
+      tbody.innerHTML = data.map(o => {
+        const totalItensVersao = itensPorVersao.get(o.receitas_tinta_versoes?.id) ?? '?';
+        const pesados = pesadosPorOrdem.get(o.id)?.size ?? 0;
+        return `
+        <tr>
+          <td class="mono">${o.numero_ordem}</td>
+          <td>${o.receitas_tinta_versoes?.receitas_tinta?.codigo ?? ''} — ${o.receitas_tinta_versoes?.receitas_tinta?.nome ?? '(receita removida)'}</td>
+          <td>v${o.receitas_tinta_versoes?.numero_versao ?? '?'}</td>
+          <td class="num mono">${fmtNum(o.quantidade_planejada)}</td>
+          <td>${pesados} / ${totalItensVersao} itens</td>
+          <td><span class="badge ${BADGE_STATUS_ORDEM[o.status]}">${LABEL_STATUS_ORDEM[o.status]}</span></td>
+          <td style="text-align:right;"><a href="casa-tintas-ordem-detalhe.html?id=${o.id}" class="icon-btn"><i data-lucide="folder-open"></i> Abrir</a></td>
         </tr>`;
       }).join('');
 

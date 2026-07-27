@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ordem de Preparação — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link active"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow"><a href="casa-tintas.html" style="color:inherit; text-decoration:none;">Casa de Tintas</a></span>
+      <h1 id="titulo-ordem">Ordem de Preparação</h1>
+    </div>
+    <a href="casa-tintas.html" class="btn ghost"><i data-lucide="arrow-left"></i> Voltar</a>
+  </div>
+
+  <section class="grid grid-4" style="margin-bottom:18px;">
+    <div class="card"><div class="label">Receita</div><div class="big valor" id="info-receita" style="font-size:16px;">—</div></div>
+    <div class="card"><div class="label">Quantidade Planejada</div><div class="big valor" id="info-quantidade">—</div></div>
+    <div class="card"><div class="label">Status</div><div class="big valor" id="info-status">—</div></div>
+    <div class="card"><div class="label">Progresso de Pesagem</div><div class="big valor" id="info-progresso">—</div></div>
+  </section>
+
+  <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+  <div class="toolbar" style="padding:0; margin-bottom:16px;">
+    <span style="font-size:13px; color:var(--ink-soft);" id="obs-ordem"></span>
+    <div class="spacer"></div>
+    <button class="btn ghost" type="button" id="btn-reservar"><i data-lucide="lock"></i> Reservar Insumos da Receita</button>
+    <button class="btn primary" type="button" id="btn-concluir-pesagem" style="display:none;"><i data-lucide="check"></i> Marcar Ordem como Pesada</button>
+    <button class="btn ghost" type="button" id="btn-cancelar-ordem" style="color:var(--red); display:none;"><i data-lucide="x"></i> Cancelar Ordem</button>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead>
+        <tr><th>Insumo</th><th>Função</th><th class="num">Planejado</th><th>Reservado</th><th class="num">Pesado</th><th>Status</th><th style="text-align:right;">Ações</th></tr>
+      </thead>
+      <tbody id="tbody-itens"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: registrar pesagem de um item -->
+<div class="modal-overlay" id="modal-pesagem">
+  <div class="modal">
+    <h2>Registrar Pesagem</h2>
+    <div class="modal-sub" id="pesagem-insumo-nome">—</div>
+
+    <label class="field">
+      <span class="field-label">Lote</span>
+      <select class="input" id="pes_lote"></select>
+    </label>
+    <label class="field">
+      <span class="field-label">Quantidade Pesada *</span>
+      <input class="input mono" type="number" step="0.0001" min="0.0001" id="pes_quantidade">
+    </label>
+    <label class="field">
+      <span class="field-label">Balança/Equipamento</span>
+      <input class="input" id="pes_balanca" placeholder="Ex: Balança 01">
+    </label>
+
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-pesagem">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-pesagem">Confirmar Pesagem</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
+const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+const LABEL_STATUS_ORDEM = { aberta: 'Aberta', pesada: 'Pesada', cancelada: 'Cancelada' };
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+const params = new URLSearchParams(location.search);
+const ordemId = params.get('id');
+if (!ordemId) { mostrarErro('Ordem não informada.'); }
+
+let ordemAtual = null, itensReceita = [], reservasAtuais = [], pesagensAtuais = [];
+
+async function carregarTudo() {
+  const { data: ordem, error } = await supabase
+    .from('ordens_preparacao_tinta')
+    .select('*, receitas_tinta_versoes(id, numero_versao, receitas_tinta(codigo, nome))')
+    .eq('id', ordemId).single();
+
+  if (error || !ordem) { mostrarErro('Ordem não encontrada.'); return; }
+  ordemAtual = ordem;
+
+  document.getElementById('titulo-ordem').textContent = `Ordem ${ordem.numero_ordem}`;
+  document.getElementById('info-receita').textContent = `${ordem.receitas_tinta_versoes?.receitas_tinta?.codigo ?? ''} (v${ordem.receitas_tinta_versoes?.numero_versao ?? '?'})`;
+  document.getElementById('info-quantidade').textContent = fmtNum(ordem.quantidade_planejada) + ' kg';
+  document.getElementById('info-status').textContent = LABEL_STATUS_ORDEM[ordem.status];
+  document.getElementById('obs-ordem').textContent = ordem.observacoes || '';
+
+  const { data: itens } = await supabase.from('receitas_tinta_itens')
+    .select('id, insumo_id, quantidade, funcao, tolerancia_pesagem_percentual, insumos_tinta(codigo, nome, unidade_medida)')
+    .eq('versao_id', ordem.receitas_tinta_versoes.id);
+  itensReceita = itens || [];
+
+  const { data: reservas } = await supabase.from('reservas_lote_insumo_tinta')
+    .select('id, insumo_id, lote_id, quantidade_reservada, lotes_insumo_tinta(numero_lote, data_validade)')
+    .eq('ordem_id', ordemId);
+  reservasAtuais = reservas || [];
+
+  const { data: pesagens } = await supabase.from('pesagens_preparacao_tinta')
+    .select('id, receita_item_id, quantidade_pesada, lotes_insumo_tinta(numero_lote)')
+    .eq('ordem_id', ordemId);
+  pesagensAtuais = pesagens || [];
+
+  const totalItens = itensReceita.length;
+  const itensCompletos = itensReceita.filter(it => somaPesado(it.id) >= it.quantidade).length;
+  document.getElementById('info-progresso').textContent = `${itensCompletos} / ${totalItens} itens`;
+
+  document.getElementById('btn-reservar').style.display = ordem.status === 'aberta' ? 'inline-flex' : 'none';
+  document.getElementById('btn-concluir-pesagem').style.display = (ordem.status === 'aberta' && totalItens > 0 && itensCompletos === totalItens) ? 'inline-flex' : 'none';
+  document.getElementById('btn-cancelar-ordem').style.display = ordem.status === 'aberta' ? 'inline-flex' : 'none';
+
+  renderTabela();
+}
+
+function somaPesado(receitaItemId) {
+  return pesagensAtuais.filter(p => p.receita_item_id === receitaItemId).reduce((s, p) => s + Number(p.quantidade_pesada), 0);
+}
+function somaReservado(insumoId) {
+  return reservasAtuais.filter(r => r.insumo_id === insumoId).reduce((s, r) => s + Number(r.quantidade_reservada), 0);
+}
+
+function renderTabela() {
+  const tbody = document.getElementById('tbody-itens');
+  if (!itensReceita.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Esta versão da receita não tem itens.</td></tr>`; return; }
+
+  tbody.innerHTML = itensReceita.map(it => {
+    const pesado = somaPesado(it.id);
+    const reservado = somaReservado(it.insumo_id);
+    const reservasDoItem = reservasAtuais.filter(r => r.insumo_id === it.insumo_id);
+    const completo = pesado >= it.quantidade;
+    const podeEditar = ordemAtual?.status === 'aberta';
+
+    return `
+      <tr>
+        <td>${it.insumos_tinta?.codigo ?? ''} — ${it.insumos_tinta?.nome ?? '(insumo removido)'}</td>
+        <td>${it.funcao ?? '—'}</td>
+        <td class="num mono">${fmtNum(it.quantidade)} ${it.insumos_tinta?.unidade_medida ?? ''}</td>
+        <td style="font-size:12px;">${reservasDoItem.length ? reservasDoItem.map(r => `${r.lotes_insumo_tinta?.numero_lote} (${fmtNum(r.quantidade_reservada)})`).join(', ') : (reservado > 0 ? fmtNum(reservado) : '—')}</td>
+        <td class="num mono">${fmtNum(pesado)} ${it.insumos_tinta?.unidade_medida ?? ''}</td>
+        <td><span class="badge ${completo ? 'liquidado' : 'aberto'}">${completo ? 'Pesado' : 'Pendente'}</span></td>
+        <td style="text-align:right;">${podeEditar ? `<button class="icon-btn" data-pesar="${it.id}"><i data-lucide="scale"></i> Pesar</button>` : ''}</td>
+      </tr>`;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+// ---------- Reservar Insumos (FEFO, multi-lote) ----------
+document.getElementById('btn-reservar').addEventListener('click', async () => {
+  const faltas = [];
+  const btn = document.getElementById('btn-reservar');
+  btn.disabled = true; btn.textContent = 'Reservando…';
+
+  for (const it of itensReceita) {
+    const jaReservado = somaReservado(it.insumo_id);
+    const jaPesado = somaPesado(it.id);
+    let necessario = Number(it.quantidade) - jaPesado - jaReservado;
+    if (necessario <= 0) continue;
+
+    const { data: lotesDisponiveis } = await supabase.from('lotes_insumo_tinta')
+      .select('id, numero_lote, saldo_atual, saldo_reservado, data_validade')
+      .eq('insumo_id', it.insumo_id)
+      .eq('status_qualidade', 'liberado')
+      .order('data_validade', { ascending: true, nullsFirst: false });
+
+    for (const lote of (lotesDisponiveis || [])) {
+      if (necessario <= 0) break;
+      const disponivelNoLote = Number(lote.saldo_atual) - Number(lote.saldo_reservado);
+      if (disponivelNoLote <= 0) continue;
+      const alocar = Math.min(necessario, disponivelNoLote);
+
+      const { error } = await supabase.from('reservas_lote_insumo_tinta').insert({
+        tenant_id: TENANT_ID, ordem_id: ordemId, lote_id: lote.id, insumo_id: it.insumo_id,
+        quantidade_reservada: alocar, criado_por: usuario?.id,
+      });
+      if (!error) necessario -= alocar;
+    }
+
+    if (necessario > 0) {
+      faltas.push(`${it.insumos_tinta?.codigo ?? it.insumo_id}: faltam ${fmtNum(necessario)} ${it.insumos_tinta?.unidade_medida ?? ''}`);
+    }
+  }
+
+  btn.disabled = false; btn.textContent = 'Reservar Insumos da Receita';
+  await carregarTudo();
+
+  if (faltas.length) {
+    alert('Reserva parcial — estoque insuficiente para:\n\n' + faltas.join('\n') + '\n\nOs demais insumos foram reservados normalmente. Registre um recebimento e tente novamente.');
+  } else {
+    alert('Todos os insumos foram reservados com sucesso.');
+  }
+});
+
+// ---------- Pesagem ----------
+const modalPesagem = document.getElementById('modal-pesagem');
+let itemEmPesagem = null;
+
+document.getElementById('tbody-itens').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-pesar]');
+  if (!btn) return;
+  await abrirModalPesagem(btn.dataset.pesar);
+});
+
+async function abrirModalPesagem(receitaItemId) {
+  const item = itensReceita.find(i => i.id === receitaItemId);
+  if (!item) return;
+  itemEmPesagem = item;
+
+  const pesadoAteAgora = somaPesado(item.id);
+  const restante = Math.max(0, Number(item.quantidade) - pesadoAteAgora);
+
+  document.getElementById('pesagem-insumo-nome').textContent = `${item.insumos_tinta?.codigo ?? ''} — ${item.insumos_tinta?.nome ?? ''} (planejado: ${fmtNum(item.quantidade)} ${item.insumos_tinta?.unidade_medida ?? ''})`;
+  document.getElementById('pes_quantidade').value = restante > 0 ? restante : '';
+  document.getElementById('pes_balanca').value = '';
+
+  // Lotes reservados pra este insumo entram primeiro na lista; se não houver
+  // reserva, cai para qualquer lote liberado com saldo disponível (FEFO).
+  const reservasDoItem = reservasAtuais.filter(r => r.insumo_id === item.insumo_id);
+  let opcoesLotes = reservasDoItem.map(r => ({ id: r.lote_id, numero_lote: r.lotes_insumo_tinta?.numero_lote, tag: 'reservado' }));
+
+  if (!opcoesLotes.length) {
+    const { data: lotesLivres } = await supabase.from('lotes_insumo_tinta')
+      .select('id, numero_lote, saldo_atual, saldo_reservado')
+      .eq('insumo_id', item.insumo_id).eq('status_qualidade', 'liberado')
+      .order('data_validade', { ascending: true, nullsFirst: false });
+    opcoesLotes = (lotesLivres || [])
+      .filter(l => (Number(l.saldo_atual) - Number(l.saldo_reservado)) > 0)
+      .map(l => ({ id: l.id, numero_lote: l.numero_lote, tag: 'disponível' }));
+  }
+
+  const selectLote = document.getElementById('pes_lote');
+  if (!opcoesLotes.length) {
+    selectLote.innerHTML = '<option value="">Nenhum lote disponível — registre um recebimento primeiro</option>';
+  } else {
+    selectLote.innerHTML = opcoesLotes.map(l => `<option value="${l.id}">${l.numero_lote} (${l.tag})</option>`).join('');
+  }
+
+  modalPesagem.classList.add('open');
+}
+
+document.getElementById('btn-cancelar-pesagem').addEventListener('click', () => modalPesagem.classList.remove('open'));
+
+document.getElementById('btn-confirmar-pesagem').addEventListener('click', async () => {
+  const loteId = document.getElementById('pes_lote').value;
+  const quantidade = parseFloat(document.getElementById('pes_quantidade').value || 0);
+  if (!loteId) { alert('Selecione um lote.'); return; }
+  if (!quantidade || quantidade <= 0) { alert('Informe a quantidade pesada.'); return; }
+
+  const { error } = await supabase.from('pesagens_preparacao_tinta').insert({
+    tenant_id: TENANT_ID, ordem_id: ordemId, receita_item_id: itemEmPesagem.id, insumo_id: itemEmPesagem.insumo_id,
+    lote_id: loteId, quantidade_planejada: itemEmPesagem.quantidade, quantidade_pesada: quantidade,
+    balanca_equipamento: document.getElementById('pes_balanca').value.trim() || null,
+    operador_id: usuario?.id, criado_por: usuario?.id,
+  });
+
+  if (error) { alert('Erro ao registrar pesagem: ' + (error.message.includes('negativo') ? 'saldo do lote ficaria negativo — confira a quantidade ou escolha outro lote.' : error.message)); return; }
+
+  modalPesagem.classList.remove('open');
+  await carregarTudo();
+});
+
+// ---------- Concluir / Cancelar ordem ----------
+document.getElementById('btn-concluir-pesagem').addEventListener('click', async () => {
+  if (!confirm('Marcar esta ordem como pesada? Todos os itens já foram apontados.')) return;
+  const { error } = await supabase.from('ordens_preparacao_tinta').update({ status: 'pesada' }).eq('id', ordemId);
+  if (error) { alert('Erro: ' + error.message); return; }
+  await carregarTudo();
+});
+
+document.getElementById('btn-cancelar-ordem').addEventListener('click', async () => {
+  if (!confirm('Cancelar esta ordem? As reservas de insumo serão liberadas automaticamente.')) return;
+  const { error } = await supabase.from('ordens_preparacao_tinta').update({ status: 'cancelada' }).eq('id', ordemId);
+  if (error) { alert('Erro: ' + error.message); return; }
+  // libera as reservas (cascade não dispara por UPDATE de status, só por DELETE — remove explicitamente)
+  await supabase.from('reservas_lote_insumo_tinta').delete().eq('ordem_id', ordemId);
+  await carregarTudo();
+});
+
+if (ordemId) await carregarTudo();
+</script>
+</body>
+</html>
