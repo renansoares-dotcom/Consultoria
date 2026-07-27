@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editar Arte — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<style>
+  .ea-ferramenta.primary { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link active"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Pré-impressão</span>
+      <h1 id="titulo-editor">Editar Arte</h1>
+    </div>
+    <a href="pre-impressao.html" class="btn ghost"><i data-lucide="arrow-left"></i> Voltar sem salvar</a>
+  </div>
+
+  <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px; padding:12px;"></div>
+
+  <div id="area-editor" class="card" style="padding:18px;"></div>
+
+  <div class="modal-actions" style="margin-top:18px; justify-content:flex-start;">
+    <button class="btn primary" type="button" id="btn-salvar-versao">Salvar como Nova Versão</button>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import { criarEditorArte } from '../../js/editor-arte.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+}
+
+const params = new URLSearchParams(location.search);
+const versaoId = params.get('versao');
+const projetoId = params.get('projeto');
+
+if (!versaoId || !projetoId) {
+  mostrarErro('Link inválido — faltam parâmetros. Volte e tente abrir "Editar" novamente.');
+  throw new Error('parâmetros faltando');
+}
+
+const { data: versaoOrigem, error: erroVersao } = await supabase
+  .from('arte_versoes')
+  .select('id, projeto_id, arquivo_path, arquivo_tipo, arquivo_nome, projetos_arte(nome)')
+  .eq('id', versaoId)
+  .single();
+
+if (erroVersao || !versaoOrigem) {
+  mostrarErro('Não foi possível carregar essa versão da arte.');
+  throw new Error('versão não encontrada');
+}
+
+if (!(versaoOrigem.arquivo_tipo || '').startsWith('image/')) {
+  mostrarErro('Por enquanto só é possível editar arquivos de imagem (JPG, PNG). Edição de PDF chega em breve.');
+  throw new Error('tipo não suportado');
+}
+
+document.getElementById('titulo-editor').textContent = `Editar — ${versaoOrigem.projetos_arte?.nome ?? 'Arte'}`;
+
+const { data: signed, error: erroSigned } = await supabase.storage.from('anexos').createSignedUrl(versaoOrigem.arquivo_path, 300);
+if (erroSigned || !signed?.signedUrl) {
+  mostrarErro('Erro ao carregar o arquivo original: ' + (erroSigned?.message ?? ''));
+  throw new Error('erro ao gerar link');
+}
+
+const editor = criarEditorArte({ containerId: 'area-editor', imagemUrl: signed.signedUrl });
+await editor.pronto;
+
+document.getElementById('btn-salvar-versao').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-salvar-versao');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  try {
+    const blob = await editor.exportarPNG();
+    const nomeArquivo = `edicao_${Date.now()}.png`;
+    const caminho = `${TENANT_ID}/artes/${projetoId}/staff_${Date.now()}_${nomeArquivo}`;
+
+    const { count } = await supabase.from('arte_versoes').select('id', { count: 'exact', head: true }).eq('projeto_id', projetoId);
+    const proximaVersao = (count || 0) + 1;
+
+    const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, blob, { contentType: 'image/png' });
+    if (erroUpload) { mostrarErro('Erro ao enviar arquivo editado: ' + erroUpload.message); return; }
+
+    const { error: erroInsert } = await supabase.from('arte_versoes').insert({
+      tenant_id: TENANT_ID,
+      projeto_id: projetoId,
+      numero_versao: proximaVersao,
+      arquivo_path: caminho,
+      arquivo_nome: nomeArquivo,
+      arquivo_tipo: 'image/png',
+      tamanho_bytes: blob.size,
+      enviado_por: usuario?.id,
+    });
+    if (erroInsert) { mostrarErro('Arquivo enviado, mas houve erro ao registrar a versão: ' + erroInsert.message); return; }
+
+    await supabase.from('projetos_arte').update({ status: 'aguardando_aprovacao' }).eq('id', projetoId);
+    window.location.href = 'pre-impressao.html';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar como Nova Versão';
+  }
+});
+</script>
+</body>
+</html>

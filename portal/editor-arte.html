@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editar Arte — Portal do Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<style>
+  .btn.primary.ea-ferramenta-ativa, .ea-ferramenta.primary { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="app-main" style="margin-left:0;">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>PORTAL DO CLIENTE</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Pré-impressão</span>
+      <h1 id="titulo-editor">Editar Arte</h1>
+    </div>
+    <a href="pre-impressao.html" class="btn ghost"><i data-lucide="arrow-left"></i> Voltar sem salvar</a>
+  </div>
+
+  <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px; padding:12px;"></div>
+
+  <div id="area-editor" class="card" style="padding:18px;"></div>
+
+  <div class="modal-actions" style="margin-top:18px; justify-content:flex-start;">
+    <button class="btn primary" type="button" id="btn-salvar-versao">Salvar como Nova Versão</button>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessaoPortal, usuarioPortalAtual } from '../js/portal-client.js';
+import { criarEditorArte } from '../js/editor-arte.js';
+
+const sessao = await exigirSessaoPortal();
+const usuario = await usuarioPortalAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do Portal?')) { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+});
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+}
+
+const params = new URLSearchParams(location.search);
+const versaoId = params.get('versao');
+const projetoId = params.get('projeto');
+
+if (!versaoId || !projetoId) {
+  mostrarErro('Link inválido — faltam parâmetros. Volte e tente abrir "Editar" novamente.');
+  throw new Error('parâmetros faltando');
+}
+
+const { data: versaoOrigem, error: erroVersao } = await supabase
+  .from('arte_versoes')
+  .select('id, projeto_id, arquivo_path, arquivo_tipo, arquivo_nome, projetos_arte(nome)')
+  .eq('id', versaoId)
+  .single();
+
+if (erroVersao || !versaoOrigem) {
+  mostrarErro('Não foi possível carregar essa versão da arte.');
+  throw new Error('versão não encontrada');
+}
+
+if (!(versaoOrigem.arquivo_tipo || '').startsWith('image/')) {
+  mostrarErro('Por enquanto só é possível editar arquivos de imagem (JPG, PNG). Edição de PDF chega em breve.');
+  throw new Error('tipo não suportado');
+}
+
+document.getElementById('titulo-editor').textContent = `Editar — ${versaoOrigem.projetos_arte?.nome ?? 'Arte'}`;
+
+const { data: signed, error: erroSigned } = await supabase.storage.from('anexos').createSignedUrl(versaoOrigem.arquivo_path, 300);
+if (erroSigned || !signed?.signedUrl) {
+  mostrarErro('Erro ao carregar o arquivo original: ' + (erroSigned?.message ?? ''));
+  throw new Error('erro ao gerar link');
+}
+
+const editor = criarEditorArte({ containerId: 'area-editor', imagemUrl: signed.signedUrl });
+await editor.pronto;
+
+document.getElementById('btn-salvar-versao').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-salvar-versao');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  try {
+    const blob = await editor.exportarPNG();
+    const nomeArquivo = `edicao_${Date.now()}.png`;
+    const caminho = `${usuario.tenant_id}/artes/${projetoId}/portal_${Date.now()}_${nomeArquivo}`;
+
+    const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, blob, { contentType: 'image/png' });
+    if (erroUpload) { mostrarErro('Erro ao enviar arquivo editado: ' + erroUpload.message); return; }
+
+    const { error: erroInsert } = await supabase.from('arte_versoes').insert({
+      tenant_id: usuario.tenant_id,
+      projeto_id: projetoId,
+      arquivo_path: caminho,
+      arquivo_nome: nomeArquivo,
+      arquivo_tipo: 'image/png',
+      tamanho_bytes: blob.size,
+    });
+    if (erroInsert) { mostrarErro('Arquivo enviado, mas houve erro ao registrar a versão: ' + erroInsert.message); return; }
+
+    window.location.href = 'pre-impressao.html';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar como Nova Versão';
+  }
+});
+</script>
+</body>
+</html>

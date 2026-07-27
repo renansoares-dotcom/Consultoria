@@ -276,16 +276,19 @@
       ${comLink.map((v, i) => {
         const ehImagem = (v.arquivo_tipo || '').startsWith('image/');
         return `
-        <a href="${v.url ?? '#'}" target="_blank" rel="noopener" class="card-arte" style="text-decoration:none; color:inherit; display:block; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-soft); background:var(--paper-raised);">
-          <div style="aspect-ratio:1/1; background:var(--ledger); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
-            ${ehImagem && v.url ? `<img src="${v.url}" alt="${v.arquivo_nome}" style="width:100%; height:100%; object-fit:cover;">` : `<i data-lucide="file-text" style="width:32px; height:32px; color:var(--ink-soft);"></i>`}
-            ${i === 0 ? '<span class="badge liquidado" style="position:absolute; top:6px; right:6px; font-size:10px;">Atual</span>' : ''}
-          </div>
-          <div style="padding:8px 10px;">
-            <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.arquivo_nome}</div>
-            <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao}${v.enviado_por_portal ? ' · enviado pelo cliente' : ''}</div>
-          </div>
-        </a>`;
+        <div class="card-arte" style="border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-soft); background:var(--paper-raised);">
+          <a href="${v.url ?? '#'}" target="_blank" rel="noopener" style="text-decoration:none; color:inherit; display:block;">
+            <div style="aspect-ratio:1/1; background:var(--ledger); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+              ${ehImagem && v.url ? `<img src="${v.url}" alt="${v.arquivo_nome}" style="width:100%; height:100%; object-fit:cover;">` : `<i data-lucide="file-text" style="width:32px; height:32px; color:var(--ink-soft);"></i>`}
+              ${i === 0 ? '<span class="badge liquidado" style="position:absolute; top:6px; right:6px; font-size:10px;">Atual</span>' : ''}
+            </div>
+            <div style="padding:8px 10px 4px;">
+              <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.arquivo_nome}</div>
+              <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao}${v.enviado_por_portal ? ' · enviado pelo cliente' : ''}</div>
+            </div>
+          </a>
+          ${ehImagem ? `<div style="padding:0 10px 10px;"><a href="editor-arte.html?projeto=${projetoEmDetalhe}&versao=${v.id}" class="icon-btn" style="font-size:11px;"><i data-lucide="pencil"></i> Editar</a></div>` : ''}
+        </div>`;
       }).join('')}
     </div>`;
     if (window.lucide) lucide.createIcons();
