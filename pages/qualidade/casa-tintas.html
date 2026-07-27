@@ -57,15 +57,17 @@
     <a href="dashboard.html" class="btn ghost"><i data-lucide="arrow-left"></i> Voltar para Qualidade</a>
   </div>
 
-  <section class="grid grid-3" style="margin-bottom:18px;">
+  <section class="grid grid-4" style="margin-bottom:18px;">
     <div class="card"><div class="label">Insumos Ativos</div><div class="big valor" id="card-insumos">0</div></div>
     <div class="card"><div class="label">Cores Cadastradas</div><div class="big valor" id="card-cores">0</div></div>
+    <div class="card"><div class="label">Receitas com Versão Aprovada</div><div class="big valor" id="card-receitas">0</div></div>
     <div class="card"><div class="label">Sistemas de Tinta</div><div class="big valor" id="card-sistemas">0</div></div>
   </section>
 
   <div class="subnav" id="abas">
     <button class="active" data-aba="insumos">Insumos</button>
     <button data-aba="cores">Cores</button>
+    <button data-aba="receitas">Receitas</button>
     <button data-aba="sistemas">Sistemas de Tinta</button>
   </div>
 
@@ -75,6 +77,7 @@
     <div class="spacer"></div>
     <a href="casa-tintas-insumo-novo.html" class="btn primary" id="btn-novo-insumo"><i data-lucide="plus"></i> Novo Insumo</a>
     <a href="casa-tintas-cor-nova.html" class="btn primary" id="btn-nova-cor" style="display:none;"><i data-lucide="plus"></i> Nova Cor</a>
+    <a href="casa-tintas-receita-nova.html" class="btn primary" id="btn-nova-receita" style="display:none;"><i data-lucide="plus"></i> Nova Receita</a>
     <button class="btn primary" id="btn-novo-sistema" style="display:none;"><i data-lucide="plus"></i> Novo Sistema</button>
   </div>
 
@@ -213,6 +216,9 @@
   const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
   const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
+  const LABEL_STATUS_RECEITA = { rascunho: 'Rascunho', em_teste: 'Em Teste', aprovada: 'Aprovada', bloqueada: 'Bloqueada', obsoleta: 'Obsoleta' };
+  const BADGE_STATUS_RECEITA = { rascunho: '', em_teste: 'parcial', aprovada: 'liquidado', bloqueada: 'inadimplente', obsoleta: 'inadimplente' };
+
   const LABEL_TIPO_INSUMO = {
     tinta_base: 'Tinta-Base', pigmento_concentrado: 'Pigmento/Concentrado', verniz: 'Verniz',
     solvente: 'Solvente', retardador: 'Retardador', diluente: 'Diluente',
@@ -223,9 +229,11 @@
     const { count: insumos } = await supabase.from('insumos_tinta').select('id', { count: 'exact', head: true }).eq('ativo', true);
     const { count: cores } = await supabase.from('cores_tinta').select('id', { count: 'exact', head: true }).eq('ativo', true);
     const { count: sistemas } = await supabase.from('sistemas_tinta').select('id', { count: 'exact', head: true }).eq('ativo', true);
+    const { data: versoesAprovadas } = await supabase.from('receitas_tinta_versoes').select('receita_id').eq('status', 'aprovada');
     document.getElementById('card-insumos').textContent = insumos || 0;
     document.getElementById('card-cores').textContent = cores || 0;
     document.getElementById('card-sistemas').textContent = sistemas || 0;
+    document.getElementById('card-receitas').textContent = new Set((versoesAprovadas || []).map(v => v.receita_id)).size;
   }
 
   let abaAtual = 'insumos';
@@ -238,6 +246,7 @@
     document.getElementById('busca').value = '';
     document.getElementById('btn-novo-insumo').style.display = abaAtual === 'insumos' ? 'inline-flex' : 'none';
     document.getElementById('btn-nova-cor').style.display = abaAtual === 'cores' ? 'inline-flex' : 'none';
+    document.getElementById('btn-nova-receita').style.display = abaAtual === 'receitas' ? 'inline-flex' : 'none';
     document.getElementById('btn-novo-sistema').style.display = abaAtual === 'sistemas' ? 'inline-flex' : 'none';
     carregar();
   });
@@ -304,6 +313,38 @@
           <td><span class="badge ${c.ativo ? 'liquidado' : 'inadimplente'}">${c.ativo ? 'Ativa' : 'Inativa'}</span></td>
           <td style="text-align:right;"><a href="casa-tintas-cor-nova.html?id=${c.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a></td>
         </tr>`).join('');
+
+    } else if (abaAtual === 'receitas') {
+      document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Cor</th><th>Última Versão</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+
+      let query = supabase.from('receitas_tinta').select('id, codigo, nome, ativo, cores_tinta(nome)').order('codigo');
+      if (termo) query = query.or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`);
+      const { data, error } = await query;
+
+      if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+      document.getElementById('contador').textContent = `${data?.length || 0} receita(s)`;
+      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma receita cadastrada ainda.</td></tr>`; return; }
+
+      // Última versão de cada receita, buscada à parte e cruzada no
+      // navegador (mesmo motivo do saldo de insumo: evitar embed através
+      // de agregação/ordenação complexa via PostgREST).
+      const { data: versoes } = await supabase.from('receitas_tinta_versoes').select('receita_id, numero_versao, status').order('numero_versao', { ascending: false });
+      const ultimaVersaoPorReceita = new Map();
+      (versoes || []).forEach(v => { if (!ultimaVersaoPorReceita.has(v.receita_id)) ultimaVersaoPorReceita.set(v.receita_id, v); });
+
+      tbody.innerHTML = data.map(r => {
+        const uv = ultimaVersaoPorReceita.get(r.id);
+        return `
+        <tr>
+          <td class="mono">${r.codigo}</td>
+          <td>${r.nome}</td>
+          <td>${r.cores_tinta?.nome ?? '—'}</td>
+          <td>${uv ? 'v' + uv.numero_versao : '—'}</td>
+          <td>${uv ? `<span class="badge ${BADGE_STATUS_RECEITA[uv.status]}">${LABEL_STATUS_RECEITA[uv.status]}</span>` : '<span class="badge">Sem versão</span>'}</td>
+          <td style="text-align:right;"><a href="casa-tintas-receita-nova.html?id=${r.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a></td>
+        </tr>`;
+      }).join('');
 
     } else {
       document.getElementById('thead').innerHTML = `<tr><th>Nome</th><th>Descrição</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
