@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receita de Tinta — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link active"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Nova Receita de Tinta</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="casa-tintas.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="geral">Geral</button>
+      <button data-tab="versoes">Versões</button>
+    </nav>
+
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+      <!-- ============================== GERAL ============================== -->
+      <div id="tab-geral">
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Código *</span>
+            <input class="input mono" type="text" id="f_codigo" required>
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Nome *</span>
+            <input class="input" type="text" id="f_nome" required>
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-grow">
+            <span class="field-label">Cor de Tinta *</span>
+            <select class="input" id="f_cor" required><option value="">Selecione…</option></select>
+          </label>
+          <label class="field f-260">
+            <span class="field-label">Aplicação</span>
+            <input class="input" type="text" id="f_aplicacao" placeholder="Ex: superfície, laminação, interno">
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_ativo" checked>
+              <label for="f_ativo" style="margin:0;">Ativa</label>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ============================== VERSÕES ============================== -->
+      <div id="tab-versoes" style="display:none;">
+        <div id="versoes-bloqueado" class="empty-state">Salve a receita na aba Geral antes de criar versões.</div>
+        <div id="versoes-conteudo" style="display:none;">
+          <div class="toolbar" style="padding:0; margin-bottom:16px;">
+            <span style="font-size:13px; color:var(--ink-soft);">Uma vez aprovada, uma versão fica congelada — qualquer alteração exige criar uma nova versão.</span>
+            <div class="spacer"></div>
+            <button class="btn primary" type="button" id="btn-nova-versao"><i data-lucide="plus"></i> Nova Versão</button>
+          </div>
+          <div class="lista-selecao" id="lista-versoes"><div class="empty-state">Carregando…</div></div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:18px;">
+        <button class="btn primary" type="button" id="btn-salvar">Salvar Receita</button>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<!-- Modal: detalhe/edição de uma versão -->
+<div class="modal-overlay" id="modal-versao">
+  <div class="modal" style="max-width:760px;">
+    <h2 id="versao-titulo">Versão</h2>
+    <div class="modal-sub" id="versao-status-sub">—</div>
+
+    <div id="versao-aviso-congelada" class="caixa-info" style="display:none; margin-bottom:16px;">
+      Esta versão está congelada — os campos abaixo são somente leitura. Para alterar a fórmula, crie uma nova versão a partir desta.
+    </div>
+
+    <div class="linha-flex">
+      <label class="field f-140">
+        <span class="field-label">Qtd. Mínima de Lote</span>
+        <input class="input mono" type="number" step="0.001" min="0" id="v_qtd_min">
+      </label>
+      <label class="field f-140">
+        <span class="field-label">Qtd. Máxima de Lote</span>
+        <input class="input mono" type="number" step="0.001" min="0" id="v_qtd_max">
+      </label>
+      <label class="field f-140">
+        <span class="field-label">Custo Teórico</span>
+        <input class="input mono" id="v_custo_teorico" disabled>
+      </label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-130">
+        <span class="field-label">Viscosidade Alvo</span>
+        <input class="input mono" type="number" step="0.01" id="v_visc_alvo">
+      </label>
+      <label class="field f-130">
+        <span class="field-label">Tolerância Viscosidade</span>
+        <input class="input mono" type="number" step="0.01" min="0" id="v_visc_tolerancia">
+      </label>
+      <label class="field f-160">
+        <span class="field-label">Método/Copa</span>
+        <input class="input" id="v_visc_metodo" placeholder="Ex: Copa Ford #4">
+      </label>
+      <label class="field f-130">
+        <span class="field-label">Densidade Alvo</span>
+        <input class="input mono" type="number" step="0.001" id="v_dens_alvo">
+      </label>
+      <label class="field f-130">
+        <span class="field-label">Tolerância Densidade</span>
+        <input class="input mono" type="number" step="0.001" min="0" id="v_dens_tolerancia">
+      </label>
+      <label class="field f-130">
+        <span class="field-label">Tolerância Delta E</span>
+        <input class="input mono" type="number" step="0.01" min="0" id="v_delta_e">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">Observações</span>
+      <textarea class="input" id="v_observacoes" style="min-height:60px; resize:vertical;"></textarea>
+    </label>
+
+    <button class="btn ghost" type="button" id="btn-salvar-parametros" style="margin-bottom:18px;"><i data-lucide="save"></i> Salvar Parâmetros</button>
+
+    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:8px;">Composição</div>
+    <div class="lista-selecao" id="lista-itens-versao" style="margin-bottom:16px;">
+      <div class="empty-state">Carregando…</div>
+    </div>
+    <div class="linha-flex" id="form-novo-item">
+      <label class="field f-grow">
+        <span class="field-label">Insumo</span>
+        <select class="input" id="ni_insumo"></select>
+      </label>
+      <label class="field f-130">
+        <span class="field-label">Quantidade</span>
+        <input class="input mono" type="number" step="0.0001" min="0.0001" id="ni_quantidade">
+      </label>
+      <label class="field f-160">
+        <span class="field-label">Função</span>
+        <input class="input" id="ni_funcao" placeholder="Ex: base, secante">
+      </label>
+      <label class="field f-130">
+        <span class="field-label">Tolerância Pesagem (%)</span>
+        <input class="input mono" type="number" step="0.01" min="0" id="ni_tolerancia">
+      </label>
+      <button class="btn primary" type="button" id="btn-add-item"><i data-lucide="plus"></i></button>
+    </div>
+
+    <div class="modal-actions" id="acoes-fluxo-versao" style="justify-content:space-between; margin-top:20px;">
+      <button class="btn ghost" type="button" id="btn-fechar-versao">Fechar</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn ghost" type="button" id="btn-enviar-teste">Enviar para Teste</button>
+        <button class="btn ghost" type="button" id="btn-aprovar">Aprovar Versão</button>
+        <button class="btn ghost" type="button" id="btn-bloquear" style="color:var(--red);">Bloquear</button>
+        <button class="btn ghost" type="button" id="btn-obsoleta" style="color:var(--red);">Marcar Obsoleta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+const LABEL_STATUS = { rascunho: 'Rascunho', em_teste: 'Em Teste', aprovada: 'Aprovada', bloqueada: 'Bloqueada', obsoleta: 'Obsoleta' };
+const BADGE_STATUS = { rascunho: '', em_teste: 'parcial', aprovada: 'liquidado', bloqueada: 'inadimplente', obsoleta: 'inadimplente' };
+
+// ---------- Abas ----------
+document.querySelectorAll('.janela-abas button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.janela-abas button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['geral','versoes'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+}));
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------- Selects auxiliares ----------
+const { data: coresLista } = await supabase.from('cores_tinta').select('id, codigo, nome').eq('ativo', true).order('codigo');
+document.getElementById('f_cor').insertAdjacentHTML('beforeend', (coresLista || []).map(c => `<option value="${c.id}">${c.codigo} — ${c.nome}</option>`).join(''));
+
+const { data: insumosLista } = await supabase.from('insumos_tinta').select('id, codigo, nome, unidade_medida').eq('ativo', true).order('codigo');
+document.getElementById('ni_insumo').insertAdjacentHTML('beforeend', (insumosLista || []).map(i => `<option value="${i.id}">${i.codigo} — ${i.nome}</option>`).join(''));
+
+// ---------- Carregar em modo edição ----------
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+
+if (idEdicao) {
+  document.getElementById('titulo-janela').textContent = 'Editar Receita de Tinta';
+  const { data: r, error } = await supabase.from('receitas_tinta').select('*').eq('id', idEdicao).single();
+  if (error || !r) {
+    mostrarErro('Receita não encontrada.');
+  } else {
+    document.getElementById('f_codigo').value = r.codigo ?? '';
+    document.getElementById('f_nome').value = r.nome ?? '';
+    document.getElementById('f_cor').value = r.cor_tinta_id ?? '';
+    document.getElementById('f_aplicacao').value = r.aplicacao ?? '';
+    document.getElementById('f_ativo').checked = r.ativo !== false;
+
+    document.getElementById('versoes-bloqueado').style.display = 'none';
+    document.getElementById('versoes-conteudo').style.display = 'block';
+    await carregarVersoes();
+  }
+}
+
+// ---------- Salvar (Geral) ----------
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  const codigo = document.getElementById('f_codigo').value.trim();
+  const nome = document.getElementById('f_nome').value.trim();
+  const corId = document.getElementById('f_cor').value;
+  if (!codigo) { mostrarErro('Preencha o Código (aba Geral).'); return; }
+  if (!nome) { mostrarErro('Preencha o Nome (aba Geral).'); return; }
+  if (!corId) { mostrarErro('Selecione a Cor de Tinta (aba Geral).'); return; }
+
+  const payload = {
+    codigo, nome,
+    cor_tinta_id: corId,
+    aplicacao: document.getElementById('f_aplicacao').value.trim() || null,
+    ativo: document.getElementById('f_ativo').checked,
+  };
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const query = idEdicao
+    ? supabase.from('receitas_tinta').update(payload).eq('id', idEdicao)
+    : supabase.from('receitas_tinta').insert({ ...payload, tenant_id: TENANT_ID, criado_por: usuario?.id }).select('id').single();
+  const { data, error } = await query;
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Salvar Receita';
+    mostrarErro('Erro ao salvar: ' + (error.code === '23505' ? 'já existe uma receita com esse código.' : error.message));
+    return;
+  }
+
+  const novoId = idEdicao || data?.id;
+  window.location.href = `casa-tintas-receita-nova.html?id=${novoId}`;
+});
+
+// ---------- Versões ----------
+let versoesCache = [];
+
+async function carregarVersoes() {
+  const lista = document.getElementById('lista-versoes');
+  const { data, error } = await supabase
+    .from('receitas_tinta_versoes')
+    .select('id, numero_versao, status, custo_teorico, aprovado_em')
+    .eq('receita_id', idEdicao)
+    .order('numero_versao', { ascending: false });
+
+  if (error) { lista.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
+  versoesCache = data || [];
+
+  if (!versoesCache.length) { lista.innerHTML = `<div class="empty-state">Nenhuma versão criada ainda. Clique em "Nova Versão" para começar.</div>`; return; }
+
+  lista.innerHTML = versoesCache.map(v => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">
+        <div>Versão ${v.numero_versao}${v.aprovado_em ? ' · aprovada em ' + fmtDataHora(v.aprovado_em) : ''}</div>
+        <div style="font-size:11px; color:var(--ink-soft);">Custo teórico: ${fmt(v.custo_teorico)}</div>
+      </div>
+      <span class="badge ${BADGE_STATUS[v.status]}" style="margin-right:12px;">${LABEL_STATUS[v.status]}</span>
+      <button class="icon-btn" data-abrir-versao="${v.id}"><i data-lucide="folder-open"></i> Abrir</button>
+    </div>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-nova-versao').addEventListener('click', async () => {
+  const ultima = versoesCache[0]; // já ordenado desc
+  const proximoNumero = ultima ? ultima.numero_versao + 1 : 1;
+
+  const { data: novaVersao, error } = await supabase.from('receitas_tinta_versoes').insert({
+    tenant_id: TENANT_ID, receita_id: idEdicao, numero_versao: proximoNumero, status: 'rascunho',
+    criado_por: usuario?.id,
+    // copia os parâmetros técnicos da última versão como ponto de partida (se houver)
+    ...(ultima ? {} : {}),
+  }).select('id').single();
+
+  if (error) { alert('Erro ao criar versão: ' + error.message); return; }
+
+  // Se havia versão anterior, copia parâmetros + itens como ponto de partida
+  if (ultima) {
+    const { data: anteriorCompleta } = await supabase.from('receitas_tinta_versoes').select('*').eq('id', ultima.id).single();
+    const { data: itensAnteriores } = await supabase.from('receitas_tinta_itens').select('insumo_id, quantidade, funcao, tolerancia_pesagem_percentual').eq('versao_id', ultima.id);
+
+    if (anteriorCompleta) {
+      await supabase.from('receitas_tinta_versoes').update({
+        quantidade_minima_lote: anteriorCompleta.quantidade_minima_lote,
+        quantidade_maxima_lote: anteriorCompleta.quantidade_maxima_lote,
+        viscosidade_alvo: anteriorCompleta.viscosidade_alvo,
+        viscosidade_tolerancia: anteriorCompleta.viscosidade_tolerancia,
+        viscosidade_metodo: anteriorCompleta.viscosidade_metodo,
+        densidade_alvo: anteriorCompleta.densidade_alvo,
+        densidade_tolerancia: anteriorCompleta.densidade_tolerancia,
+        delta_e_tolerancia: anteriorCompleta.delta_e_tolerancia,
+        observacoes: anteriorCompleta.observacoes,
+      }).eq('id', novaVersao.id);
+    }
+    if (itensAnteriores?.length) {
+      await supabase.from('receitas_tinta_itens').insert(
+        itensAnteriores.map(it => ({ ...it, tenant_id: TENANT_ID, versao_id: novaVersao.id, criado_por: usuario?.id }))
+      );
+    }
+  }
+
+  await carregarVersoes();
+  abrirModalVersao(novaVersao.id);
+});
+
+document.getElementById('lista-versoes').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-abrir-versao]');
+  if (btn) abrirModalVersao(btn.dataset.abrirVersao);
+});
+
+// ---------- Modal de Versão ----------
+const modalVersao = document.getElementById('modal-versao');
+let versaoEmEdicao = null, statusVersaoEmEdicao = null;
+
+async function abrirModalVersao(versaoId) {
+  versaoEmEdicao = versaoId;
+  const { data: v, error } = await supabase.from('receitas_tinta_versoes').select('*').eq('id', versaoId).single();
+  if (error || !v) { alert('Erro ao carregar versão.'); return; }
+  statusVersaoEmEdicao = v.status;
+
+  document.getElementById('versao-titulo').textContent = `Versão ${v.numero_versao}`;
+  document.getElementById('versao-status-sub').innerHTML = `<span class="badge ${BADGE_STATUS[v.status]}">${LABEL_STATUS[v.status]}</span>`;
+  document.getElementById('v_qtd_min').value = v.quantidade_minima_lote ?? '';
+  document.getElementById('v_qtd_max').value = v.quantidade_maxima_lote ?? '';
+  document.getElementById('v_custo_teorico').value = fmt(v.custo_teorico);
+  document.getElementById('v_visc_alvo').value = v.viscosidade_alvo ?? '';
+  document.getElementById('v_visc_tolerancia').value = v.viscosidade_tolerancia ?? '';
+  document.getElementById('v_visc_metodo').value = v.viscosidade_metodo ?? '';
+  document.getElementById('v_dens_alvo').value = v.densidade_alvo ?? '';
+  document.getElementById('v_dens_tolerancia').value = v.densidade_tolerancia ?? '';
+  document.getElementById('v_delta_e').value = v.delta_e_tolerancia ?? '';
+  document.getElementById('v_observacoes').value = v.observacoes ?? '';
+
+  const editavel = ['rascunho', 'em_teste'].includes(v.status);
+  document.querySelectorAll('#modal-versao .input:not(#v_custo_teorico)').forEach(el => el.disabled = !editavel);
+  document.getElementById('btn-salvar-parametros').style.display = editavel ? 'inline-flex' : 'none';
+  document.getElementById('form-novo-item').style.display = editavel ? 'flex' : 'none';
+  document.getElementById('versao-aviso-congelada').style.display = editavel ? 'none' : 'block';
+
+  document.getElementById('btn-enviar-teste').style.display = v.status === 'rascunho' ? 'inline-flex' : 'none';
+  document.getElementById('btn-aprovar').style.display = v.status === 'em_teste' ? 'inline-flex' : 'none';
+  document.getElementById('btn-bloquear').style.display = v.status === 'aprovada' ? 'inline-flex' : 'none';
+  document.getElementById('btn-obsoleta').style.display = ['aprovada','bloqueada'].includes(v.status) ? 'inline-flex' : 'none';
+
+  await carregarItensVersao();
+  modalVersao.classList.add('open');
+}
+
+document.getElementById('btn-fechar-versao').addEventListener('click', async () => {
+  modalVersao.classList.remove('open');
+  await carregarVersoes();
+});
+
+document.getElementById('btn-salvar-parametros').addEventListener('click', async () => {
+  const payload = {
+    quantidade_minima_lote: document.getElementById('v_qtd_min').value ? Number(document.getElementById('v_qtd_min').value) : null,
+    quantidade_maxima_lote: document.getElementById('v_qtd_max').value ? Number(document.getElementById('v_qtd_max').value) : null,
+    viscosidade_alvo: document.getElementById('v_visc_alvo').value ? Number(document.getElementById('v_visc_alvo').value) : null,
+    viscosidade_tolerancia: document.getElementById('v_visc_tolerancia').value ? Number(document.getElementById('v_visc_tolerancia').value) : null,
+    viscosidade_metodo: document.getElementById('v_visc_metodo').value.trim() || null,
+    densidade_alvo: document.getElementById('v_dens_alvo').value ? Number(document.getElementById('v_dens_alvo').value) : null,
+    densidade_tolerancia: document.getElementById('v_dens_tolerancia').value ? Number(document.getElementById('v_dens_tolerancia').value) : null,
+    delta_e_tolerancia: document.getElementById('v_delta_e').value ? Number(document.getElementById('v_delta_e').value) : null,
+    observacoes: document.getElementById('v_observacoes').value.trim() || null,
+  };
+  const { error } = await supabase.from('receitas_tinta_versoes').update(payload).eq('id', versaoEmEdicao);
+  if (error) { alert('Erro ao salvar parâmetros: ' + error.message); return; }
+  alert('Parâmetros salvos.');
+});
+
+// ---------- Itens da versão ----------
+async function carregarItensVersao() {
+  const lista = document.getElementById('lista-itens-versao');
+  const { data, error } = await supabase
+    .from('receitas_tinta_itens')
+    .select('id, quantidade, funcao, tolerancia_pesagem_percentual, insumos_tinta(codigo, nome, unidade_medida)')
+    .eq('versao_id', versaoEmEdicao)
+    .order('criado_em');
+
+  if (error) { lista.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
+  if (!data?.length) { lista.innerHTML = `<div class="empty-state">Nenhum item na composição ainda.</div>`; return; }
+
+  const totalQuantidade = data.reduce((s, it) => s + Number(it.quantidade), 0);
+  const editavel = ['rascunho', 'em_teste'].includes(statusVersaoEmEdicao);
+
+  lista.innerHTML = data.map(it => `
+    <div class="lista-selecao-linha">
+      <div class="col-desc">
+        <div>${it.insumos_tinta?.codigo ?? ''} — ${it.insumos_tinta?.nome ?? '(insumo removido)'}${it.funcao ? ' · ' + it.funcao : ''}</div>
+        <div style="font-size:11px; color:var(--ink-soft);">${totalQuantidade > 0 ? (Number(it.quantidade)/totalQuantidade*100).toFixed(1) + '% da composição' : ''}${it.tolerancia_pesagem_percentual != null ? ' · tolerância ±' + it.tolerancia_pesagem_percentual + '%' : ''}</div>
+      </div>
+      <div class="col-valor mono">${fmtNum(it.quantidade)} ${it.insumos_tinta?.unidade_medida ?? ''}</div>
+      ${editavel ? `<button class="icon-btn danger" data-remover-item="${it.id}" style="margin-left:8px;"><i data-lucide="trash-2"></i></button>` : ''}
+    </div>`).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById('btn-add-item').addEventListener('click', async () => {
+  const insumoId = document.getElementById('ni_insumo').value;
+  const quantidade = parseFloat(document.getElementById('ni_quantidade').value || 0);
+  if (!insumoId) { alert('Selecione um insumo.'); return; }
+  if (!quantidade || quantidade <= 0) { alert('Informe a quantidade.'); return; }
+
+  const { error } = await supabase.from('receitas_tinta_itens').insert({
+    tenant_id: TENANT_ID, versao_id: versaoEmEdicao, insumo_id: insumoId, quantidade,
+    funcao: document.getElementById('ni_funcao').value.trim() || null,
+    tolerancia_pesagem_percentual: document.getElementById('ni_tolerancia').value ? Number(document.getElementById('ni_tolerancia').value) : null,
+    criado_por: usuario?.id,
+  });
+  if (error) { alert('Erro ao adicionar item: ' + error.message); return; }
+
+  document.getElementById('ni_quantidade').value = '';
+  document.getElementById('ni_funcao').value = '';
+  document.getElementById('ni_tolerancia').value = '';
+  await carregarItensVersao();
+  // custo teórico é recalculado sozinho pelo trigger — só refletir na tela
+  const { data: vAtual } = await supabase.from('receitas_tinta_versoes').select('custo_teorico').eq('id', versaoEmEdicao).single();
+  if (vAtual) document.getElementById('v_custo_teorico').value = fmt(vAtual.custo_teorico);
+});
+
+document.getElementById('lista-itens-versao').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-remover-item]');
+  if (!btn) return;
+  if (!confirm('Remover este item da composição?')) return;
+  const { error } = await supabase.from('receitas_tinta_itens').delete().eq('id', btn.dataset.removerItem);
+  if (error) { alert('Erro ao remover: ' + error.message); return; }
+  await carregarItensVersao();
+  const { data: vAtual } = await supabase.from('receitas_tinta_versoes').select('custo_teorico').eq('id', versaoEmEdicao).single();
+  if (vAtual) document.getElementById('v_custo_teorico').value = fmt(vAtual.custo_teorico);
+});
+
+// ---------- Fluxo de status ----------
+async function mudarStatusVersao(novoStatus, extraPayload = {}) {
+  const { error } = await supabase.from('receitas_tinta_versoes').update({ status: novoStatus, ...extraPayload }).eq('id', versaoEmEdicao);
+  if (error) { alert('Erro ao mudar status: ' + error.message); return; }
+  await abrirModalVersao(versaoEmEdicao);
+}
+
+document.getElementById('btn-enviar-teste').addEventListener('click', () => {
+  if (confirm('Enviar esta versão para teste?')) mudarStatusVersao('em_teste');
+});
+document.getElementById('btn-aprovar').addEventListener('click', () => {
+  if (confirm('Aprovar esta versão? A partir de agora ela fica congelada — qualquer mudança na fórmula vai exigir uma nova versão.')) {
+    mudarStatusVersao('aprovada', { aprovador_id: usuario?.id, aprovado_em: new Date().toISOString() });
+  }
+});
+document.getElementById('btn-bloquear').addEventListener('click', () => {
+  if (confirm('Bloquear esta versão? Ela deixa de estar disponível para uso em novas preparações.')) mudarStatusVersao('bloqueada');
+});
+document.getElementById('btn-obsoleta').addEventListener('click', () => {
+  if (confirm('Marcar esta versão como obsoleta?')) mudarStatusVersao('obsoleta');
+});
+</script>
+</body>
+</html>

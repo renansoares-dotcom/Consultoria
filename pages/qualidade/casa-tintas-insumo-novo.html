@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insumo de Tinta — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link active"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page" style="max-width:1080px;">
+  <div class="janela">
+    <div class="janela-titulo">
+      <div class="janela-titulo-texto">
+        <span class="janela-titulo-icone">◆</span>
+        <span id="titulo-janela">Novo Insumo de Tinta</span>
+      </div>
+      <div class="janela-titulo-acoes">
+        <a href="casa-tintas.html" class="janela-btn" title="Voltar">←</a>
+      </div>
+    </div>
+
+    <nav class="subnav janela-abas">
+      <button class="active" data-tab="geral">Geral</button>
+      <button data-tab="seguranca">Segurança (FISPQ)</button>
+    </nav>
+
+    <div class="janela-corpo">
+      <div id="aviso-erro" class="card" style="display:none; border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:16px; font-size:13px;"></div>
+
+      <!-- ============================== GERAL ============================== -->
+      <div id="tab-geral">
+        <div class="linha-flex">
+          <label class="field f-160">
+            <span class="field-label">Código *</span>
+            <input class="input mono" type="text" id="f_codigo" required>
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Nome *</span>
+            <input class="input" type="text" id="f_nome" required>
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Tipo *</span>
+            <select class="input" id="f_tipo" required>
+              <option value="">Selecione…</option>
+              <option value="tinta_base">Tinta-Base</option>
+              <option value="pigmento_concentrado">Pigmento/Concentrado</option>
+              <option value="verniz">Verniz</option>
+              <option value="solvente">Solvente</option>
+              <option value="retardador">Retardador</option>
+              <option value="diluente">Diluente</option>
+              <option value="plastificante">Plastificante</option>
+              <option value="aditivo">Aditivo</option>
+              <option value="limpeza">Produto de Limpeza</option>
+            </select>
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">Sistema de Tinta</span>
+            <select class="input" id="f_sistema"><option value="">Selecione…</option></select>
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Unidade de Medida *</span>
+            <select class="input" id="f_unidade" required>
+              <option value="KG">KG — Quilograma</option>
+              <option value="L">L — Litro</option>
+              <option value="UN">UN — Unidade</option>
+            </select>
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Fornecedor Padrão</span>
+            <select class="input" id="f_fornecedor"><option value="">Selecione…</option></select>
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Custo de Referência (R$)</span>
+            <input class="input mono" type="number" step="0.01" min="0" id="f_custo_referencia">
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-200">
+            <span class="field-label">Densidade de Referência (kg/L)</span>
+            <input class="input mono" type="number" step="0.0001" min="0" id="f_densidade_referencia">
+          </label>
+          <label class="field f-200">
+            <span class="field-label">Temperatura de Referência (°C)</span>
+            <input class="input mono" type="number" step="0.1" id="f_temperatura_referencia_c">
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_ativo" checked>
+              <label for="f_ativo" style="margin:0;">Ativo</label>
+            </span>
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">Observações</span>
+          <textarea class="input" id="f_observacoes" style="min-height:80px; resize:vertical;"></textarea>
+        </label>
+      </div>
+
+      <!-- ============================== SEGURANÇA (FISPQ) ============================== -->
+      <div id="tab-seguranca" style="display:none;">
+        <div class="caixa-info" style="margin-bottom:16px;">
+          <strong>Informações de segurança do insumo</strong><br>
+          Salvas junto com o insumo. O anexo da FISPQ é opcional e pode ser enviado depois.
+        </div>
+        <div class="linha-flex">
+          <label class="field f-260">
+            <span class="field-label">Classe de Risco</span>
+            <input class="input" type="text" id="f_classe_risco" placeholder="Ex: Inflamável categoria 3">
+          </label>
+          <label class="field f-160">
+            <span class="field-label">Ponto de Fulgor (°C)</span>
+            <input class="input mono" type="number" step="0.1" id="f_ponto_fulgor_c">
+          </label>
+          <label class="field" style="align-self:flex-end;">
+            <span class="checkbox-field" style="margin-bottom:0;">
+              <input type="checkbox" id="f_inflamavel">
+              <label for="f_inflamavel" style="margin:0;">Inflamável</label>
+            </span>
+          </label>
+        </div>
+        <div class="linha-flex">
+          <label class="field f-grow">
+            <span class="field-label">EPI Necessário</span>
+            <input class="input" type="text" id="f_epi_necessario" placeholder="Ex: Luva nitrílica, óculos de proteção">
+          </label>
+          <label class="field f-grow">
+            <span class="field-label">Local de Armazenagem</span>
+            <input class="input" type="text" id="f_local_armazenagem" placeholder="Ex: Armário ventilado A2">
+          </label>
+        </div>
+        <label class="field">
+          <span class="field-label">Observações de Segurança</span>
+          <textarea class="input" id="f_observacoes_seguranca" style="min-height:60px; resize:vertical;"></textarea>
+        </label>
+
+        <div class="field">
+          <span class="field-label">Ficha FISPQ (PDF)</span>
+          <div id="fispq-atual" style="margin-bottom:8px; font-size:13px; color:var(--ink-soft);">Nenhum arquivo enviado.</div>
+          <input type="file" id="input-fispq" accept="application/pdf" style="display:none;">
+          <button class="btn ghost" type="button" id="btn-anexar-fispq"><i data-lucide="paperclip"></i> Anexar FISPQ</button>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:18px;">
+        <button class="btn primary" type="button" id="btn-salvar">Salvar Insumo</button>
+      </div>
+    </div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+// ---------- Abas ----------
+document.querySelectorAll('.subnav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.subnav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  ['geral','seguranca'].forEach(t => document.getElementById('tab-'+t).style.display = (t === b.dataset.tab ? 'block' : 'none'));
+}));
+
+function mostrarErro(msg) {
+  const box = document.getElementById('aviso-erro');
+  box.textContent = msg; box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ---------- Selects auxiliares ----------
+const { data: sistemas } = await supabase.from('sistemas_tinta').select('id, nome').eq('ativo', true).order('nome');
+document.getElementById('f_sistema').insertAdjacentHTML('beforeend', (sistemas || []).map(s => `<option value="${s.id}">${s.nome}</option>`).join(''));
+
+const { data: fornecedores } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'fornecedores').eq('ativo', true).order('nome');
+document.getElementById('f_fornecedor').insertAdjacentHTML('beforeend', (fornecedores || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join(''));
+
+// ---------- Carregar em modo edição ----------
+const params = new URLSearchParams(location.search);
+const idEdicao = params.get('id');
+let fispqPathAtual = null;
+let arquivoFispqSelecionado = null;
+
+const CAMPOS_TEXTO = ['codigo', 'nome', 'tipo', 'sistema_tinta_id', 'fornecedor_padrao_id', 'observacoes'];
+const CAMPOS_NUMERO = ['custo_referencia', 'densidade_referencia', 'temperatura_referencia_c'];
+
+if (idEdicao) {
+  document.getElementById('titulo-janela').textContent = 'Editar Insumo de Tinta';
+  const { data: i, error } = await supabase.from('insumos_tinta').select('*').eq('id', idEdicao).single();
+  if (error || !i) {
+    mostrarErro('Insumo não encontrado.');
+  } else {
+    document.getElementById('f_codigo').value = i.codigo ?? '';
+    document.getElementById('f_nome').value = i.nome ?? '';
+    document.getElementById('f_tipo').value = i.tipo ?? '';
+    document.getElementById('f_sistema').value = i.sistema_tinta_id ?? '';
+    document.getElementById('f_unidade').value = i.unidade_medida ?? 'KG';
+    document.getElementById('f_fornecedor').value = i.fornecedor_padrao_id ?? '';
+    document.getElementById('f_custo_referencia').value = i.custo_referencia ?? '';
+    document.getElementById('f_densidade_referencia').value = i.densidade_referencia ?? '';
+    document.getElementById('f_temperatura_referencia_c').value = i.temperatura_referencia_c ?? '';
+    document.getElementById('f_observacoes').value = i.observacoes ?? '';
+    document.getElementById('f_ativo').checked = i.ativo !== false;
+
+    const { data: seg } = await supabase.from('especificacoes_seguranca_insumo').select('*').eq('insumo_id', idEdicao).maybeSingle();
+    if (seg) {
+      document.getElementById('f_classe_risco').value = seg.classe_risco ?? '';
+      document.getElementById('f_ponto_fulgor_c').value = seg.ponto_fulgor_c ?? '';
+      document.getElementById('f_inflamavel').checked = !!seg.inflamavel;
+      document.getElementById('f_epi_necessario').value = seg.epi_necessario ?? '';
+      document.getElementById('f_local_armazenagem').value = seg.local_armazenagem ?? '';
+      document.getElementById('f_observacoes_seguranca').value = seg.observacoes ?? '';
+      if (seg.fispq_arquivo_path) {
+        fispqPathAtual = seg.fispq_arquivo_path;
+        document.getElementById('fispq-atual').innerHTML = `<a href="#" id="link-baixar-fispq" style="color:var(--accent);">${seg.fispq_arquivo_nome || 'Baixar FISPQ'}</a>`;
+        document.getElementById('link-baixar-fispq').addEventListener('click', async (e) => {
+          e.preventDefault();
+          const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(fispqPathAtual, 300);
+          if (signed?.signedUrl) window.open(signed.signedUrl, '_blank');
+        });
+      }
+    }
+  }
+}
+
+// ---------- Anexo FISPQ ----------
+document.getElementById('btn-anexar-fispq').addEventListener('click', () => document.getElementById('input-fispq').click());
+document.getElementById('input-fispq').addEventListener('change', (e) => {
+  arquivoFispqSelecionado = e.target.files[0] || null;
+  if (arquivoFispqSelecionado) {
+    document.getElementById('fispq-atual').textContent = `Selecionado: ${arquivoFispqSelecionado.name} (será enviado ao salvar)`;
+  }
+});
+
+// ---------- Salvar ----------
+document.getElementById('btn-salvar').addEventListener('click', async () => {
+  document.getElementById('aviso-erro').style.display = 'none';
+
+  const codigo = document.getElementById('f_codigo').value.trim();
+  const nome = document.getElementById('f_nome').value.trim();
+  const tipo = document.getElementById('f_tipo').value;
+  if (!codigo) { mostrarErro('Preencha o Código (aba Geral).'); return; }
+  if (!nome) { mostrarErro('Preencha o Nome (aba Geral).'); return; }
+  if (!tipo) { mostrarErro('Selecione o Tipo (aba Geral).'); return; }
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const payloadInsumo = {
+    codigo, nome, tipo,
+    sistema_tinta_id: document.getElementById('f_sistema').value || null,
+    unidade_medida: document.getElementById('f_unidade').value,
+    fornecedor_padrao_id: document.getElementById('f_fornecedor').value || null,
+    custo_referencia: document.getElementById('f_custo_referencia').value ? Number(document.getElementById('f_custo_referencia').value) : null,
+    densidade_referencia: document.getElementById('f_densidade_referencia').value ? Number(document.getElementById('f_densidade_referencia').value) : null,
+    temperatura_referencia_c: document.getElementById('f_temperatura_referencia_c').value ? Number(document.getElementById('f_temperatura_referencia_c').value) : null,
+    observacoes: document.getElementById('f_observacoes').value.trim() || null,
+    ativo: document.getElementById('f_ativo').checked,
+  };
+
+  const queryInsumo = idEdicao
+    ? supabase.from('insumos_tinta').update(payloadInsumo).eq('id', idEdicao).select('id').single()
+    : supabase.from('insumos_tinta').insert({ ...payloadInsumo, tenant_id: TENANT_ID, criado_por: usuario?.id }).select('id').single();
+  const { data: insumoSalvo, error: erroInsumo } = await queryInsumo;
+
+  if (erroInsumo) {
+    btn.disabled = false; btn.textContent = 'Salvar Insumo';
+    mostrarErro('Erro ao salvar insumo: ' + (erroInsumo.code === '23505' ? 'já existe um insumo com esse código.' : erroInsumo.message));
+    return;
+  }
+
+  const insumoId = idEdicao || insumoSalvo?.id;
+
+  // Upload da FISPQ, se um arquivo novo foi selecionado
+  let novoPath = fispqPathAtual;
+  let novoNome = null;
+  if (arquivoFispqSelecionado) {
+    const caminho = `${TENANT_ID}/casa-tintas/insumos/${insumoId}/fispq_${Date.now()}_${arquivoFispqSelecionado.name}`;
+    const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivoFispqSelecionado);
+    if (erroUpload) {
+      btn.disabled = false; btn.textContent = 'Salvar Insumo';
+      mostrarErro('Insumo salvo, mas houve erro ao enviar a FISPQ: ' + erroUpload.message);
+      return;
+    }
+    novoPath = caminho;
+    novoNome = arquivoFispqSelecionado.name;
+  }
+
+  const payloadSeguranca = {
+    tenant_id: TENANT_ID,
+    insumo_id: insumoId,
+    classe_risco: document.getElementById('f_classe_risco').value.trim() || null,
+    inflamavel: document.getElementById('f_inflamavel').checked,
+    ponto_fulgor_c: document.getElementById('f_ponto_fulgor_c').value ? Number(document.getElementById('f_ponto_fulgor_c').value) : null,
+    epi_necessario: document.getElementById('f_epi_necessario').value.trim() || null,
+    local_armazenagem: document.getElementById('f_local_armazenagem').value.trim() || null,
+    observacoes: document.getElementById('f_observacoes_seguranca').value.trim() || null,
+    ...(novoPath ? { fispq_arquivo_path: novoPath } : {}),
+    ...(novoNome ? { fispq_arquivo_nome: novoNome } : {}),
+  };
+
+  const { error: erroSeguranca } = await supabase.from('especificacoes_seguranca_insumo')
+    .upsert(payloadSeguranca, { onConflict: 'insumo_id' });
+
+  if (erroSeguranca) {
+    btn.disabled = false; btn.textContent = 'Salvar Insumo';
+    mostrarErro('Insumo salvo, mas houve erro ao salvar dados de segurança: ' + erroSeguranca.message);
+    return;
+  }
+
+  window.location.href = `casa-tintas-insumo-novo.html?id=${insumoId}`;
+});
+</script>
+</body>
+</html>
