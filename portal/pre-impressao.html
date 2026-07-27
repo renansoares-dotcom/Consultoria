@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pré-impressão — Portal do Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="app-main" style="margin-left:0;">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>PORTAL DO CLIENTE</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow" id="cliente-nome">Portal do Cliente</span>
+      <h1>Pré-impressão</h1>
+    </div>
+  </div>
+
+  <div class="subnav" style="margin-bottom:18px;">
+    <button onclick="window.location.href='meus-pedidos.html'">Meus Pedidos</button>
+    <button class="active">Pré-impressão</button>
+    <button onclick="window.location.href='financeiro.html'">Financeiro</button>
+  </div>
+
+  <div id="lista-projetos">
+    <div class="card" style="padding:40px; text-align:center; color:var(--ink-soft);">Carregando…</div>
+  </div>
+</main>
+  </div>
+</div>
+
+<!-- Modal: detalhe do projeto de arte + decisão -->
+<div class="modal-overlay" id="modal-arte">
+  <div class="modal" style="max-width:640px;">
+    <h2 id="arte-titulo">Projeto de Arte</h2>
+    <div class="modal-sub" id="arte-status-sub">—</div>
+
+    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:16px 0 8px;">Arquivos</div>
+    <div class="lista-selecao" id="lista-versoes" style="margin-bottom:18px;">
+      <div class="empty-state">Carregando…</div>
+    </div>
+
+    <div id="bloco-historico" style="display:none;">
+      <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:8px;">Histórico de Decisões</div>
+      <div id="lista-decisoes" style="margin-bottom:18px;"></div>
+    </div>
+
+    <div id="bloco-decisao" style="display:none;">
+      <div class="caixa-info" style="margin-bottom:14px;">
+        Sua decisão vale para a versão mais recente do arquivo (a do topo da lista acima).
+      </div>
+      <label class="field">
+        <span class="field-label">Comentário (opcional para aprovar, recomendado para reprovar/solicitar alteração)</span>
+        <textarea class="input" id="ar_comentario" style="min-height:70px; resize:vertical;"></textarea>
+      </label>
+      <div class="modal-actions" style="justify-content:flex-start; gap:8px;">
+        <button class="btn primary" type="button" id="btn-aprovar-arte">Aprovar</button>
+        <button class="btn ghost" type="button" id="btn-alteracao-arte">Solicitar Alteração</button>
+        <button class="btn ghost" type="button" id="btn-reprovar-arte" style="color:var(--red);">Reprovar</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-fechar-arte">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessaoPortal, usuarioPortalAtual } from '../js/portal-client.js';
+
+const sessao = await exigirSessaoPortal();
+const usuario = await usuarioPortalAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  document.getElementById('cliente-nome').textContent = usuario.favorecidos?.nome ?? 'Portal do Cliente';
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do Portal?')) { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+});
+
+const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+const LABEL_STATUS = { em_andamento: 'Em Andamento', aguardando_aprovacao: 'Aguardando sua aprovação', aprovado: 'Aprovado', reprovado: 'Reprovado', cancelado: 'Cancelado' };
+const BADGE_STATUS = { em_andamento: 'parcial', aguardando_aprovacao: 'aberto', aprovado: 'liquidado', reprovado: 'inadimplente', cancelado: '' };
+const LABEL_DECISAO = { aprovado: 'Aprovado', reprovado: 'Reprovado', solicitar_alteracao: 'Alteração solicitada' };
+
+async function carregar() {
+  const container = document.getElementById('lista-projetos');
+  const { data: projetos, error } = await supabase
+    .from('projetos_arte')
+    .select('id, nome, status, criado_em, produtos(codigo, nome)')
+    .order('criado_em', { ascending: false });
+
+  if (error) { container.innerHTML = `<div class="card" style="padding:40px; text-align:center; color:var(--red);">Erro: ${error.message}</div>`; return; }
+  if (!projetos?.length) { container.innerHTML = `<div class="card" style="padding:40px; text-align:center; color:var(--ink-soft);">Nenhum projeto de arte ainda.</div>`; return; }
+
+  container.innerHTML = `
+    <section class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead><tr><th>Projeto</th><th>Produto</th><th>Status</th><th style="text-align:right;">Ações</th></tr></thead>
+        <tbody>
+          ${projetos.map(p => `
+            <tr>
+              <td>${p.nome}</td>
+              <td>${p.produtos?.codigo ? p.produtos.codigo + ' — ' : ''}${p.produtos?.nome ?? '—'}</td>
+              <td><span class="badge ${BADGE_STATUS[p.status]}">${LABEL_STATUS[p.status] ?? p.status}</span></td>
+              <td style="text-align:right;"><button class="icon-btn" data-abrir="${p.id}"><i data-lucide="folder-open"></i> Abrir</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </section>`;
+  if (window.lucide) lucide.createIcons();
+}
+
+// ---------- Modal de detalhe ----------
+const modalArte = document.getElementById('modal-arte');
+let projetoEmVisualizacao = null;
+
+document.getElementById('lista-projetos').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-abrir]');
+  if (!btn) return;
+  await abrirModalArte(btn.dataset.abrir);
+});
+
+async function abrirModalArte(projetoId) {
+  const { data: projeto, error } = await supabase.from('projetos_arte').select('*').eq('id', projetoId).single();
+  if (error || !projeto) { alert('Erro ao carregar projeto.'); return; }
+  projetoEmVisualizacao = projeto;
+
+  document.getElementById('arte-titulo').textContent = projeto.nome;
+  document.getElementById('arte-status-sub').innerHTML = `<span class="badge ${BADGE_STATUS[projeto.status]}">${LABEL_STATUS[projeto.status] ?? projeto.status}</span>`;
+
+  const { data: versoes } = await supabase.from('arte_versoes')
+    .select('id, numero_versao, arquivo_path, arquivo_nome, tamanho_bytes, criado_em')
+    .eq('projeto_id', projetoId)
+    .order('numero_versao', { ascending: false });
+
+  const listaVersoes = document.getElementById('lista-versoes');
+  if (!versoes?.length) {
+    listaVersoes.innerHTML = `<div class="empty-state">Nenhum arquivo enviado ainda.</div>`;
+  } else {
+    listaVersoes.innerHTML = versoes.map((v, i) => `
+      <div class="lista-selecao-linha">
+        <div class="col-desc">
+          <div>${v.arquivo_nome} ${i === 0 ? '<span class="badge liquidado" style="margin-left:6px;">Versão atual</span>' : ''}</div>
+          <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao} · ${fmtDataHora(v.criado_em)}</div>
+        </div>
+        <button class="icon-btn" data-ver-arquivo="${v.arquivo_path}"><i data-lucide="eye"></i> Visualizar</button>
+      </div>`).join('');
+  }
+
+  const versaoMaisRecente = versoes?.[0];
+  const { data: decisoes } = versaoMaisRecente
+    ? await supabase.from('arte_aprovacoes').select('decisao, comentario, criado_em').eq('versao_id', versaoMaisRecente.id).order('criado_em', { ascending: false })
+    : { data: [] };
+
+  const blocoHistorico = document.getElementById('bloco-historico');
+  if (decisoes?.length) {
+    blocoHistorico.style.display = 'block';
+    document.getElementById('lista-decisoes').innerHTML = decisoes.map(d => `
+      <div style="font-size:13px; padding:8px 0; border-bottom:1px solid var(--border-soft);">
+        <span class="badge ${d.decisao === 'aprovado' ? 'liquidado' : (d.decisao === 'reprovado' ? 'inadimplente' : 'parcial')}">${LABEL_DECISAO[d.decisao]}</span>
+        <span style="color:var(--ink-soft); margin-left:8px;">${fmtDataHora(d.criado_em)}</span>
+        ${d.comentario ? `<div style="margin-top:4px;">${d.comentario}</div>` : ''}
+      </div>`).join('');
+  } else {
+    blocoHistorico.style.display = 'none';
+  }
+
+  const podeDecidir = projeto.status === 'aguardando_aprovacao' && versaoMaisRecente;
+  document.getElementById('bloco-decisao').style.display = podeDecidir ? 'block' : 'none';
+  document.getElementById('ar_comentario').value = '';
+  modalArte.dataset.versaoAtualId = versaoMaisRecente?.id ?? '';
+
+  if (window.lucide) lucide.createIcons();
+  modalArte.classList.add('open');
+}
+
+document.getElementById('btn-fechar-arte').addEventListener('click', async () => {
+  modalArte.classList.remove('open');
+  await carregar();
+});
+
+document.getElementById('lista-versoes').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-ver-arquivo]');
+  if (!btn) return;
+  const { data: signed, error } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.verArquivo, 300);
+  if (error || !signed?.signedUrl) { alert('Erro ao gerar link do arquivo: ' + (error?.message ?? '')); return; }
+  window.open(signed.signedUrl, '_blank');
+});
+
+// ---------- Decisão ----------
+async function registrarDecisao(decisao) {
+  const versaoId = modalArte.dataset.versaoAtualId;
+  if (!versaoId) { alert('Nenhuma versão disponível para decidir.'); return; }
+
+  const comentario = document.getElementById('ar_comentario').value.trim();
+  if (decisao !== 'aprovado' && !comentario) {
+    alert('Explique o motivo — isso ajuda nossa equipe a corrigir rápido.');
+    return;
+  }
+
+  const rotulo = decisao === 'aprovado' ? 'aprovar' : (decisao === 'reprovado' ? 'reprovar' : 'solicitar alteração em');
+  if (!confirm(`Confirma que deseja ${rotulo} esta arte?`)) return;
+
+  const { error } = await supabase.from('arte_aprovacoes').insert({
+    tenant_id: usuario?.tenant_id,
+    versao_id: versaoId,
+    decisao,
+    comentario: comentario || null,
+  });
+
+  if (error) { alert('Erro ao registrar decisão: ' + error.message); return; }
+
+  modalArte.classList.remove('open');
+  await carregar();
+}
+
+document.getElementById('btn-aprovar-arte').addEventListener('click', () => registrarDecisao('aprovado'));
+document.getElementById('btn-reprovar-arte').addEventListener('click', () => registrarDecisao('reprovado'));
+document.getElementById('btn-alteracao-arte').addEventListener('click', () => registrarDecisao('solicitar_alteracao'));
+
+await carregar();
+</script>
+</body>
+</html>
