@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financeiro — Portal do Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="app-main" style="margin-left:0;">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>PORTAL DO CLIENTE</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow" id="cliente-nome">Portal do Cliente</span>
+      <h1>Financeiro</h1>
+    </div>
+  </div>
+
+  <div class="subnav" style="margin-bottom:18px;">
+    <button onclick="window.location.href='meus-pedidos.html'">Meus Pedidos</button>
+    <button class="active">Financeiro</button>
+  </div>
+
+  <section class="grid grid-3" style="margin-bottom:18px;">
+    <div class="card"><div class="label">Em Aberto</div><div class="big valor" id="card-aberto">—</div></div>
+    <div class="card"><div class="label">Vencidos</div><div class="big valor" id="card-vencidos" style="color:var(--red);">—</div></div>
+    <div class="card"><div class="label">Pagos (últimos 12 meses)</div><div class="big valor" id="card-pagos">—</div></div>
+  </section>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead><tr><th>Documento</th><th>Descrição</th><th>Vencimento</th><th class="num">Valor</th><th>Status</th><th style="text-align:right;">Ações</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: solicitar prorrogação -->
+<div class="modal-overlay" id="modal-prorrogacao">
+  <div class="modal">
+    <h2>Solicitar Prorrogação</h2>
+    <div class="modal-sub" id="prorrogacao-titulo-nome">—</div>
+
+    <div id="aviso-prorrogacao" class="card" style="display:none; margin-bottom:14px; font-size:13px; border-color:var(--red); background:var(--red-soft); color:var(--red);"></div>
+
+    <label class="field">
+      <span class="field-label">Nova data de vencimento desejada *</span>
+      <input class="input" type="date" id="pr_nova_data">
+    </label>
+    <label class="field">
+      <span class="field-label">Motivo *</span>
+      <textarea class="input" id="pr_motivo" style="min-height:70px; resize:vertical;" placeholder="Explique o motivo do pedido — sua solicitação será analisada pela nossa equipe."></textarea>
+    </label>
+
+    <div class="caixa-info" style="margin-bottom:0;">
+      Esta é uma solicitação — o vencimento só muda de fato depois que nossa equipe analisar e aprovar.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-prorrogacao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-enviar-prorrogacao">Enviar Solicitação</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessaoPortal, usuarioPortalAtual } from '../js/portal-client.js';
+
+const sessao = await exigirSessaoPortal();
+const usuario = await usuarioPortalAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  document.getElementById('cliente-nome').textContent = usuario.favorecidos?.nome ?? 'Portal do Cliente';
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do Portal?')) { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+});
+
+const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+const fmtMoeda = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const LABEL_STATUS = { pago: 'Pago', em_aberto: 'Em Aberto', inadimplente: 'Vencido', parcial: 'Parcial' };
+const BADGE_STATUS = { pago: 'pago', em_aberto: 'aberto', inadimplente: 'inadimplente', parcial: 'parcial' };
+
+async function carregar() {
+  const tbody = document.getElementById('tbody');
+
+  // Nunca um select direto em `lancamentos` — a RPC é a única porta, e ela
+  // já devolve só as colunas seguras, escopadas ao próprio cliente.
+  const { data: titulos, error } = await supabase.rpc('portal_meus_titulos');
+
+  if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro ao carregar títulos: ${error.message}</td></tr>`; return; }
+  if (!titulos?.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum título encontrado ainda.</td></tr>`;
+    document.getElementById('card-aberto').textContent = fmtMoeda(0);
+    document.getElementById('card-vencidos').textContent = fmtMoeda(0);
+    document.getElementById('card-pagos').textContent = fmtMoeda(0);
+    return;
+  }
+
+  // Solicitações de prorrogação já feitas — RLS garante que só vêm as
+  // próprias. Usada só pra saber o que mostrar na coluna Ações.
+  const { data: solicitacoes } = await supabase.from('solicitacoes_prorrogacao')
+    .select('lancamento_id, status, data_vencimento_solicitada')
+    .order('criado_em', { ascending: false });
+  const solicitacaoPorTitulo = new Map();
+  (solicitacoes || []).forEach(s => { if (!solicitacaoPorTitulo.has(s.lancamento_id)) solicitacaoPorTitulo.set(s.lancamento_id, s); });
+  window.__titulosCache = titulos;
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const doze_meses_atras = new Date(); doze_meses_atras.setMonth(doze_meses_atras.getMonth() - 12);
+
+  const totalAberto = titulos.filter(t => t.status === 'em_aberto' || t.status === 'parcial').reduce((s,t) => s + Number(t.valor), 0);
+  const totalVencidos = titulos.filter(t => (t.status === 'em_aberto' || t.status === 'inadimplente') && t.data_vencimento && t.data_vencimento < hoje).reduce((s,t) => s + Number(t.valor), 0);
+  const totalPagos = titulos.filter(t => t.status === 'pago' && t.data_pagamento && new Date(t.data_pagamento) >= doze_meses_atras).reduce((s,t) => s + Number(t.valor), 0);
+
+  document.getElementById('card-aberto').textContent = fmtMoeda(totalAberto);
+  document.getElementById('card-vencidos').textContent = fmtMoeda(totalVencidos);
+  document.getElementById('card-pagos').textContent = fmtMoeda(totalPagos);
+
+  const LABEL_SOLICITACAO = { solicitada: 'Solicitação enviada', em_analise: 'Em análise', aprovada: 'Prorrogação aprovada', recusada: 'Solicitação recusada', cancelada: 'Cancelada' };
+  const BADGE_SOLICITACAO = { solicitada: 'parcial', em_analise: 'parcial', aprovada: 'liquidado', recusada: 'inadimplente', cancelada: '' };
+
+  tbody.innerHTML = titulos.map(t => {
+    const vencido = (t.status === 'em_aberto' || t.status === 'inadimplente') && t.data_vencimento && t.data_vencimento < hoje;
+    const statusExibido = vencido ? 'inadimplente' : t.status;
+    const podeSolicitar = ['em_aberto', 'parcial', 'inadimplente'].includes(t.status);
+    const solicitacao = solicitacaoPorTitulo.get(t.id);
+
+    let acao = '';
+    if (solicitacao && ['solicitada', 'em_analise', 'aprovada'].includes(solicitacao.status)) {
+      acao = `<span class="badge ${BADGE_SOLICITACAO[solicitacao.status]}">${LABEL_SOLICITACAO[solicitacao.status]}</span>`;
+    } else if (podeSolicitar) {
+      acao = `<button class="icon-btn" data-solicitar="${t.id}"><i data-lucide="calendar-clock"></i> Solicitar prorrogação</button>`;
+    } else {
+      acao = '—';
+    }
+
+    return `
+    <tr>
+      <td class="mono">${t.numero_documento ?? '—'}</td>
+      <td>${t.descricao ?? '—'}${t.motivo_prorrogacao ? `<div style="font-size:11px; color:var(--ink-soft);">Prorrogado: ${t.motivo_prorrogacao}</div>` : ''}</td>
+      <td>${fmtData(t.data_prorrogacao_vencimento || t.data_vencimento)}</td>
+      <td class="num mono">${fmtMoeda(t.valor)}</td>
+      <td><span class="badge ${BADGE_STATUS[statusExibido] ?? ''}">${LABEL_STATUS[statusExibido] ?? statusExibido}</span></td>
+      <td style="text-align:right;">${acao}</td>
+    </tr>`;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+// ---------- Modal: solicitar prorrogação ----------
+const modalProrrogacao = document.getElementById('modal-prorrogacao');
+let tituloEmSolicitacao = null;
+
+document.getElementById('tbody').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-solicitar]');
+  if (!btn) return;
+  tituloEmSolicitacao = (window.__titulosCache || []).find(t => t.id === btn.dataset.solicitar);
+  if (!tituloEmSolicitacao) return;
+  document.getElementById('prorrogacao-titulo-nome').textContent = `${tituloEmSolicitacao.numero_documento ?? 'Título'} — vencimento atual ${fmtData(tituloEmSolicitacao.data_vencimento)}`;
+  document.getElementById('pr_nova_data').value = '';
+  document.getElementById('pr_nova_data').min = tituloEmSolicitacao.data_vencimento;
+  document.getElementById('pr_motivo').value = '';
+  document.getElementById('aviso-prorrogacao').style.display = 'none';
+  modalProrrogacao.classList.add('open');
+});
+
+document.getElementById('btn-cancelar-prorrogacao').addEventListener('click', () => modalProrrogacao.classList.remove('open'));
+
+document.getElementById('btn-enviar-prorrogacao').addEventListener('click', async () => {
+  const aviso = document.getElementById('aviso-prorrogacao');
+  aviso.style.display = 'none';
+
+  const novaData = document.getElementById('pr_nova_data').value;
+  const motivo = document.getElementById('pr_motivo').value.trim();
+
+  if (!novaData) { aviso.textContent = 'Escolha a nova data desejada.'; aviso.style.display = 'block'; return; }
+  if (!motivo) { aviso.textContent = 'Explique o motivo do pedido.'; aviso.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btn-enviar-prorrogacao');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  const { error } = await supabase.from('solicitacoes_prorrogacao').insert({
+    tenant_id: usuario?.tenant_id,
+    lancamento_id: tituloEmSolicitacao.id,
+    favorecido_id: usuario?.favorecido_id,
+    data_vencimento_atual: tituloEmSolicitacao.data_vencimento,  // o banco recalcula sozinho; enviado só por completude
+    data_vencimento_solicitada: novaData,
+    motivo,
+  });
+
+  btn.disabled = false; btn.textContent = 'Enviar Solicitação';
+
+  if (error) {
+    aviso.textContent = 'Erro ao enviar: ' + error.message;
+    aviso.style.display = 'block';
+    return;
+  }
+
+  modalProrrogacao.classList.remove('open');
+  await carregar();
+});
+
+await carregar();
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acessos do Portal do Cliente — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link active"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow"><a href="dashboard.html" style="color:inherit; text-decoration:none;">Cadastro</a></span>
+      <h1>Acessos do Portal do Cliente</h1>
+    </div>
+    <button class="btn primary" type="button" id="btn-novo-acesso"><i data-lucide="user-plus"></i> Novo Acesso</button>
+  </div>
+
+  <div class="caixa-info" style="margin-bottom:16px;">
+    Cada acesso é vinculado a um cliente (Favorecido). A pessoa loga em <strong>portal/login.html</strong> — nunca no login interno — e só enxerga os próprios pedidos, protegido por regra no banco de dados.
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Cliente</th><th>Status</th><th style="text-align:right;">Ações</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="5" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: novo acesso do portal -->
+<div class="modal-overlay" id="modal-novo-acesso">
+  <div class="modal">
+    <h2>Novo Acesso ao Portal</h2>
+
+    <div id="aviso-modal" class="card" style="display:none; margin-bottom:14px; font-size:13px;"></div>
+
+    <label class="field">
+      <span class="field-label">Cliente *</span>
+      <select class="input" id="na_favorecido"><option value="">Selecione…</option></select>
+    </label>
+    <label class="field">
+      <span class="field-label">Nome do contato *</span>
+      <input class="input" type="text" id="na_nome">
+    </label>
+    <label class="field">
+      <span class="field-label">E-mail de acesso *</span>
+      <input class="input" type="email" id="na_email">
+    </label>
+    <label class="field">
+      <span class="field-label">Senha inicial *</span>
+      <input class="input" type="text" id="na_senha" placeholder="Mínimo 6 caracteres">
+    </label>
+
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-acesso">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-criar-acesso">Criar Acesso</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+
+const { data: clientes } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'clientes').eq('ativo', true).order('nome');
+document.getElementById('na_favorecido').insertAdjacentHTML('beforeend', (clientes || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join(''));
+
+async function carregar() {
+  const tbody = document.getElementById('tbody');
+  const { data, error } = await supabase.from('usuarios_portal').select('id, nome, email, ativo, favorecidos(nome)').order('nome');
+  if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+  if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhum acesso do portal criado ainda.</td></tr>`; return; }
+
+  tbody.innerHTML = data.map(u => `
+    <tr>
+      <td>${u.nome}</td>
+      <td class="mono">${u.email}</td>
+      <td>${u.favorecidos?.nome ?? '—'}</td>
+      <td><span class="badge ${u.ativo ? 'liquidado' : 'inadimplente'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
+      <td style="text-align:right;"><button class="icon-btn" data-toggle="${u.id}" data-ativo="${u.ativo}">${u.ativo ? 'Desativar' : 'Reativar'}</button></td>
+    </tr>`).join('');
+}
+
+document.getElementById('tbody').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-toggle]');
+  if (!btn) return;
+  const novoValor = btn.dataset.ativo !== 'true';
+  await supabase.from('usuarios_portal').update({ ativo: novoValor }).eq('id', btn.dataset.toggle);
+  await carregar();
+});
+
+// ---------- Modal: novo acesso ----------
+const modal = document.getElementById('modal-novo-acesso');
+document.getElementById('btn-novo-acesso').addEventListener('click', () => {
+  document.getElementById('aviso-modal').style.display = 'none';
+  document.getElementById('na_favorecido').value = '';
+  document.getElementById('na_nome').value = '';
+  document.getElementById('na_email').value = '';
+  document.getElementById('na_senha').value = '';
+  modal.classList.add('open');
+});
+document.getElementById('btn-cancelar-acesso').addEventListener('click', () => modal.classList.remove('open'));
+
+document.getElementById('btn-criar-acesso').addEventListener('click', async () => {
+  const aviso = document.getElementById('aviso-modal');
+  aviso.style.display = 'none';
+
+  const favorecidoId = document.getElementById('na_favorecido').value;
+  const nome = document.getElementById('na_nome').value.trim();
+  const email = document.getElementById('na_email').value.trim();
+  const senha = document.getElementById('na_senha').value;
+
+  if (!favorecidoId) { alert('Selecione o cliente.'); return; }
+  if (!nome) { alert('Informe o nome do contato.'); return; }
+  if (!email) { alert('Informe o e-mail de acesso.'); return; }
+  if (!senha || senha.length < 6) { alert('A senha inicial precisa ter pelo menos 6 caracteres.'); return; }
+
+  const btn = document.getElementById('btn-criar-acesso');
+  btn.disabled = true; btn.textContent = 'Criando…';
+
+  // IMPORTANTE: signUp() troca a sessão ativa do cliente Supabase que o
+  // chama pela sessão do usuário recém-criado. Por isso usamos aqui um
+  // cliente Supabase JOGADO FORA, isolado do `supabase` importado (que
+  // mantém a sessão do administrador logado) — evita derrubar a sessão de
+  // quem está criando o acesso.
+  const clienteDescartavel = createClient(
+    'https://qandcrcjecawcfsvqfhr.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhbmRjcmNqZWNhd2Nmc3ZxZmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4ODc5MjYsImV4cCI6MjA5OTQ2MzkyNn0.T8TMWvSkDXc5AidbBpx8KXrrztZl9rv8HvgBKIUQG8U'
+  );
+
+  const { data: signUpData, error: erroSignUp } = await clienteDescartavel.auth.signUp({ email, password: senha });
+
+  if (erroSignUp || !signUpData?.user) {
+    btn.disabled = false; btn.textContent = 'Criar Acesso';
+    aviso.style.display = 'block';
+    aviso.style.borderColor = 'var(--red)'; aviso.style.background = 'var(--red-soft)'; aviso.style.color = 'var(--red)';
+    aviso.textContent = 'Erro ao criar login: ' + (erroSignUp?.message || 'resposta inesperada do Supabase.');
+    return;
+  }
+
+  const { error: erroPerfil } = await supabase.from('usuarios_portal').insert({
+    id: signUpData.user.id,
+    tenant_id: TENANT_ID,
+    favorecido_id: favorecidoId,
+    nome, email,
+    criado_por: usuario?.id,
+  });
+
+  btn.disabled = false; btn.textContent = 'Criar Acesso';
+
+  if (erroPerfil) {
+    aviso.style.display = 'block';
+    aviso.style.borderColor = 'var(--red)'; aviso.style.background = 'var(--red-soft)'; aviso.style.color = 'var(--red)';
+    aviso.textContent = 'Login criado no Supabase, mas houve erro ao vincular ao cliente: ' + erroPerfil.message + '. Copie o e-mail e avise o suporte técnico.';
+    return;
+  }
+
+  modal.classList.remove('open');
+  alert('Acesso criado. Se a confirmação de e-mail estiver ativa no projeto Supabase, o cliente precisa confirmar o e-mail antes do primeiro login.');
+  await carregar();
+});
+
+await carregar();
+</script>
+</body>
+</html>

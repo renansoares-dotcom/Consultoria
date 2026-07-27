@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Datativo Industrial — Acesso</title>
+<title>Portal do Cliente — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="../css/design-system.css">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
   body.login {
@@ -50,14 +50,14 @@
 
   <div>
     <form class="login-card" id="form-login">
-      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span> <small>ERP</small></div>
-      <div class="sub">Entre com suas credenciais para acessar sua conta.</div>
+      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span> <small>PORTAL</small></div>
+      <div class="sub">Portal do Cliente — acompanhe seus pedidos.</div>
 
       <div id="erro"></div>
 
       <label class="field">
         <span class="field-label">E-mail</span>
-        <input class="input" type="email" id="email" required autocomplete="username" placeholder="voce@empresa.com.br">
+        <input class="input" type="email" id="email" required autocomplete="username" placeholder="voce@suaempresa.com.br">
       </label>
       <label class="field">
         <span class="field-label">Senha</span>
@@ -69,21 +69,29 @@
         <a href="#" id="link-esqueci" style="font-size:12.5px; color:var(--ink-soft); text-decoration:underline;">Esqueci minha senha</a>
       </div>
     </form>
-    <div class="login-footer">ACESSO RESTRITO · DADOS AUDITADOS</div>
+    <div class="login-footer">PORTAL DO CLIENTE · ACESSO RESTRITO</div>
   </div>
 
 <script type="module">
-  import { supabase } from './js/supabase-client.js';
-  import { initTheme } from './js/theme.js';
-  initTheme();
+  import { supabase, usuarioPortalAtual } from '../js/portal-client.js';
 
   const form = document.getElementById('form-login');
   const erroBox = document.getElementById('erro');
   const btn = document.getElementById('btn-entrar');
 
-  // Se já houver sessão válida, pula direto pro dashboard
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) window.location.href = 'pages/financeiro/dashboard.html';
+  const params = new URLSearchParams(location.search);
+  if (params.get('erro') === 'acesso') {
+    erroBox.textContent = 'Este acesso não é válido para o Portal do Cliente. Se você é colaborador da empresa, use o login interno do sistema.';
+    erroBox.style.display = 'block';
+  }
+
+  // Se já houver sessão válida DE PORTAL, pula direto — mas nunca confia
+  // cegamente na sessão: verifica se ela realmente é de um usuário do
+  // portal antes de redirecionar.
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (!session) return;
+    const usuario = await usuarioPortalAtual();
+    if (usuario) window.location.href = 'meus-pedidos.html';
   });
 
   form.addEventListener('submit', async (e) => {
@@ -98,7 +106,6 @@
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
 
     if (error) {
-      console.error('Erro de login Supabase:', error);
       erroBox.textContent = error.message === 'Invalid login credentials'
         ? 'E-mail ou senha inválidos. Verifique e tente novamente.'
         : `Erro: ${error.message}`;
@@ -109,21 +116,20 @@
     }
 
     // Login no Supabase Auth funcionou, mas isso não garante que é um
-    // colaborador interno — pode ser um cliente do Portal usando o
-    // formulário errado. Confirma contra `usuarios` antes de deixar entrar
-    // no ERP interno.
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: colaborador } = await supabase.from('usuarios').select('id').eq('id', user.id).maybeSingle();
-    if (!colaborador) {
+    // usuário do Portal — pode ser um colaborador interno testando este
+    // formulário por engano. Confirma contra usuarios_portal antes de
+    // deixar entrar.
+    const usuario = await usuarioPortalAtual();
+    if (!usuario) {
       await supabase.auth.signOut();
-      erroBox.textContent = 'Este login é do Portal do Cliente, não do sistema interno. Acesse pelo link do Portal enviado a você.';
+      erroBox.textContent = 'Este login não tem acesso ao Portal do Cliente. Se você é colaborador da empresa, use o sistema interno.';
       erroBox.style.display = 'block';
       btn.textContent = 'Entrar';
       btn.disabled = false;
       return;
     }
 
-    window.location.href = 'pages/financeiro/dashboard.html';
+    window.location.href = 'meus-pedidos.html';
   });
 
   document.getElementById('link-esqueci').addEventListener('click', async (e) => {
@@ -136,7 +142,7 @@
       erroBox.style.color = 'var(--amber)';
       return;
     }
-    const redirectTo = window.location.origin + window.location.pathname.replace('index.html', '') + 'pages/redefinir-senha.html';
+    const redirectTo = window.location.origin + window.location.pathname.replace('login.html', '') + 'redefinir-senha.html';
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
     erroBox.style.display = 'block';
     if (error) {

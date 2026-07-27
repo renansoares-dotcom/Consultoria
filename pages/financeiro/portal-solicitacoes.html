@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitações do Portal — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link active"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow"><a href="dashboard.html" style="color:inherit; text-decoration:none;">Financeiro</a></span>
+      <h1>Solicitações do Portal do Cliente</h1>
+    </div>
+  </div>
+
+  <div class="subnav" id="abas">
+    <button class="active" data-status="pendentes">Pendentes</button>
+    <button data-status="todas">Histórico</button>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden; margin-top:16px;">
+    <table>
+      <thead><tr><th>Cliente</th><th>Título</th><th>Vencimento Atual</th><th>Nova Data Pedida</th><th>Motivo</th><th>Status</th><th style="text-align:right;">Ações</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: recusar solicitação -->
+<div class="modal-overlay" id="modal-recusar">
+  <div class="modal">
+    <h2>Recusar Solicitação</h2>
+    <label class="field">
+      <span class="field-label">Motivo da recusa (visível ao cliente) *</span>
+      <textarea class="input" id="rec_motivo" style="min-height:80px; resize:vertical;"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-recusa">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-recusa" style="background:var(--red); border-color:var(--red);">Confirmar Recusa</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const fmtMoeda = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const LABEL_STATUS = { solicitada: 'Solicitada', em_analise: 'Em Análise', aprovada: 'Aprovada', recusada: 'Recusada', cancelada: 'Cancelada' };
+  const BADGE_STATUS = { solicitada: 'aberto', em_analise: 'parcial', aprovada: 'liquidado', recusada: 'inadimplente', cancelada: '' };
+
+  let abaAtual = 'pendentes';
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-status]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    abaAtual = btn.dataset.status;
+    carregar();
+  });
+
+  async function carregar() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+    let query = supabase.from('solicitacoes_prorrogacao')
+      .select('id, data_vencimento_atual, data_vencimento_solicitada, motivo, status, resposta_interna, criado_em, favorecidos(nome), lancamentos(numero_documento, descricao, valor)')
+      .order('criado_em', { ascending: false });
+    if (abaAtual === 'pendentes') query = query.in('status', ['solicitada', 'em_analise']);
+    const { data, error } = await query;
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma solicitação ${abaAtual === 'pendentes' ? 'pendente' : ''}.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(s => `
+      <tr>
+        <td>${s.favorecidos?.nome ?? '—'}</td>
+        <td>${s.lancamentos?.numero_documento ?? '—'} <span style="color:var(--ink-soft); font-size:12px;">(${fmtMoeda(s.lancamentos?.valor)})</span></td>
+        <td>${fmtData(s.data_vencimento_atual)}</td>
+        <td class="mono">${fmtData(s.data_vencimento_solicitada)}</td>
+        <td style="max-width:220px; font-size:13px;">${s.motivo}</td>
+        <td><span class="badge ${BADGE_STATUS[s.status]}">${LABEL_STATUS[s.status]}</span></td>
+        <td style="text-align:right; white-space:nowrap;">
+          ${['solicitada','em_analise'].includes(s.status) ? `
+            <button class="icon-btn" data-aprovar="${s.id}"><i data-lucide="check"></i> Aprovar</button>
+            <button class="icon-btn" data-recusar="${s.id}"><i data-lucide="x"></i> Recusar</button>
+          ` : (s.resposta_interna ? `<span style="font-size:12px; color:var(--ink-soft);">${s.resposta_interna}</span>` : '—')}
+        </td>
+      </tr>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  document.getElementById('tbody').addEventListener('click', async (e) => {
+    const btnAprovar = e.target.closest('[data-aprovar]');
+    const btnRecusar = e.target.closest('[data-recusar]');
+
+    if (btnAprovar) {
+      if (!confirm('Aprovar esta solicitação? O vencimento do título será alterado imediatamente.')) return;
+      const { error } = await supabase.rpc('fn_aprovar_solicitacao_prorrogacao', {
+        p_solicitacao_id: btnAprovar.dataset.aprovar,
+        p_usuario_id: usuario.id,
+      });
+      if (error) { alert('Erro ao aprovar: ' + error.message); return; }
+      await carregar();
+    }
+
+    if (btnRecusar) {
+      solicitacaoEmRecusa = btnRecusar.dataset.recusar;
+      document.getElementById('rec_motivo').value = '';
+      document.getElementById('modal-recusar').classList.add('open');
+    }
+  });
+
+  let solicitacaoEmRecusa = null;
+  document.getElementById('btn-cancelar-recusa').addEventListener('click', () => document.getElementById('modal-recusar').classList.remove('open'));
+  document.getElementById('btn-confirmar-recusa').addEventListener('click', async () => {
+    const motivo = document.getElementById('rec_motivo').value.trim();
+    if (!motivo) { alert('Informe o motivo da recusa — o cliente vai ver essa mensagem.'); return; }
+
+    const { error } = await supabase.from('solicitacoes_prorrogacao')
+      .update({ status: 'recusada', resposta_interna: motivo, analisado_por: usuario.id, analisado_em: new Date().toISOString() })
+      .eq('id', solicitacaoEmRecusa);
+
+    if (error) { alert('Erro ao recusar: ' + error.message); return; }
+    document.getElementById('modal-recusar').classList.remove('open');
+    await carregar();
+  });
+
+  await carregar();
+</script>
+</body>
+</html>

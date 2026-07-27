@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus Pedidos — Portal do Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="app-main" style="margin-left:0;">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>PORTAL DO CLIENTE</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow" id="cliente-nome">Portal do Cliente</span>
+      <h1>Meus Pedidos</h1>
+    </div>
+  </div>
+
+  <div class="subnav" style="margin-bottom:18px;">
+    <button class="active">Meus Pedidos</button>
+    <button onclick="window.location.href='financeiro.html'">Financeiro</button>
+  </div>
+
+  <div id="lista-pedidos">
+    <div class="card" style="padding:40px; text-align:center; color:var(--ink-soft);">Carregando seus pedidos…</div>
+  </div>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessaoPortal, usuarioPortalAtual } from '../js/portal-client.js';
+
+const sessao = await exigirSessaoPortal();
+const usuario = await usuarioPortalAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  document.getElementById('cliente-nome').textContent = usuario.favorecidos?.nome ?? 'Portal do Cliente';
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do Portal?')) { await supabase.auth.signOut(); window.location.href = 'login.html'; }
+});
+
+const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+const fmtMoeda = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+const LABEL_STATUS_PEDIDO = { aberto: 'Aberto', em_producao: 'Em Produção', faturado: 'Faturado', cancelado: 'Cancelado' };
+const BADGE_STATUS_PEDIDO = { aberto: 'aberto', em_producao: 'parcial', faturado: 'liquidado', cancelado: 'inadimplente' };
+const LABEL_STATUS_OP = { planejada: 'Planejada', em_andamento: 'Em Produção', concluida: 'Concluída', cancelada: 'Cancelada' };
+
+async function carregar() {
+  const container = document.getElementById('lista-pedidos');
+
+  // RLS já garante que só voltam pedidos deste cliente — não precisa (e não
+  // deve) filtrar por favorecido_id aqui de novo, o banco já faz isso.
+  const { data: pedidos, error } = await supabase
+    .from('pedidos_venda')
+    .select('id, numero_pedido, data_pedido, data_entrega_prevista, status, observacoes')
+    .order('data_pedido', { ascending: false });
+
+  if (error) { container.innerHTML = `<div class="card" style="padding:40px; text-align:center; color:var(--red);">Erro ao carregar pedidos: ${error.message}</div>`; return; }
+  if (!pedidos?.length) { container.innerHTML = `<div class="card" style="padding:40px; text-align:center; color:var(--ink-soft);">Nenhum pedido encontrado ainda.</div>`; return; }
+
+  const pedidoIds = pedidos.map(p => p.id);
+
+  const { data: itens } = await supabase.from('pedido_venda_itens')
+    .select('pedido_venda_id, produto_id, quantidade, valor_unitario, quantidade_atendida')
+    .in('pedido_venda_id', pedidoIds);
+
+  // Nome/código do produto vêm de uma função RPC dedicada, não de um select
+  // direto em `produtos` — essa tabela tem custo_medio (custo interno de
+  // fábrica) e nunca deve ficar acessível ao portal, nem por engano.
+  const { data: produtosData } = await supabase.rpc('portal_meus_produtos');
+  const mapaProdutos = new Map((produtosData || []).map(p => [p.produto_id, p]));
+
+  const { data: ordens } = await supabase.from('ordens_producao')
+    .select('pedido_venda_id, numero_op, status, quantidade_planejada, quantidade_produzida, data_prevista')
+    .in('pedido_venda_id', pedidoIds);
+
+  const { data: expedicoes } = await supabase.from('expedicoes')
+    .select('pedido_venda_id, numero_expedicao, data_expedicao, transportadora, codigo_rastreio, previsao_entrega, status')
+    .in('pedido_venda_id', pedidoIds);
+
+  container.innerHTML = pedidos.map(p => {
+    const itensPedido = (itens || []).filter(i => i.pedido_venda_id === p.id);
+    const ordensPedido = (ordens || []).filter(o => o.pedido_venda_id === p.id);
+    const expedicoesPedido = (expedicoes || []).filter(e => e.pedido_venda_id === p.id);
+    const totalPedido = itensPedido.reduce((s, i) => s + Number(i.quantidade) * Number(i.valor_unitario), 0);
+
+    return `
+    <section class="card" style="margin-bottom:16px; overflow:hidden;">
+      <div style="padding:18px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border-soft);">
+        <div>
+          <div style="font-weight:600; font-size:15px;">Pedido ${p.numero_pedido}</div>
+          <div style="font-size:12px; color:var(--ink-soft);">Realizado em ${fmtData(p.data_pedido)}${p.data_entrega_prevista ? ' · Previsão de entrega: ' + fmtData(p.data_entrega_prevista) : ''}</div>
+        </div>
+        <span class="badge ${BADGE_STATUS_PEDIDO[p.status]}">${LABEL_STATUS_PEDIDO[p.status] ?? p.status}</span>
+      </div>
+
+      <div style="padding:16px 20px;">
+        <table style="width:100%; margin-bottom: ${(ordensPedido.length || expedicoesPedido.length) ? '16px' : '0'};">
+          <thead><tr><th>Produto</th><th class="num">Quantidade</th><th class="num">Atendido</th><th class="num">Valor</th></tr></thead>
+          <tbody>
+            ${itensPedido.map(i => `
+              <tr>
+                <td>${mapaProdutos.get(i.produto_id)?.codigo ? mapaProdutos.get(i.produto_id).codigo + ' — ' : ''}${mapaProdutos.get(i.produto_id)?.nome ?? '—'}</td>
+                <td class="num mono">${Number(i.quantidade).toLocaleString('pt-BR')}</td>
+                <td class="num mono">${Number(i.quantidade_atendida || 0).toLocaleString('pt-BR')}</td>
+                <td class="num mono">${fmtMoeda(Number(i.quantidade) * Number(i.valor_unitario))}</td>
+              </tr>`).join('')}
+          </tbody>
+          <tfoot><tr><td colspan="3" style="text-align:right; font-weight:600;">Total do pedido</td><td class="num mono" style="font-weight:600;">${fmtMoeda(totalPedido)}</td></tr></tfoot>
+        </table>
+
+        ${ordensPedido.length ? `
+          <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:6px;">Posição de Produção</div>
+          ${ordensPedido.map(o => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; font-size:13px; border-bottom:1px solid var(--border-soft);">
+              <span>${o.numero_op} — ${Number(o.quantidade_produzida||0).toLocaleString('pt-BR')} / ${Number(o.quantidade_planejada).toLocaleString('pt-BR')} produzido</span>
+              <span class="badge ${o.status === 'concluida' ? 'liquidado' : (o.status === 'cancelada' ? 'inadimplente' : 'parcial')}">${LABEL_STATUS_OP[o.status] ?? o.status}</span>
+            </div>`).join('')}
+        ` : ''}
+
+        ${expedicoesPedido.length ? `
+          <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:16px 0 6px;">Entrega</div>
+          ${expedicoesPedido.map(e => `
+            <div style="padding:8px 0; font-size:13px; border-bottom:1px solid var(--border-soft);">
+              <div style="display:flex; justify-content:space-between;">
+                <span>${e.numero_expedicao}${e.transportadora ? ' — ' + e.transportadora : ''}</span>
+                <span class="badge ${e.status === 'expedido' ? 'liquidado' : 'inadimplente'}">${e.status === 'expedido' ? 'Despachado' : 'Cancelado'}</span>
+              </div>
+              <div style="color:var(--ink-soft); margin-top:2px;">
+                ${e.codigo_rastreio ? 'Rastreio: ' + e.codigo_rastreio + ' · ' : ''}${e.previsao_entrega ? 'Previsão: ' + fmtData(e.previsao_entrega) : ''}
+              </div>
+            </div>`).join('')}
+        ` : ''}
+      </div>
+    </section>`;
+  }).join('');
+}
+
+await carregar();
+</script>
+</body>
+</html>
