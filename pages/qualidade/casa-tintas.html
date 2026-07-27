@@ -57,17 +57,15 @@
     <a href="dashboard.html" class="btn ghost"><i data-lucide="arrow-left"></i> Voltar para Qualidade</a>
   </div>
 
-  <section class="grid grid-4" style="margin-bottom:18px;">
+  <section class="grid grid-3" style="margin-bottom:18px;">
     <div class="card"><div class="label">Insumos Ativos</div><div class="big valor" id="card-insumos">0</div></div>
     <div class="card"><div class="label">Cores Cadastradas</div><div class="big valor" id="card-cores">0</div></div>
-    <div class="card"><div class="label">Receitas com Versão Aprovada</div><div class="big valor" id="card-receitas">0</div></div>
     <div class="card"><div class="label">Sistemas de Tinta</div><div class="big valor" id="card-sistemas">0</div></div>
   </section>
 
   <div class="subnav" id="abas">
     <button class="active" data-aba="insumos">Insumos</button>
     <button data-aba="cores">Cores</button>
-    <button data-aba="receitas">Receitas</button>
     <button data-aba="sistemas">Sistemas de Tinta</button>
   </div>
 
@@ -77,7 +75,6 @@
     <div class="spacer"></div>
     <a href="casa-tintas-insumo-novo.html" class="btn primary" id="btn-novo-insumo"><i data-lucide="plus"></i> Novo Insumo</a>
     <a href="casa-tintas-cor-nova.html" class="btn primary" id="btn-nova-cor" style="display:none;"><i data-lucide="plus"></i> Nova Cor</a>
-    <a href="casa-tintas-receita-nova.html" class="btn primary" id="btn-nova-receita" style="display:none;"><i data-lucide="plus"></i> Nova Receita</a>
     <button class="btn primary" id="btn-novo-sistema" style="display:none;"><i data-lucide="plus"></i> Novo Sistema</button>
   </div>
 
@@ -114,89 +111,6 @@
   </div>
 </div>
 
-<!-- Modal: lotes do insumo (recebimento + ajuste de saldo) -->
-<div class="modal-overlay" id="modal-lotes">
-  <div class="modal" style="max-width:760px;">
-    <h2>Lotes em Estoque</h2>
-    <div class="modal-sub" id="lotes-insumo-nome">—</div>
-
-    <div class="lista-selecao" id="lista-lotes" style="margin-bottom:20px;">
-      <div class="empty-state">Carregando…</div>
-    </div>
-
-    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:8px;">Novo Recebimento de Lote</div>
-    <div class="linha-flex">
-      <label class="field f-140">
-        <span class="field-label">Número do Lote *</span>
-        <input class="input mono" id="nl_numero">
-      </label>
-      <label class="field f-130">
-        <span class="field-label">Quantidade Recebida *</span>
-        <input class="input mono" type="number" step="0.0001" min="0.0001" id="nl_quantidade">
-      </label>
-      <label class="field f-130">
-        <span class="field-label">Custo Unitário (R$)</span>
-        <input class="input mono" type="number" step="0.01" min="0" id="nl_custo">
-      </label>
-      <label class="field f-140">
-        <span class="field-label">Data Recebimento</span>
-        <input class="input" type="date" id="nl_data_recebimento">
-      </label>
-      <label class="field f-140">
-        <span class="field-label">Data Validade</span>
-        <input class="input" type="date" id="nl_data_validade">
-      </label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow">
-        <span class="field-label">Fornecedor</span>
-        <select class="input" id="nl_fornecedor"><option value="">Selecione…</option></select>
-      </label>
-      <label class="field f-160">
-        <span class="field-label">Nota Fiscal</span>
-        <input class="input" id="nl_nota_fiscal">
-      </label>
-      <label class="field f-160">
-        <span class="field-label">Status de Qualidade</span>
-        <select class="input" id="nl_status">
-          <option value="liberado">Liberado</option>
-          <option value="quarentena">Quarentena</option>
-          <option value="bloqueado">Bloqueado</option>
-        </select>
-      </label>
-      <button class="btn primary" type="button" id="btn-registrar-lote" style="align-self:flex-end;"><i data-lucide="plus"></i> Registrar</button>
-    </div>
-
-    <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:20px 0 8px;">Ajuste de Saldo</div>
-    <div class="linha-flex">
-      <label class="field f-grow">
-        <span class="field-label">Lote</span>
-        <select class="input" id="aj_lote"></select>
-      </label>
-      <label class="field f-130">
-        <span class="field-label">Tipo</span>
-        <select class="input" id="aj_tipo">
-          <option value="entrada">Entrada</option>
-          <option value="saida">Saída</option>
-        </select>
-      </label>
-      <label class="field f-130">
-        <span class="field-label">Quantidade *</span>
-        <input class="input mono" type="number" step="0.0001" min="0.0001" id="aj_quantidade">
-      </label>
-      <label class="field f-grow">
-        <span class="field-label">Motivo *</span>
-        <input class="input" id="aj_motivo" placeholder="Ex: perda por avaria, contagem de inventário...">
-      </label>
-      <button class="btn ghost" type="button" id="btn-registrar-ajuste" style="align-self:flex-end;"><i data-lucide="arrow-left-right"></i> Ajustar</button>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-fechar-lotes">Fechar</button>
-    </div>
-  </div>
-</div>
-
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
   import { initNav } from '../../js/nav.js';
@@ -213,12 +127,6 @@
     if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
   });
 
-  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
-  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-
-  const LABEL_STATUS_RECEITA = { rascunho: 'Rascunho', em_teste: 'Em Teste', aprovada: 'Aprovada', bloqueada: 'Bloqueada', obsoleta: 'Obsoleta' };
-  const BADGE_STATUS_RECEITA = { rascunho: '', em_teste: 'parcial', aprovada: 'liquidado', bloqueada: 'inadimplente', obsoleta: 'inadimplente' };
-
   const LABEL_TIPO_INSUMO = {
     tinta_base: 'Tinta-Base', pigmento_concentrado: 'Pigmento/Concentrado', verniz: 'Verniz',
     solvente: 'Solvente', retardador: 'Retardador', diluente: 'Diluente',
@@ -229,11 +137,9 @@
     const { count: insumos } = await supabase.from('insumos_tinta').select('id', { count: 'exact', head: true }).eq('ativo', true);
     const { count: cores } = await supabase.from('cores_tinta').select('id', { count: 'exact', head: true }).eq('ativo', true);
     const { count: sistemas } = await supabase.from('sistemas_tinta').select('id', { count: 'exact', head: true }).eq('ativo', true);
-    const { data: versoesAprovadas } = await supabase.from('receitas_tinta_versoes').select('receita_id').eq('status', 'aprovada');
     document.getElementById('card-insumos').textContent = insumos || 0;
     document.getElementById('card-cores').textContent = cores || 0;
     document.getElementById('card-sistemas').textContent = sistemas || 0;
-    document.getElementById('card-receitas').textContent = new Set((versoesAprovadas || []).map(v => v.receita_id)).size;
   }
 
   let abaAtual = 'insumos';
@@ -246,7 +152,6 @@
     document.getElementById('busca').value = '';
     document.getElementById('btn-novo-insumo').style.display = abaAtual === 'insumos' ? 'inline-flex' : 'none';
     document.getElementById('btn-nova-cor').style.display = abaAtual === 'cores' ? 'inline-flex' : 'none';
-    document.getElementById('btn-nova-receita').style.display = abaAtual === 'receitas' ? 'inline-flex' : 'none';
     document.getElementById('btn-novo-sistema').style.display = abaAtual === 'sistemas' ? 'inline-flex' : 'none';
     carregar();
   });
@@ -259,23 +164,16 @@
     const tbody = document.getElementById('tbody');
 
     if (abaAtual === 'insumos') {
-      document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Sistema</th><th>Fornecedor Padrão</th><th class="num">Saldo em Estoque</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
-      tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
+      document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Sistema</th><th>Fornecedor Padrão</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
 
-      let query = supabase.from('insumos_tinta').select('id, codigo, nome, tipo, unidade_medida, ativo, sistemas_tinta(nome), favorecidos:fornecedor_padrao_id(nome)').order('codigo');
+      let query = supabase.from('insumos_tinta').select('id, codigo, nome, tipo, ativo, sistemas_tinta(nome), favorecidos:fornecedor_padrao_id(nome)').order('codigo');
       if (termo) query = query.or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`);
       const { data, error } = await query;
 
-      if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+      if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
       document.getElementById('contador').textContent = `${data?.length || 0} insumo(s)`;
-      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhum insumo cadastrado ainda.</td></tr>`; return; }
-
-      // Saldo vem de uma view agregada (GROUP BY) — buscada à parte e cruzada
-      // no navegador pelo insumo_id, nunca via embed de FK do PostgREST
-      // através da view (mesmo motivo do bug já corrigido no Dashboard
-      // Financeiro: embed de FK não funciona através de view agregada).
-      const { data: saldos } = await supabase.from('vw_saldo_insumo_tinta').select('insumo_id, saldo_total');
-      const mapaSaldos = new Map((saldos || []).map(s => [s.insumo_id, s.saldo_total]));
+      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum insumo cadastrado ainda.</td></tr>`; return; }
 
       tbody.innerHTML = data.map(i => `
         <tr>
@@ -284,12 +182,8 @@
           <td>${LABEL_TIPO_INSUMO[i.tipo] ?? i.tipo}</td>
           <td>${i.sistemas_tinta?.nome ?? '—'}</td>
           <td>${i.favorecidos?.nome ?? '—'}</td>
-          <td class="num mono">${fmtNum(mapaSaldos.get(i.id) || 0)} ${i.unidade_medida}</td>
           <td><span class="badge ${i.ativo ? 'liquidado' : 'inadimplente'}">${i.ativo ? 'Ativo' : 'Inativo'}</span></td>
-          <td style="text-align:right;">
-            <button class="icon-btn" data-lotes="${i.id}" data-nome="${i.nome.replace(/"/g,'&quot;')}" data-unidade="${i.unidade_medida}"><i data-lucide="boxes"></i> Lotes</button>
-            <a href="casa-tintas-insumo-novo.html?id=${i.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a>
-          </td>
+          <td style="text-align:right;"><a href="casa-tintas-insumo-novo.html?id=${i.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a></td>
         </tr>`).join('');
 
     } else if (abaAtual === 'cores') {
@@ -313,38 +207,6 @@
           <td><span class="badge ${c.ativo ? 'liquidado' : 'inadimplente'}">${c.ativo ? 'Ativa' : 'Inativa'}</span></td>
           <td style="text-align:right;"><a href="casa-tintas-cor-nova.html?id=${c.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a></td>
         </tr>`).join('');
-
-    } else if (abaAtual === 'receitas') {
-      document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Cor</th><th>Última Versão</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
-
-      let query = supabase.from('receitas_tinta').select('id, codigo, nome, ativo, cores_tinta(nome)').order('codigo');
-      if (termo) query = query.or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`);
-      const { data, error } = await query;
-
-      if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-      document.getElementById('contador').textContent = `${data?.length || 0} receita(s)`;
-      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma receita cadastrada ainda.</td></tr>`; return; }
-
-      // Última versão de cada receita, buscada à parte e cruzada no
-      // navegador (mesmo motivo do saldo de insumo: evitar embed através
-      // de agregação/ordenação complexa via PostgREST).
-      const { data: versoes } = await supabase.from('receitas_tinta_versoes').select('receita_id, numero_versao, status').order('numero_versao', { ascending: false });
-      const ultimaVersaoPorReceita = new Map();
-      (versoes || []).forEach(v => { if (!ultimaVersaoPorReceita.has(v.receita_id)) ultimaVersaoPorReceita.set(v.receita_id, v); });
-
-      tbody.innerHTML = data.map(r => {
-        const uv = ultimaVersaoPorReceita.get(r.id);
-        return `
-        <tr>
-          <td class="mono">${r.codigo}</td>
-          <td>${r.nome}</td>
-          <td>${r.cores_tinta?.nome ?? '—'}</td>
-          <td>${uv ? 'v' + uv.numero_versao : '—'}</td>
-          <td>${uv ? `<span class="badge ${BADGE_STATUS_RECEITA[uv.status]}">${LABEL_STATUS_RECEITA[uv.status]}</span>` : '<span class="badge">Sem versão</span>'}</td>
-          <td style="text-align:right;"><a href="casa-tintas-receita-nova.html?id=${r.id}" class="icon-btn"><i data-lucide="pencil"></i> Editar</a></td>
-        </tr>`;
-      }).join('');
 
     } else {
       document.getElementById('thead').innerHTML = `<tr><th>Nome</th><th>Descrição</th><th>Status</th><th style="text-align:right;">Ações</th></tr>`;
@@ -410,126 +272,6 @@
     if (error) { alert('Erro ao salvar: ' + (error.code === '23505' ? 'já existe um sistema com esse nome.' : error.message)); return; }
     modalSistema.classList.remove('open');
     await carregar();
-  });
-
-  // ---------- Modal: Lotes do Insumo ----------
-  const modalLotes = document.getElementById('modal-lotes');
-  let insumoEmLotes = null, unidadeInsumoEmLotes = '';
-
-  const { data: fornecedoresLotes } = await supabase.from('favorecidos').select('id, nome').eq('tipo', 'fornecedores').eq('ativo', true).order('nome');
-  document.getElementById('nl_fornecedor').insertAdjacentHTML('beforeend', (fornecedoresLotes || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join(''));
-
-  const LABEL_STATUS_LOTE = { liberado: 'Liberado', quarentena: 'Quarentena', bloqueado: 'Bloqueado', vencido: 'Vencido' };
-  const BADGE_STATUS_LOTE = { liberado: 'liquidado', quarentena: 'parcial', bloqueado: 'inadimplente', vencido: 'inadimplente' };
-
-  document.getElementById('tbody').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-lotes]');
-    if (!btn) return;
-    abrirModalLotes(btn.dataset.lotes, btn.dataset.nome, btn.dataset.unidade);
-  });
-
-  async function abrirModalLotes(insumoId, nome, unidade) {
-    insumoEmLotes = insumoId;
-    unidadeInsumoEmLotes = unidade;
-    document.getElementById('lotes-insumo-nome').textContent = nome;
-    document.getElementById('nl_numero').value = '';
-    document.getElementById('nl_quantidade').value = '';
-    document.getElementById('nl_custo').value = '';
-    document.getElementById('nl_data_recebimento').value = new Date().toISOString().slice(0,10);
-    document.getElementById('nl_data_validade').value = '';
-    document.getElementById('nl_fornecedor').value = '';
-    document.getElementById('nl_nota_fiscal').value = '';
-    document.getElementById('nl_status').value = 'liberado';
-    document.getElementById('aj_quantidade').value = '';
-    document.getElementById('aj_motivo').value = '';
-    modalLotes.classList.add('open');
-    await carregarLotes();
-  }
-
-  document.getElementById('btn-fechar-lotes').addEventListener('click', () => {
-    modalLotes.classList.remove('open');
-    carregar(); // saldo pode ter mudado — atualiza a tabela de trás
-  });
-
-  async function carregarLotes() {
-    const lista = document.getElementById('lista-lotes');
-    const { data, error } = await supabase
-      .from('lotes_insumo_tinta')
-      .select('id, numero_lote, saldo_atual, quantidade_recebida, data_recebimento, data_validade, status_qualidade, favorecidos:fornecedor_id(nome)')
-      .eq('insumo_id', insumoEmLotes)
-      .order('data_validade', { ascending: true, nullsFirst: false });
-
-    if (error) { lista.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
-
-    const selectLote = document.getElementById('aj_lote');
-    selectLote.innerHTML = (data || []).map(l => `<option value="${l.id}">${l.numero_lote} — saldo ${fmtNum(l.saldo_atual)} ${unidadeInsumoEmLotes}</option>`).join('');
-
-    if (!data?.length) { lista.innerHTML = `<div class="empty-state">Nenhum lote recebido ainda.</div>`; return; }
-
-    lista.innerHTML = data.map(l => `
-      <div class="lista-selecao-linha">
-        <div class="col-desc">
-          <div class="mono">${l.numero_lote}${l.favorecidos?.nome ? ' — ' + l.favorecidos.nome : ''}</div>
-          <div style="font-size:11px; color:var(--ink-soft);">Recebido em ${fmtData(l.data_recebimento)} · Validade: ${fmtData(l.data_validade)}</div>
-        </div>
-        <div class="col-valor mono">${fmtNum(l.saldo_atual)} / ${fmtNum(l.quantidade_recebida)} ${unidadeInsumoEmLotes}</div>
-        <span class="badge ${BADGE_STATUS_LOTE[l.status_qualidade]}" style="margin-left:12px;">${LABEL_STATUS_LOTE[l.status_qualidade]}</span>
-      </div>`).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  document.getElementById('btn-registrar-lote').addEventListener('click', async () => {
-    const numero = document.getElementById('nl_numero').value.trim();
-    const quantidade = parseFloat(document.getElementById('nl_quantidade').value || 0);
-    if (!numero) { alert('Informe o número do lote.'); return; }
-    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade recebida.'); return; }
-
-    const { data: lote, error: erroLote } = await supabase.from('lotes_insumo_tinta').insert({
-      tenant_id: TENANT_ID,
-      insumo_id: insumoEmLotes,
-      numero_lote: numero,
-      quantidade_recebida: quantidade,
-      custo_unitario: document.getElementById('nl_custo').value ? Number(document.getElementById('nl_custo').value) : null,
-      data_recebimento: document.getElementById('nl_data_recebimento').value || new Date().toISOString().slice(0,10),
-      data_validade: document.getElementById('nl_data_validade').value || null,
-      fornecedor_id: document.getElementById('nl_fornecedor').value || null,
-      nota_fiscal: document.getElementById('nl_nota_fiscal').value.trim() || null,
-      status_qualidade: document.getElementById('nl_status').value,
-      criado_por: usuario?.id,
-    }).select('id').single();
-
-    if (erroLote) { alert('Erro ao registrar lote: ' + (erroLote.code === '23505' ? 'já existe um lote com esse número para este insumo.' : erroLote.message)); return; }
-
-    const { error: erroMov } = await supabase.from('movimentacoes_estoque_tinta').insert({
-      tenant_id: TENANT_ID, lote_id: lote.id, tipo: 'entrada', quantidade,
-      origem: 'recebimento_insumo', criado_por: usuario?.id,
-    });
-    if (erroMov) { alert('Lote criado, mas houve erro ao registrar a entrada: ' + erroMov.message); return; }
-
-    document.getElementById('nl_numero').value = '';
-    document.getElementById('nl_quantidade').value = '';
-    document.getElementById('nl_custo').value = '';
-    document.getElementById('nl_nota_fiscal').value = '';
-    await carregarLotes();
-  });
-
-  document.getElementById('btn-registrar-ajuste').addEventListener('click', async () => {
-    const loteId = document.getElementById('aj_lote').value;
-    const quantidade = parseFloat(document.getElementById('aj_quantidade').value || 0);
-    const motivo = document.getElementById('aj_motivo').value.trim();
-    if (!loteId) { alert('Selecione um lote (registre um recebimento primeiro, se ainda não houver nenhum).'); return; }
-    if (!quantidade || quantidade <= 0) { alert('Informe a quantidade do ajuste.'); return; }
-    if (!motivo) { alert('Informe o motivo do ajuste.'); return; }
-
-    const { error } = await supabase.from('movimentacoes_estoque_tinta').insert({
-      tenant_id: TENANT_ID, lote_id: loteId, tipo: document.getElementById('aj_tipo').value,
-      quantidade, origem: 'ajuste_manual', observacoes: motivo, criado_por: usuario?.id,
-    });
-    if (error) { alert('Erro ao registrar ajuste: ' + (error.message.includes('negativo') ? 'saldo do lote ficaria negativo — confira a quantidade.' : error.message)); return; }
-
-    document.getElementById('aj_quantidade').value = '';
-    document.getElementById('aj_motivo').value = '';
-    await carregarLotes();
   });
 
   await carregar();
