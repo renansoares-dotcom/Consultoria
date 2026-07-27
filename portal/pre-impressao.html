@@ -51,8 +51,13 @@
     <div class="modal-sub" id="arte-status-sub">—</div>
 
     <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:16px 0 8px;">Arquivos</div>
-    <div class="lista-selecao" id="lista-versoes" style="margin-bottom:18px;">
+    <div class="lista-selecao" id="lista-versoes" style="margin-bottom:12px;">
       <div class="empty-state">Carregando…</div>
+    </div>
+    <input type="file" id="input-arquivo-arte" style="display:none;" accept="application/pdf,image/*">
+    <button class="btn ghost" type="button" id="btn-enviar-versao" style="margin-bottom:8px;"><i data-lucide="upload"></i> Enviar Novo Arquivo</button>
+    <div class="caixa-info" style="margin-bottom:18px; font-size:12px;">
+      Enviar um novo arquivo coloca o projeto em revisão pela nossa equipe.
     </div>
 
     <div id="bloco-historico" style="display:none;">
@@ -203,6 +208,47 @@ document.getElementById('lista-versoes').addEventListener('click', async (e) => 
   const { data: signed, error } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.verArquivo, 300);
   if (error || !signed?.signedUrl) { alert('Erro ao gerar link do arquivo: ' + (error?.message ?? '')); return; }
   window.open(signed.signedUrl, '_blank');
+});
+
+// ---------- Enviar novo arquivo ----------
+document.getElementById('btn-enviar-versao').addEventListener('click', () => document.getElementById('input-arquivo-arte').click());
+
+document.getElementById('input-arquivo-arte').addEventListener('change', async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo || !projetoEmVisualizacao) return;
+
+  const btn = document.getElementById('btn-enviar-versao');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  try {
+    const bytes = await arquivo.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+    const hashArquivo = [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // Caminho usa timestamp em vez do número da versão — o número real é
+    // calculado pelo banco no INSERT (nunca confia no que o navegador
+    // manda), então não dá pra saber o número certo antes de enviar.
+    const caminho = `${usuario.tenant_id}/artes/${projetoEmVisualizacao.id}/portal_${Date.now()}_${arquivo.name}`;
+    const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivo);
+    if (erroUpload) { alert('Erro ao enviar arquivo: ' + erroUpload.message); return; }
+
+    const { error } = await supabase.from('arte_versoes').insert({
+      tenant_id: usuario.tenant_id,
+      projeto_id: projetoEmVisualizacao.id,
+      arquivo_path: caminho,
+      arquivo_nome: arquivo.name,
+      arquivo_tipo: arquivo.type,
+      hash_arquivo: hashArquivo,
+      tamanho_bytes: arquivo.size,
+    });
+    if (error) { alert('Erro ao registrar arquivo: ' + error.message); return; }
+
+    document.getElementById('input-arquivo-arte').value = '';
+    modalArte.classList.remove('open');
+    await carregar();
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar Novo Arquivo';
+  }
 });
 
 // ---------- Decisão ----------
