@@ -8,6 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
 <script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  .card-arte { transition: transform .15s ease, box-shadow .15s ease; }
+  .card-arte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+</style>
 </head>
 <body>
 
@@ -96,8 +100,9 @@
     <h2 id="detalhe-titulo">Projeto de Arte</h2>
     <p class="modal-sub" id="detalhe-info">—</p>
 
-    <div class="label" style="margin:14px 0 8px;">Versões (histórico completo, imutável)</div>
-    <div id="lista-versoes" style="margin-bottom:18px;"></div>
+    <div class="label" style="margin:14px 0 8px;">Arquivos (histórico completo, imutável)</div>
+    <div id="galeria-versoes" style="margin-bottom:12px;"></div>
+    <div id="historico-decisoes" style="margin-bottom:18px;"></div>
 
     <div class="linha-flex">
       <input type="file" id="input-arquivo-arte" style="display:none;">
@@ -240,22 +245,15 @@
 
   async function carregarVersoes() {
     const { data: versoes } = await supabase.from('arte_versoes')
-      .select('id, numero_versao, arquivo_nome, tamanho_bytes, criado_em, arte_aprovacoes(decisao, comentario, criado_em)')
+      .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, tamanho_bytes, criado_em, enviado_por_portal, arte_aprovacoes(decisao, comentario, criado_em)')
       .eq('projeto_id', projetoEmDetalhe).order('numero_versao', { ascending: false });
 
-    document.getElementById('lista-versoes').innerHTML = (versoes?.length ? versoes.map(v => {
-      const decisoes = (v.arte_aprovacoes || []).map(d => `<div style="font-size:11px; color:var(--ink-soft);">${LABEL_DECISAO[d.decisao]} — ${fmtDataHora(d.criado_em)}${d.comentario ? ': ' + d.comentario : ''}</div>`).join('');
-      return `<div class="lista-selecao-linha" style="flex-direction:column; align-items:flex-start;">
-        <div style="display:flex; justify-content:space-between; width:100%;">
-          <div class="col-desc">v${v.numero_versao} — ${v.arquivo_nome}</div>
-          <div style="display:flex; gap:8px;">
-            <button class="icon-btn" data-baixar="${v.id}"><i data-lucide="download"></i></button>
-            <button class="icon-btn" data-reimprimir="${v.id}" title="Reimprimir/reenviar link"><i data-lucide="link"></i></button>
-          </div>
-        </div>
-        ${decisoes}
-      </div>`;
-    }).join('') : '<div class="empty-state">Nenhuma versão enviada ainda.</div>');
+    await renderGaleriaArtes(document.getElementById('galeria-versoes'), versoes);
+
+    const historico = (versoes || []).flatMap(v => (v.arte_aprovacoes || []).map(d => ({ ...d, numero_versao: v.numero_versao })));
+    document.getElementById('historico-decisoes').innerHTML = historico.length
+      ? `<div class="label" style="margin-bottom:6px;">Histórico de Decisões</div>` + historico.map(d => `<div style="font-size:12px; color:var(--ink-soft); padding:4px 0;">v${d.numero_versao} — ${LABEL_DECISAO[d.decisao]} · ${fmtDataHora(d.criado_em)}${d.comentario ? ': ' + d.comentario : ''}</div>`).join('')
+      : '';
 
     const ultimaVersao = versoes?.[0];
     const jaDecidida = ultimaVersao && (ultimaVersao.arte_aprovacoes || []).length > 0;
@@ -265,16 +263,35 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  let versaoAtualId = null;
+  // ---------- Galeria de artes (miniaturas, estilo álbum) ----------
+  async function renderGaleriaArtes(container, versoes) {
+    if (!versoes?.length) { container.innerHTML = `<div class="empty-state">Nenhuma versão enviada ainda.</div>`; return; }
 
-  document.getElementById('lista-versoes').addEventListener('click', async (e) => {
-    const btnBaixar = e.target.closest('[data-baixar]');
-    if (btnBaixar) {
-      const { data: v } = await supabase.from('arte_versoes').select('arquivo_path').eq('id', btnBaixar.dataset.baixar).single();
+    const comLink = await Promise.all(versoes.map(async v => {
       const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(v.arquivo_path, 300);
-      if (signed?.signedUrl) window.open(signed.signedUrl, '_blank');
-    }
-  });
+      return { ...v, url: signed?.signedUrl ?? null };
+    }));
+
+    container.innerHTML = `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:14px;">
+      ${comLink.map((v, i) => {
+        const ehImagem = (v.arquivo_tipo || '').startsWith('image/');
+        return `
+        <a href="${v.url ?? '#'}" target="_blank" rel="noopener" class="card-arte" style="text-decoration:none; color:inherit; display:block; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-soft); background:var(--paper-raised);">
+          <div style="aspect-ratio:1/1; background:var(--ledger); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+            ${ehImagem && v.url ? `<img src="${v.url}" alt="${v.arquivo_nome}" style="width:100%; height:100%; object-fit:cover;">` : `<i data-lucide="file-text" style="width:32px; height:32px; color:var(--ink-soft);"></i>`}
+            ${i === 0 ? '<span class="badge liquidado" style="position:absolute; top:6px; right:6px; font-size:10px;">Atual</span>' : ''}
+          </div>
+          <div style="padding:8px 10px;">
+            <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.arquivo_nome}</div>
+            <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao}${v.enviado_por_portal ? ' · enviado pelo cliente' : ''}</div>
+          </div>
+        </a>`;
+      }).join('')}
+    </div>`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  let versaoAtualId = null;
 
   // ---------- Enviar versão ----------
   document.getElementById('btn-enviar-versao').addEventListener('click', () => document.getElementById('input-arquivo-arte').click());

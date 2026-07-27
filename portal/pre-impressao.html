@@ -8,6 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 <script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  .card-arte { transition: transform .15s ease, box-shadow .15s ease; }
+  .card-arte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+</style>
 </head>
 <body>
 
@@ -51,7 +55,7 @@
     <div class="modal-sub" id="arte-status-sub">—</div>
 
     <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:16px 0 8px;">Arquivos</div>
-    <div class="lista-selecao" id="lista-versoes" style="margin-bottom:12px;">
+    <div id="galeria-versoes" style="margin-bottom:12px;">
       <div class="empty-state">Carregando…</div>
     </div>
     <input type="file" id="input-arquivo-arte" style="display:none;" accept="application/pdf,image/*">
@@ -152,23 +156,11 @@ async function abrirModalArte(projetoId) {
   document.getElementById('arte-status-sub').innerHTML = `<span class="badge ${BADGE_STATUS[projeto.status]}">${LABEL_STATUS[projeto.status] ?? projeto.status}</span>`;
 
   const { data: versoes } = await supabase.from('arte_versoes')
-    .select('id, numero_versao, arquivo_path, arquivo_nome, tamanho_bytes, criado_em')
+    .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, tamanho_bytes, criado_em')
     .eq('projeto_id', projetoId)
     .order('numero_versao', { ascending: false });
 
-  const listaVersoes = document.getElementById('lista-versoes');
-  if (!versoes?.length) {
-    listaVersoes.innerHTML = `<div class="empty-state">Nenhum arquivo enviado ainda.</div>`;
-  } else {
-    listaVersoes.innerHTML = versoes.map((v, i) => `
-      <div class="lista-selecao-linha">
-        <div class="col-desc">
-          <div>${v.arquivo_nome} ${i === 0 ? '<span class="badge liquidado" style="margin-left:6px;">Versão atual</span>' : ''}</div>
-          <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao} · ${fmtDataHora(v.criado_em)}</div>
-        </div>
-        <button class="icon-btn" data-ver-arquivo="${v.arquivo_path}"><i data-lucide="eye"></i> Visualizar</button>
-      </div>`).join('');
-  }
+  await renderGaleriaArtes(document.getElementById('galeria-versoes'), versoes);
 
   const versaoMaisRecente = versoes?.[0];
   const { data: decisoes } = versaoMaisRecente
@@ -202,13 +194,35 @@ document.getElementById('btn-fechar-arte').addEventListener('click', async () =>
   await carregar();
 });
 
-document.getElementById('lista-versoes').addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-ver-arquivo]');
-  if (!btn) return;
-  const { data: signed, error } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.verArquivo, 300);
-  if (error || !signed?.signedUrl) { alert('Erro ao gerar link do arquivo: ' + (error?.message ?? '')); return; }
-  window.open(signed.signedUrl, '_blank');
-});
+// ---------- Galeria de artes (miniaturas, estilo álbum) ----------
+async function renderGaleriaArtes(container, versoes) {
+  if (!versoes?.length) { container.innerHTML = `<div class="empty-state">Nenhum arquivo enviado ainda.</div>`; return; }
+
+  // Gera link assinado pra todas as versões em paralelo — usado tanto pra
+  // miniatura (quando é imagem) quanto pro clique de abrir o arquivo.
+  const comLink = await Promise.all(versoes.map(async v => {
+    const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(v.arquivo_path, 300);
+    return { ...v, url: signed?.signedUrl ?? null };
+  }));
+
+  container.innerHTML = `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">
+    ${comLink.map((v, i) => {
+      const ehImagem = (v.arquivo_tipo || '').startsWith('image/');
+      return `
+      <a href="${v.url ?? '#'}" target="_blank" rel="noopener" class="card-arte" style="text-decoration:none; color:inherit; display:block; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-soft); background:var(--paper-raised);">
+        <div style="aspect-ratio:1/1; background:var(--ledger); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+          ${ehImagem && v.url ? `<img src="${v.url}" alt="${v.arquivo_nome}" style="width:100%; height:100%; object-fit:cover;">` : `<i data-lucide="file-text" style="width:34px; height:34px; color:var(--ink-soft);"></i>`}
+          ${i === 0 ? '<span class="badge liquidado" style="position:absolute; top:6px; right:6px; font-size:10px;">Atual</span>' : ''}
+        </div>
+        <div style="padding:8px 10px;">
+          <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.arquivo_nome}</div>
+          <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao} · ${fmtDataHora(v.criado_em)}</div>
+        </div>
+      </a>`;
+    }).join('')}
+  </div>`;
+  if (window.lucide) lucide.createIcons();
+}
 
 // ---------- Enviar novo arquivo ----------
 document.getElementById('btn-enviar-versao').addEventListener('click', () => document.getElementById('input-arquivo-arte').click());
