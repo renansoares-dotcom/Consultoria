@@ -180,9 +180,19 @@ document.getElementById('btn-criar-acesso').addEventListener('click', async () =
   // cliente Supabase JOGADO FORA, isolado do `supabase` importado (que
   // mantém a sessão do administrador logado) — evita derrubar a sessão de
   // quem está criando o acesso.
+  // IMPORTANTE: por padrão, dois createClient() apontando pro mesmo projeto
+  // COMPARTILHAM o mesmo espaço de sessão no localStorage do navegador —
+  // criar um objeto de cliente "novo" em JS não é suficiente pra isolar a
+  // sessão. Sem persistSession:false/autoRefreshToken:false aqui, o
+  // signUp() abaixo SUBSTITUI a sessão do administrador logado pela sessão
+  // do cliente recém-criado, e o INSERT seguinte roda como esse cliente
+  // novo (sem permissão), disparando erro de RLS. (Bug real encontrado e
+  // corrigido em 27/07/2026 — não repetir esse padrão em nenhum outro
+  // lugar do sistema que crie login por trás de uma sessão já autenticada.)
   const clienteDescartavel = createClient(
     'https://qandcrcjecawcfsvqfhr.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhbmRjcmNqZWNhd2Nmc3ZxZmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4ODc5MjYsImV4cCI6MjA5OTQ2MzkyNn0.T8TMWvSkDXc5AidbBpx8KXrrztZl9rv8HvgBKIUQG8U'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhbmRjcmNqZWNhd2Nmc3ZxZmhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4ODc5MjYsImV4cCI6MjA5OTQ2MzkyNn0.T8TMWvSkDXc5AidbBpx8KXrrztZl9rv8HvgBKIUQG8U',
+    { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
   );
 
   const { data: signUpData, error: erroSignUp } = await clienteDescartavel.auth.signUp({ email, password: senha });
