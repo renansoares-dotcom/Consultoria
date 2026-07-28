@@ -212,9 +212,10 @@ document.getElementById('user-chip').addEventListener('click', async () => {
   if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
 });
 
-// Filtro de status pode vir por querystring (?status=em_aberto) a partir de outros menus
+// Filtro de status/mês pode vir por querystring (?status=em_aberto&mes=2026-07) a partir de outros menus
 const params = new URLSearchParams(location.search);
 if (params.get('status')) document.getElementById('f_status').value = params.get('status');
+if (params.get('mes')) document.getElementById('f_mes').value = params.get('mes');
 
 let lancamentos = [];
 let totalRegistros = 0;

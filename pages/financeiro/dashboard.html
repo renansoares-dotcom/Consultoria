@@ -66,15 +66,8 @@
   /* Ajuste 2 — indicador de tendência: SÓ ESTRUTURA VISUAL, texto fixo,
      sem nenhum cálculo ou dado real. Trocar pelo valor de verdade exige
      lógica nova em JS, fora do escopo deste ajuste (visual apenas). */
-  .hero-saldo .hero-tendencia {
-    display: flex; align-items: center; gap: 5px;
-    margin-top: 5px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255,255,255,.82);
-    position: relative; z-index: 1;
-  }
-  .hero-saldo .hero-tendencia svg { width: 13px; height: 13px; }
+  .hero-saldo .hero-tendencia { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.82); position: relative; z-index: 1; }
+  .hero-saldo .hero-tendencia #hero-tendencia-seta { font-size: 11px; }
   .hero-saldo .hero-icone {
     width: 40px; height: 40px; border-radius: var(--radius-sm);
     background: rgba(255,255,255,.14);
@@ -126,6 +119,8 @@
 
   /* ---------- Gráfico de barras mensal: baseline + mais respiro ---------- */
   .grafico-barras-mensal { border-top: 1px solid var(--line); padding-top: 18px; }
+  .grafico-barras-mensal .grupo-mes[data-mes] { cursor: pointer; border-radius: var(--radius-sm); }
+  .grafico-barras-mensal .grupo-mes[data-mes]:hover { background: var(--paper); }
 
   /* ---------- Bar-lists: barra de preenchimento com leve gradiente ---------- */
   .bar-list .trilho .fill { background-image: linear-gradient(90deg, currentColor, currentColor); filter: brightness(1); }
@@ -284,7 +279,7 @@
         <span>SALDO ATUAL</span>
         <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
       </div>
-      <div class="hero-tendencia"><i data-lucide="trending-up"></i><span>+12% em relação ao mês anterior</span></div>
+      <div class="hero-tendencia"><span id="hero-tendencia-seta">▲</span><span id="hero-tendencia-texto">Calculando…</span></div>
     </div>
     <div class="hero-icone"><i data-lucide="wallet"></i></div>
   </div>
@@ -592,6 +587,70 @@ if (window.lucide) lucide.createIcons();
   // ---------- Fluxo Mensal (últimos 6 meses) ----------
   const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
+  // Intervalo "cheio" do período selecionado (sem sub-dividir em barras) —
+  // usado pela tendência do hero e pelos gráficos de fluxo (Top Favorecidos,
+  // Distribuição por Plano de Contas). NÃO é usado pelos cards/donuts de
+  // SALDO (Realizado, Aberto, Projetado, Inadimplência, Saldo por Conta,
+  // Aging) — esses são posição atual/acumulada, não teria sentido "filtrar
+  // por período" um saldo (ficaria mostrando só o saldo de hoje, por
+  // exemplo, o que mentiria sobre o valor real em caixa).
+  function obterIntervaloPeriodo(periodo) {
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    if (periodo === 'ano') {
+      const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 11, 1);
+      return { inicio, fim: hoje };
+    }
+    const dias = { hoje: 0, '7dias': 6, '30dias': 29, '90dias': 89 }[periodo] ?? 6;
+    const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - dias);
+    return { inicio, fim: hoje };
+  }
+
+  // Tendência real do hero — variação do saldo DESDE O INÍCIO do período
+  // selecionado até agora. Ex: se "30 dias" está selecionado, mostra o
+  // quanto o saldo cresceu/caiu nos últimos 30 dias (não é o mesmo cálculo
+  // do card "Realizado", que é a posição acumulada de sempre).
+  const LABEL_TENDENCIA_PERIODO = { hoje: 'ontem', '7dias': '7 dias atrás', '30dias': '30 dias atrás', '90dias': '90 dias atrás', ano: '12 meses atrás' };
+
+  function atualizarTendenciaHero() {
+    const { contas, realizado } = dadosCompartilhados;
+    const saldoInicialContas = contas.reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+    let realizadoTotal = saldoInicialContas;
+    let netFlowPeriodo = 0;
+    const { inicio, fim } = obterIntervaloPeriodo(periodoAtivo);
+
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.tipo) return;
+      const sinal = r.tipo === 'entrada' ? 1 : -1;
+      realizadoTotal += Number(r.valor_desembolsado) * sinal;
+      if (r.data_baixa) {
+        const d = new Date(r.data_baixa + 'T00:00:00');
+        if (d >= inicio && d <= fim) netFlowPeriodo += Number(r.valor_desembolsado) * sinal;
+      }
+    });
+
+    const saldoInicioPeriodo = realizadoTotal - netFlowPeriodo;
+    const seta = document.getElementById('hero-tendencia-seta');
+    const texto = document.getElementById('hero-tendencia-texto');
+    const positivo = netFlowPeriodo >= 0;
+    seta.textContent = positivo ? '▲' : '▼';
+    seta.style.color = positivo ? '#fff' : 'rgba(255,255,255,.65)';
+
+    if (Math.abs(saldoInicioPeriodo) < 0.01) {
+      texto.textContent = `${positivo ? '+' : ''}${fmt(netFlowPeriodo)} ${LABEL_TENDENCIA_PERIODO[periodoAtivo] === 'ontem' ? 'desde ontem' : 'nos últimos ' + LABEL_TENDENCIA_PERIODO[periodoAtivo].replace(' atrás','')}`;
+    } else {
+      const variacao = (netFlowPeriodo / Math.abs(saldoInicioPeriodo)) * 100;
+      // Base de comparação muito pequena em relação à movimentação (comum
+      // logo no início de uso do sistema, com poucos meses de histórico)
+      // gera um percentual sem sentido prático (ex: +2500%) — mostra o
+      // valor em R$ nesses casos, mais informativo que um % descontrolado.
+      if (Math.abs(variacao) > 999) {
+        texto.textContent = `${positivo ? '+' : ''}${fmt(netFlowPeriodo)} em relação a ${LABEL_TENDENCIA_PERIODO[periodoAtivo]}`;
+      } else {
+        texto.textContent = `${variacao >= 0 ? '+' : ''}${variacao.toFixed(1)}% em relação a ${LABEL_TENDENCIA_PERIODO[periodoAtivo]}`;
+      }
+    }
+  }
+
   // Gera os "baldes" (intervalos) do eixo X conforme o período escolhido.
   // 'ano' agrupa por mês (12 meses); os demais agrupam por dia, mas nunca
   // mais que ~15 barras (senão o gráfico fica espremido) — 30 e 90 dias
@@ -604,7 +663,8 @@ if (window.lucide) lucide.createIcons();
       for (let i = 11; i >= 0; i--) {
         const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
         const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() - i + 1, 0);
-        buckets.push({ inicio: d, fim: fimMes, label: `${MESES_ABR[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` });
+        const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        buckets.push({ inicio: d, fim: fimMes, label: `${MESES_ABR[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`, chave });
       }
       return buckets;
     }
@@ -642,7 +702,7 @@ if (window.lucide) lucide.createIcons();
     const max = Math.max(...buckets.flatMap(b => [b.entrada, b.saida]), 0.01);
 
     document.getElementById('grafico-fluxo-mensal').innerHTML = buckets.map(m => `
-      <div class="grupo-mes">
+      <div class="grupo-mes"${m.chave ? ` data-mes="${m.chave}"` : ''}>
         <div class="barras" title="Entradas: ${fmt(m.entrada)} · Saídas: ${fmt(m.saida)}">
           <div class="barra bg-serie-1" style="height:${Math.max(3, m.entrada/max*130)}px;"></div>
           <div class="barra bg-serie-6" style="height:${Math.max(3, m.saida/max*130)}px;"></div>
@@ -657,7 +717,12 @@ if (window.lucide) lucide.createIcons();
   // pra eliminar sem mudar a view. Continua async só por causa disso.
   async function carregarTopFavorecidos() {
     const { realizado } = dadosCompartilhados;
-    const data = realizado.filter(r => r.tipo !== 'transferencia');
+    const { inicio, fim } = obterIntervaloPeriodo(periodoAtivo);
+    const data = realizado.filter(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return false;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      return d >= inicio && d <= fim;
+    });
 
     const idsFavorecidos = [...new Set(data.map(r => r.favorecido_id).filter(Boolean))];
     let nomesPorId = {};
@@ -687,7 +752,12 @@ if (window.lucide) lucide.createIcons();
   // ---------- Distribuição por Plano de Contas ----------
   function carregarDistPlanoContas() {
     const { realizado } = dadosCompartilhados;
-    const data = realizado.filter(r => r.tipo !== 'transferencia');
+    const { inicio, fim } = obterIntervaloPeriodo(periodoAtivo);
+    const data = realizado.filter(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return false;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      return d >= inicio && d <= fim;
+    });
 
     const porPlano = {};
     data.forEach(r => {
@@ -711,6 +781,7 @@ if (window.lucide) lucide.createIcons();
   async function recarregarDashboard() {
     await carregarDadosCompartilhados();
     carregarCards();
+    atualizarTendenciaHero();
 
     // Promise.allSettled: se o Top Favorecidos (o único que ainda busca
     // algo à parte) falhar, os outros gráficos continuam normais.
@@ -739,6 +810,20 @@ if (window.lucide) lucide.createIcons();
     btn.classList.add('ativo');
     periodoAtivo = btn.dataset.periodo;
     carregarFluxoMensal();
+    atualizarTendenciaHero();
+    carregarTopFavorecidos();
+    carregarDistPlanoContas();
+  });
+
+  // Clique numa barra do Fluxo Mensal abre os lançamentos daquele mês —
+  // só faz sentido quando o período é "Ano" (cada barra = 1 mês exato).
+  // lancamentos.html só sabe filtrar por status/mês pela URL hoje; ligar
+  // isso a Top Favorecidos/Distribuição exigiria adicionar filtro por
+  // favorecido/plano de contas lá também — fica pra uma próxima rodada.
+  document.getElementById('grafico-fluxo-mensal').addEventListener('click', (e) => {
+    const grupo = e.target.closest('.grupo-mes[data-mes]');
+    if (!grupo) return;
+    window.location.href = `lancamentos.html?mes=${grupo.dataset.mes}`;
   });
 
   try { await recarregarDashboard(); } catch (e) { console.error('Erro ao carregar dashboard financeiro:', e); }
