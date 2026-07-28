@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/design-system.css">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   .card-arte { transition: transform .15s ease, box-shadow .15s ease; }
   .card-arte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.18); }
@@ -85,13 +86,31 @@
     </div>
 
     <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-gerar-pdf"><i data-lucide="file-down"></i> Gerar Relatório PDF</button>
       <button class="btn ghost" type="button" id="btn-fechar-arte">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: observação ao enviar um arquivo novo -->
+<div class="modal-overlay" id="modal-observacao-versao">
+  <div class="modal">
+    <h2>Enviar Arquivo</h2>
+    <div class="modal-sub" id="ov-nome-arquivo">—</div>
+    <label class="field">
+      <span class="field-label">Observação (o que mudou, o que você quer que a equipe note)</span>
+      <textarea class="input" id="ov_observacao" style="min-height:80px; resize:vertical;" placeholder="Opcional, mas ajuda muito nossa equipe a entender o contexto."></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-observacao-versao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-envio-versao">Confirmar Envio</button>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { supabase, exigirSessaoPortal, usuarioPortalAtual } from '../js/portal-client.js';
+import { gerarRelatorioArtePDF } from '../js/relatorio-arte.js';
 
 const sessao = await exigirSessaoPortal();
 const usuario = await usuarioPortalAtual();
@@ -177,7 +196,7 @@ async function abrirModalArte(projetoId) {
   document.getElementById('arte-status-sub').innerHTML = `<span class="badge ${BADGE_STATUS[projeto.status]}">${LABEL_STATUS[projeto.status] ?? projeto.status}</span>`;
 
   const { data: versoes } = await supabase.from('arte_versoes')
-    .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, tamanho_bytes, criado_em')
+    .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, tamanho_bytes, observacoes, criado_em')
     .eq('projeto_id', projetoId)
     .order('numero_versao', { ascending: false });
 
@@ -215,6 +234,45 @@ document.getElementById('btn-fechar-arte').addEventListener('click', async () =>
   await carregar();
 });
 
+document.getElementById('btn-gerar-pdf').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-gerar-pdf');
+  btn.disabled = true; btn.textContent = 'Gerando…';
+  try {
+    const projetoId = modalArte.dataset.projetoId;
+
+    const { data: versoesRel } = await supabase.from('arte_versoes')
+      .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, observacoes, criado_em, enviado_por, enviado_por_portal')
+      .eq('projeto_id', projetoId).order('numero_versao', { ascending: false });
+
+    const { data: aprovacoesRel } = await supabase.from('arte_aprovacoes')
+      .select('versao_id, decisao, comentario, criado_em, decidido_por, decidido_por_portal')
+      .in('versao_id', (versoesRel || []).map(v => v.id));
+
+    const { data: autoresRel } = await supabase.rpc('portal_autores_projeto_arte', { p_projeto_id: projetoId });
+    const mapaAutores = new Map((autoresRel || []).map(a => [a.usuario_id, a.nome]));
+
+    const versoesComAutorEDecisoes = (versoesRel || []).map(v => ({
+      ...v,
+      autor: mapaAutores.get(v.enviado_por || v.enviado_por_portal) ?? (v.enviado_por_portal ? 'Cliente' : 'Equipe'),
+      decisoes: (aprovacoesRel || []).filter(a => a.versao_id === v.id).map(a => ({
+        ...a,
+        autor: mapaAutores.get(a.decidido_por || a.decidido_por_portal) ?? (a.decidido_por_portal ? 'Cliente' : 'Equipe'),
+      })),
+    }));
+
+    await gerarRelatorioArtePDF({
+      supabase,
+      projeto: projetoEmVisualizacao,
+      clienteNome: usuario?.favorecidos?.nome,
+      versoes: versoesComAutorEDecisoes,
+    });
+  } catch (err) {
+    alert('Erro ao gerar relatório: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Gerar Relatório PDF';
+  }
+});
+
 // ---------- Galeria de artes (miniaturas, estilo álbum) ----------
 async function renderGaleriaArtes(container, versoes) {
   if (!versoes?.length) { container.innerHTML = `<div class="empty-state">Nenhum arquivo enviado ainda.</div>`; return; }
@@ -239,6 +297,7 @@ async function renderGaleriaArtes(container, versoes) {
           <div style="padding:8px 10px 4px;">
             <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.arquivo_nome}</div>
             <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao} · ${fmtDataHora(v.criado_em)}</div>
+            ${v.observacoes ? `<div style="font-size:11px; color:var(--ink-soft); margin-top:3px; white-space:normal;">"${v.observacoes}"</div>` : ''}
           </div>
         </a>
         ${ehImagem ? `<div style="padding:0 10px 10px;"><a href="editor-arte.html?projeto=${modalArte.dataset.projetoId}&versao=${v.id}" class="icon-btn" style="font-size:11px;"><i data-lucide="pencil"></i> Editar</a></div>` : ''}
@@ -249,13 +308,31 @@ async function renderGaleriaArtes(container, versoes) {
 }
 
 // ---------- Enviar novo arquivo ----------
+let arquivoParaEnviar = null;
+
 document.getElementById('btn-enviar-versao').addEventListener('click', () => document.getElementById('input-arquivo-arte').click());
 
-document.getElementById('input-arquivo-arte').addEventListener('change', async (e) => {
+document.getElementById('input-arquivo-arte').addEventListener('change', (e) => {
   const arquivo = e.target.files[0];
   if (!arquivo || !projetoEmVisualizacao) return;
+  arquivoParaEnviar = arquivo;
+  document.getElementById('ov-nome-arquivo').textContent = arquivo.name;
+  document.getElementById('ov_observacao').value = '';
+  document.getElementById('modal-observacao-versao').classList.add('open');
+});
 
-  const btn = document.getElementById('btn-enviar-versao');
+document.getElementById('btn-cancelar-observacao-versao').addEventListener('click', () => {
+  document.getElementById('modal-observacao-versao').classList.remove('open');
+  document.getElementById('input-arquivo-arte').value = '';
+  arquivoParaEnviar = null;
+});
+
+document.getElementById('btn-confirmar-envio-versao').addEventListener('click', async () => {
+  const arquivo = arquivoParaEnviar;
+  if (!arquivo || !projetoEmVisualizacao) return;
+  const observacao = document.getElementById('ov_observacao').value.trim();
+
+  const btn = document.getElementById('btn-confirmar-envio-versao');
   btn.disabled = true; btn.textContent = 'Enviando…';
 
   try {
@@ -278,14 +355,17 @@ document.getElementById('input-arquivo-arte').addEventListener('change', async (
       arquivo_tipo: arquivo.type,
       hash_arquivo: hashArquivo,
       tamanho_bytes: arquivo.size,
+      observacoes: observacao || null,
     });
     if (error) { alert('Erro ao registrar arquivo: ' + error.message); return; }
 
     document.getElementById('input-arquivo-arte').value = '';
+    arquivoParaEnviar = null;
+    document.getElementById('modal-observacao-versao').classList.remove('open');
     modalArte.classList.remove('open');
     await carregar();
   } finally {
-    btn.disabled = false; btn.textContent = 'Enviar Novo Arquivo';
+    btn.disabled = false; btn.textContent = 'Confirmar Envio';
   }
 });
 

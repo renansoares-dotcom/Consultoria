@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   .card-arte { transition: transform .15s ease, box-shadow .15s ease; }
   .card-arte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.18); }
@@ -64,14 +65,10 @@
   <div class="subnav" id="abas">
     <button class="active" data-filtro="pendentes">Aguardando Decisão</button>
     <button data-filtro="todos">Todos</button>
+    <button data-filtro="excluidos">Excluídos</button>
   </div>
 
-  <section class="card" style="padding:0; overflow:hidden;">
-    <table>
-      <thead><tr><th>Projeto</th><th>Cliente</th><th>Produto</th><th>Versão Atual</th><th>Status</th><th style="text-align:right;">Ações</th></tr></thead>
-      <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
-    </table>
-  </section>
+  <div id="lista-projetos"><div class="empty-state">Carregando…</div></div>
 </main>
   </div>
 </div>
@@ -119,8 +116,53 @@
       </div>
     </div>
 
-    <div class="modal-actions">
+    <div id="area-restaurar" style="margin-top:18px; display:none;">
+      <div class="caixa-info" style="border-color:var(--red); background:var(--red-soft); color:var(--red); margin-bottom:10px;">
+        Este projeto foi excluído<span id="detalhe-motivo-exclusao"></span>. Ele fica invisível pro cliente e ninguém pode enviar arquivo ou decidir enquanto estiver assim.
+      </div>
+      <button class="btn primary" type="button" id="btn-restaurar-projeto"><i data-lucide="rotate-ccw"></i> Restaurar Projeto</button>
+    </div>
+
+    <div class="modal-actions" style="justify-content:space-between;">
+      <div style="display:flex; gap:8px;">
+        <button class="btn ghost" type="button" id="btn-gerar-pdf"><i data-lucide="file-down"></i> Gerar Relatório PDF</button>
+        <button class="btn ghost" type="button" id="btn-excluir-projeto" style="color:var(--red);"><i data-lucide="trash-2"></i> Excluir Projeto</button>
+      </div>
       <button class="btn ghost" type="button" id="btn-fechar-detalhe">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: observação ao enviar nova versão -->
+<div class="modal-overlay" id="modal-observacao-versao">
+  <div class="modal">
+    <h2>Enviar Nova Versão</h2>
+    <div class="modal-sub" id="ov-nome-arquivo">—</div>
+    <label class="field">
+      <span class="field-label">Observação (o que mudou nesta versão)</span>
+      <textarea class="input" id="ov_observacao" style="min-height:80px; resize:vertical;"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-observacao-versao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-envio-versao">Confirmar Envio</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: motivo da exclusão -->
+<div class="modal-overlay" id="modal-motivo-exclusao">
+  <div class="modal">
+    <h2>Excluir Projeto</h2>
+    <div class="caixa-info" style="margin-bottom:14px;">
+      Isso é uma exclusão suave: o projeto some da lista normal e do Portal do Cliente, mas fica guardado no histórico — dá pra restaurar depois.
+    </div>
+    <label class="field">
+      <span class="field-label">Motivo *</span>
+      <textarea class="input" id="me_motivo" style="min-height:70px; resize:vertical;"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-exclusao">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-confirmar-exclusao" style="background:var(--red); border-color:var(--red);">Confirmar Exclusão</button>
     </div>
   </div>
 </div>
@@ -128,6 +170,7 @@
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
   import { initNav } from '../../js/nav.js';
+  import { gerarRelatorioArtePDF } from '../../js/relatorio-arte.js';
   initNav();
 
   const sessao = await exigirSessao();
@@ -149,50 +192,71 @@
   let projetosCache = [];
   let filtroAtual = 'pendentes';
 
-  document.getElementById('abas').addEventListener('click', (e) => {
+  document.getElementById('abas').addEventListener('click', async (e) => {
     const btn = e.target.closest('button[data-filtro]');
     if (!btn) return;
     document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     filtroAtual = btn.dataset.filtro;
-    desenhar();
+    await desenhar();
   });
 
   async function carregar() {
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+    document.getElementById('lista-projetos').innerHTML = `<div class="empty-state">Carregando…</div>`;
 
     const { data, error } = await supabase.from('projetos_arte')
-      .select('id, nome, status, favorecidos:cliente_id(nome), produtos:produto_id(codigo, nome), arte_versoes(numero_versao, criado_em)')
+      .select('id, nome, status, arquivado_em, motivo_arquivamento, favorecidos:cliente_id(nome), produtos:produto_id(codigo, nome), arte_versoes(id, numero_versao, criado_em, arquivo_path, arquivo_tipo)')
       .order('criado_em', { ascending: false });
 
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (error) { document.getElementById('lista-projetos').innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
     projetosCache = data || [];
-    desenhar();
+    await desenhar();
   }
 
-  function desenhar() {
+  async function desenhar() {
     let filtrados = projetosCache;
-    if (filtroAtual === 'pendentes') filtrados = filtrados.filter(p => p.status === 'em_andamento' || p.status === 'aguardando_aprovacao');
+    if (filtroAtual === 'excluidos') {
+      filtrados = filtrados.filter(p => p.arquivado_em);
+    } else {
+      filtrados = filtrados.filter(p => !p.arquivado_em);
+      if (filtroAtual === 'pendentes') filtrados = filtrados.filter(p => p.status === 'em_andamento' || p.status === 'aguardando_aprovacao');
+    }
 
-    const tbody = document.getElementById('tbody');
-    if (!filtrados.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum projeto aqui.</td></tr>`; return; }
+    const container = document.getElementById('lista-projetos');
+    if (!filtrados.length) { container.innerHTML = `<div class="empty-state">Nenhum projeto aqui.</div>`; return; }
 
-    tbody.innerHTML = filtrados.map(p => {
-      const ultimaVersao = (p.arte_versoes || []).sort((a,b) => b.numero_versao - a.numero_versao)[0];
-      return `<tr>
-        <td>${p.nome}</td>
-        <td>${p.favorecidos?.nome ?? '—'}</td>
-        <td>${p.produtos ? p.produtos.codigo + ' — ' + p.produtos.nome : '—'}</td>
-        <td>${ultimaVersao ? 'v' + ultimaVersao.numero_versao : 'Sem versão ainda'}</td>
-        <td><span class="badge ${BADGE_STATUS[p.status]}">${LABEL_STATUS[p.status]}</span></td>
-        <td style="text-align:right;"><button class="icon-btn" data-abrir="${p.id}"><i data-lucide="folder-open"></i> Abrir</button></td>
-      </tr>`;
-    }).join('');
+    // Capa = versão mais recente de cada projeto. Link assinado só pras
+    // capas que são imagem (PDF usa ícone) — evita gerar link à toa.
+    const capas = await Promise.all(filtrados.map(async p => {
+      const ultima = (p.arte_versoes || []).sort((a, b) => b.numero_versao - a.numero_versao)[0];
+      if (!ultima || !(ultima.arquivo_tipo || '').startsWith('image/')) return [p.id, { versao: ultima, url: null }];
+      const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(ultima.arquivo_path, 300);
+      return [p.id, { versao: ultima, url: signed?.signedUrl ?? null }];
+    }));
+    const capaPorProjeto = new Map(capas);
+
+    container.innerHTML = `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:18px;">
+      ${filtrados.map(p => {
+        const { versao, url } = capaPorProjeto.get(p.id) || {};
+        return `
+        <div class="card-arte" data-abrir="${p.id}" style="cursor:pointer; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-soft); background:var(--paper-raised);">
+          <div style="aspect-ratio:4/3; background:var(--ledger); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;">
+            ${url ? `<img src="${url}" alt="${p.nome}" style="width:100%; height:100%; object-fit:cover;">` : `<i data-lucide="${versao ? 'file-text' : 'image-off'}" style="width:40px; height:40px; color:var(--ink-soft);"></i>`}
+            <span class="badge ${p.arquivado_em ? 'inadimplente' : BADGE_STATUS[p.status]}" style="position:absolute; top:8px; right:8px;">${p.arquivado_em ? 'Excluído' : LABEL_STATUS[p.status]}</span>
+            ${versao ? `<span class="badge" style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,.55); color:#fff; font-size:10px;">v${versao.numero_versao}</span>` : ''}
+          </div>
+          <div style="padding:12px 14px;">
+            <div style="font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.nome}</div>
+            <div style="font-size:12px; color:var(--ink-soft); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.favorecidos?.nome ?? 'Sem cliente'}</div>
+            <div style="font-size:11px; color:var(--ink-soft); margin-top:1px;">${p.produtos ? p.produtos.codigo + ' — ' + p.produtos.nome : 'Sem produto vinculado'}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
     if (window.lucide) lucide.createIcons();
   }
 
-  document.getElementById('tbody').addEventListener('click', (e) => {
+  document.getElementById('lista-projetos').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-abrir]');
     if (btn) abrirDetalhe(btn.dataset.abrir);
   });
@@ -232,12 +296,21 @@
   // ---------- Detalhe / versões / aprovação ----------
   const modalDetalhe = document.getElementById('modal-detalhe');
   let projetoEmDetalhe = null;
+  let projetoAtualDetalhe = null;
 
   async function abrirDetalhe(id) {
     projetoEmDetalhe = id;
     const p = projetosCache.find(x => x.id === id);
+    projetoAtualDetalhe = p;
     document.getElementById('detalhe-titulo').textContent = p.nome;
     document.getElementById('detalhe-info').textContent = `${p.favorecidos?.nome ?? 'Sem cliente'} · ${LABEL_STATUS[p.status]}`;
+
+    const arquivado = !!p.arquivado_em;
+    document.getElementById('area-restaurar').style.display = arquivado ? 'block' : 'none';
+    document.getElementById('detalhe-motivo-exclusao').textContent = p.motivo_arquivamento ? ` — motivo: "${p.motivo_arquivamento}"` : '';
+    document.querySelector('#modal-detalhe .linha-flex').style.display = arquivado ? 'none' : 'flex';
+    document.getElementById('btn-excluir-projeto').style.display = arquivado ? 'none' : 'inline-flex';
+
     modalDetalhe.classList.add('open');
     await carregarVersoes();
   }
@@ -245,7 +318,7 @@
 
   async function carregarVersoes() {
     const { data: versoes } = await supabase.from('arte_versoes')
-      .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, tamanho_bytes, criado_em, enviado_por_portal, arte_aprovacoes(decisao, comentario, criado_em)')
+      .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, tamanho_bytes, observacoes, criado_em, enviado_por_portal, arte_aprovacoes(decisao, comentario, criado_em)')
       .eq('projeto_id', projetoEmDetalhe).order('numero_versao', { ascending: false });
 
     await renderGaleriaArtes(document.getElementById('galeria-versoes'), versoes);
@@ -257,7 +330,8 @@
 
     const ultimaVersao = versoes?.[0];
     const jaDecidida = ultimaVersao && (ultimaVersao.arte_aprovacoes || []).length > 0;
-    document.getElementById('area-decisao').style.display = (ultimaVersao && !jaDecidida) ? 'block' : 'none';
+    const arquivado = !!projetoAtualDetalhe?.arquivado_em;
+    document.getElementById('area-decisao').style.display = (!arquivado && ultimaVersao && !jaDecidida) ? 'block' : 'none';
     versaoAtualId = ultimaVersao?.id ?? null;
 
     if (window.lucide) lucide.createIcons();
@@ -285,6 +359,7 @@
             <div style="padding:8px 10px 4px;">
               <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.arquivo_nome}</div>
               <div style="font-size:11px; color:var(--ink-soft);">v${v.numero_versao}${v.enviado_por_portal ? ' · enviado pelo cliente' : ''}</div>
+              ${v.observacoes ? `<div style="font-size:11px; color:var(--ink-soft); margin-top:3px; white-space:normal;">"${v.observacoes}"</div>` : ''}
             </div>
           </a>
           ${ehImagem ? `<div style="padding:0 10px 10px;"><a href="editor-arte.html?projeto=${projetoEmDetalhe}&versao=${v.id}" class="icon-btn" style="font-size:11px;"><i data-lucide="pencil"></i> Editar</a></div>` : ''}
@@ -297,33 +372,61 @@
   let versaoAtualId = null;
 
   // ---------- Enviar versão ----------
+  let arquivoParaEnviar = null;
+
   document.getElementById('btn-enviar-versao').addEventListener('click', () => document.getElementById('input-arquivo-arte').click());
 
-  document.getElementById('input-arquivo-arte').addEventListener('change', async (e) => {
+  document.getElementById('input-arquivo-arte').addEventListener('change', (e) => {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
+    arquivoParaEnviar = arquivo;
+    document.getElementById('ov-nome-arquivo').textContent = arquivo.name;
+    document.getElementById('ov_observacao').value = '';
+    document.getElementById('modal-observacao-versao').classList.add('open');
+  });
 
-    const { count } = await supabase.from('arte_versoes').select('id', { count: 'exact', head: true }).eq('projeto_id', projetoEmDetalhe);
-    const proximaVersao = (count || 0) + 1;
-
-    const bytes = await arquivo.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
-    const hashArquivo = [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const caminho = `${TENANT_ID}/artes/${projetoEmDetalhe}/v${proximaVersao}_${arquivo.name}`;
-    const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivo);
-    if (erroUpload) { alert('Erro ao enviar arquivo: ' + erroUpload.message); return; }
-
-    const { error } = await supabase.from('arte_versoes').insert({
-      tenant_id: TENANT_ID, projeto_id: projetoEmDetalhe, numero_versao: proximaVersao,
-      arquivo_path: caminho, arquivo_nome: arquivo.name, arquivo_tipo: arquivo.type,
-      hash_arquivo: hashArquivo, tamanho_bytes: arquivo.size, enviado_por: usuario?.id,
-    });
-    if (error) { alert('Erro ao registrar versão: ' + error.message); return; }
-
-    await supabase.from('projetos_arte').update({ status: 'aguardando_aprovacao' }).eq('id', projetoEmDetalhe);
+  document.getElementById('btn-cancelar-observacao-versao').addEventListener('click', () => {
+    document.getElementById('modal-observacao-versao').classList.remove('open');
     document.getElementById('input-arquivo-arte').value = '';
-    await carregarVersoes();
+    arquivoParaEnviar = null;
+  });
+
+  document.getElementById('btn-confirmar-envio-versao').addEventListener('click', async () => {
+    const arquivo = arquivoParaEnviar;
+    if (!arquivo) return;
+    const observacao = document.getElementById('ov_observacao').value.trim();
+
+    const btn = document.getElementById('btn-confirmar-envio-versao');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+
+    try {
+      const { count } = await supabase.from('arte_versoes').select('id', { count: 'exact', head: true }).eq('projeto_id', projetoEmDetalhe);
+      const proximaVersao = (count || 0) + 1;
+
+      const bytes = await arquivo.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+      const hashArquivo = [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const caminho = `${TENANT_ID}/artes/${projetoEmDetalhe}/v${proximaVersao}_${arquivo.name}`;
+      const { error: erroUpload } = await supabase.storage.from('anexos').upload(caminho, arquivo);
+      if (erroUpload) { alert('Erro ao enviar arquivo: ' + erroUpload.message); return; }
+
+      const { error } = await supabase.from('arte_versoes').insert({
+        tenant_id: TENANT_ID, projeto_id: projetoEmDetalhe, numero_versao: proximaVersao,
+        arquivo_path: caminho, arquivo_nome: arquivo.name, arquivo_tipo: arquivo.type,
+        hash_arquivo: hashArquivo, tamanho_bytes: arquivo.size, enviado_por: usuario?.id,
+        observacoes: observacao || null,
+      });
+      if (error) { alert('Erro ao registrar versão: ' + error.message); return; }
+
+      await supabase.from('projetos_arte').update({ status: 'aguardando_aprovacao' }).eq('id', projetoEmDetalhe);
+      document.getElementById('input-arquivo-arte').value = '';
+      arquivoParaEnviar = null;
+      document.getElementById('modal-observacao-versao').classList.remove('open');
+      await carregarVersoes();
+    } finally {
+      btn.disabled = false; btn.textContent = 'Confirmar Envio';
+    }
   });
 
   // ---------- Decisão ----------
@@ -341,6 +444,101 @@
   document.getElementById('btn-aprovar').addEventListener('click', () => registrarDecisao('aprovado'));
   document.getElementById('btn-reprovar').addEventListener('click', () => registrarDecisao('reprovado'));
   document.getElementById('btn-solicitar-alteracao').addEventListener('click', () => registrarDecisao('solicitar_alteracao'));
+
+  // ---------- Excluir / Restaurar projeto ----------
+  const modalMotivoExclusao = document.getElementById('modal-motivo-exclusao');
+
+  document.getElementById('btn-excluir-projeto').addEventListener('click', () => {
+    document.getElementById('me_motivo').value = '';
+    modalMotivoExclusao.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-exclusao').addEventListener('click', () => modalMotivoExclusao.classList.remove('open'));
+
+  document.getElementById('btn-confirmar-exclusao').addEventListener('click', async () => {
+    const motivo = document.getElementById('me_motivo').value.trim();
+    if (!motivo) { alert('Informe o motivo da exclusão.'); return; }
+
+    const btn = document.getElementById('btn-confirmar-exclusao');
+    btn.disabled = true; btn.textContent = 'Excluindo…';
+
+    const { error } = await supabase.from('projetos_arte').update({
+      arquivado_em: new Date().toISOString(), arquivado_por: usuario?.id, motivo_arquivamento: motivo,
+    }).eq('id', projetoEmDetalhe);
+
+    btn.disabled = false; btn.textContent = 'Confirmar Exclusão';
+
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+
+    await supabase.from('projetos_arte_arquivamento_log').insert({
+      tenant_id: TENANT_ID, projeto_id: projetoEmDetalhe, acao: 'arquivado', motivo, realizado_por: usuario?.id,
+    });
+
+    modalMotivoExclusao.classList.remove('open');
+    modalDetalhe.classList.remove('open');
+    await carregar();
+  });
+
+  document.getElementById('btn-restaurar-projeto').addEventListener('click', async () => {
+    if (!confirm('Restaurar este projeto? Ele volta a aparecer normalmente e o cliente pode vê-lo de novo no Portal.')) return;
+
+    const { error } = await supabase.from('projetos_arte').update({
+      arquivado_em: null, arquivado_por: null, motivo_arquivamento: null,
+    }).eq('id', projetoEmDetalhe);
+    if (error) { alert('Erro ao restaurar: ' + error.message); return; }
+
+    await supabase.from('projetos_arte_arquivamento_log').insert({
+      tenant_id: TENANT_ID, projeto_id: projetoEmDetalhe, acao: 'restaurado', realizado_por: usuario?.id,
+    });
+
+    modalDetalhe.classList.remove('open');
+    await carregar();
+  });
+
+  // ---------- Relatório PDF ----------
+  document.getElementById('btn-gerar-pdf').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-gerar-pdf');
+    btn.disabled = true; btn.textContent = 'Gerando…';
+    try {
+      const { data: versoesRel } = await supabase.from('arte_versoes')
+        .select('id, numero_versao, arquivo_path, arquivo_nome, arquivo_tipo, observacoes, criado_em, enviado_por, enviado_por_portal')
+        .eq('projeto_id', projetoEmDetalhe).order('numero_versao', { ascending: false });
+
+      const { data: aprovacoesRel } = await supabase.from('arte_aprovacoes')
+        .select('versao_id, decisao, comentario, criado_em, decidido_por, decidido_por_portal')
+        .in('versao_id', (versoesRel || []).map(v => v.id));
+
+      // Sistema interno tem leitura direta de `usuarios` — não precisa de
+      // RPC (essa é só necessária do lado do Portal).
+      const idsInternos = [...new Set([...(versoesRel||[]).map(v=>v.enviado_por), ...(aprovacoesRel||[]).map(a=>a.decidido_por)].filter(Boolean))];
+      const idsPortal = [...new Set([...(versoesRel||[]).map(v=>v.enviado_por_portal), ...(aprovacoesRel||[]).map(a=>a.decidido_por_portal)].filter(Boolean))];
+
+      const [{ data: nomesInternos }, { data: nomesPortal }] = await Promise.all([
+        idsInternos.length ? supabase.from('usuarios').select('id, nome').in('id', idsInternos) : Promise.resolve({ data: [] }),
+        idsPortal.length ? supabase.from('usuarios_portal').select('id, nome').in('id', idsPortal) : Promise.resolve({ data: [] }),
+      ]);
+      const mapaAutores = new Map([...(nomesInternos||[]), ...(nomesPortal||[])].map(u => [u.id, u.nome]));
+
+      const versoesComAutorEDecisoes = (versoesRel || []).map(v => ({
+        ...v,
+        autor: mapaAutores.get(v.enviado_por || v.enviado_por_portal) ?? (v.enviado_por_portal ? 'Cliente' : 'Equipe'),
+        decisoes: (aprovacoesRel || []).filter(a => a.versao_id === v.id).map(a => ({
+          ...a,
+          autor: mapaAutores.get(a.decidido_por || a.decidido_por_portal) ?? (a.decidido_por_portal ? 'Cliente' : 'Equipe'),
+        })),
+      }));
+
+      await gerarRelatorioArtePDF({
+        supabase,
+        projeto: projetoAtualDetalhe,
+        clienteNome: projetoAtualDetalhe?.favorecidos?.nome,
+        versoes: versoesComAutorEDecisoes,
+      });
+    } catch (err) {
+      alert('Erro ao gerar relatório: ' + err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Gerar Relatório PDF';
+    }
+  });
 
   await carregar();
 </script>
