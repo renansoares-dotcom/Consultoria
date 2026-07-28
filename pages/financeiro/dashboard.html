@@ -12,6 +12,116 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* ============================================================================
+     Redesign visual do Dashboard Financeiro — SOMENTE CSS/HTML, escopado a
+     este arquivo (não toca em css/design-system.css, zero impacto nas outras
+     páginas). Nenhum id, evento, consulta ou função JS foi alterado — só a
+     apresentação visual dos mesmos elementos que já existiam.
+  ============================================================================ */
+
+  .app-main .page { padding: 28px 32px 64px; }
+
+  /* ---------- Hero: Saldo Atual em destaque ---------- */
+  .hero-saldo {
+    background: linear-gradient(135deg, var(--accent) 0%, #145c44 100%);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-saldo::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 85% 20%, rgba(255,255,255,.10), transparent 55%);
+    pointer-events: none;
+  }
+  .hero-saldo .rotulo {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: rgba(255,255,255,.75);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .hero-saldo .saldo-ticker { display: flex; flex-direction: column; position: relative; z-index: 1; }
+  .hero-saldo .saldo-ticker span:first-child { display: none; } /* rótulo textual antigo "SALDO ATUAL" some — vira .rotulo acima, mesmo texto, tratamento maior */
+  .hero-saldo #saldo-topo {
+    font-family: var(--font-mono);
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .hero-saldo .hero-icone {
+    width: 56px; height: 56px; border-radius: var(--radius-md);
+    background: rgba(255,255,255,.14);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; position: relative; z-index: 1;
+  }
+  .hero-saldo .hero-icone svg { width: 28px; height: 28px; color: #fff; }
+
+  /* ---------- KPI cards modernos ---------- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .kpi-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 20px 22px;
+  }
+  .kpi-card .kpi-icone {
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .kpi-card .kpi-icone svg { width: 19px; height: 19px; }
+  .kpi-card .kpi-icone.tom-verde   { background: var(--accent-soft); color: var(--accent); }
+  .kpi-card .kpi-icone.tom-ambar   { background: var(--amber-soft); color: var(--amber); }
+  .kpi-card .kpi-icone.tom-azul    { background: rgba(31, 122, 92, .14); color: var(--accent); }
+  .kpi-card .kpi-icone.tom-vermelho{ background: var(--red-soft); color: var(--red); }
+  .kpi-card .kpi-corpo { min-width: 0; }
+  .kpi-card .label { margin-bottom: 8px; }
+  .kpi-card .big { font-size: 22px; }
+
+  /* ---------- Grade assimétrica de gráficos ---------- */
+  .linha-principal { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+  .linha-secundaria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 1100px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .linha-principal, .linha-secundaria { grid-template-columns: 1fr; }
+  }
+
+  .card-titulo {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .card-titulo .label { margin-bottom: 0; }
+
+  /* ---------- Gráfico de barras mensal: baseline + mais respiro ---------- */
+  .grafico-barras-mensal { border-top: 1px solid var(--line); padding-top: 18px; }
+
+  /* ---------- Bar-lists: barra de preenchimento com leve gradiente ---------- */
+  .bar-list .trilho .fill { background-image: linear-gradient(90deg, currentColor, currentColor); filter: brightness(1); }
+
+  /* ---------- Tabela: cabeçalho mais forte, badge corrigido ---------- */
+  .card-tabela { padding: 0; overflow: hidden; }
+  .card-tabela .card-titulo { padding: 20px 24px 0; margin-bottom: 12px; }
+  .card-tabela table { font-size: 13px; }
+  .card-tabela tbody td { padding: 13px 16px; }
+  .card-tabela tbody tr:hover { background: var(--paper); }
+
+  /* Correção real: o status "em_aberto" vira classe "emaberto" no HTML
+     (JS faz status.replace('_','')), mas o design-system.css só define
+     .badge.aberto — esse badge nunca teve cor. Só CSS, não mexe no JS. */
+  .badge.emaberto { background: var(--amber-soft); color: var(--amber); }
+</style>
 </head>
 <body>
 
@@ -128,10 +238,6 @@
   </nav>
 
   <div class="topbar-right">
-    <div class="saldo-ticker">
-      <span>SALDO ATUAL</span>
-      <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
-    </div>
     <div class="user-chip" id="user-chip">
       <div class="avatar" id="user-avatar">--</div>
       <span id="user-nome">Carregando…</span>
@@ -151,68 +257,90 @@
     </div>
   </div>
 
-  <section class="grid grid-4" style="margin-bottom:16px;">
-    <div class="card">
-      <div class="label">Saldo Realizado (Pago)</div>
-      <div class="big valor" id="card-realizado">R$ 0,00</div>
+  <div class="hero-saldo">
+    <div>
+      <div class="rotulo">Saldo Atual</div>
+      <div class="saldo-ticker">
+        <span>SALDO ATUAL</span>
+        <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
+      </div>
     </div>
-    <div class="card">
-      <div class="label">Em Aberto (Previsto)</div>
-      <div class="big valor aberto" id="card-aberto">R$ 0,00</div>
+    <div class="hero-icone"><i data-lucide="wallet"></i></div>
+  </div>
+
+  <section class="kpi-grid">
+    <div class="card kpi-card">
+      <div class="kpi-icone tom-verde"><i data-lucide="check-circle-2"></i></div>
+      <div class="kpi-corpo">
+        <div class="label">Saldo Realizado (Pago)</div>
+        <div class="big valor" id="card-realizado">R$ 0,00</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="label">Saldo Projetado</div>
-      <div class="big valor" id="card-projetado">R$ 0,00</div>
+    <div class="card kpi-card">
+      <div class="kpi-icone tom-ambar"><i data-lucide="clock"></i></div>
+      <div class="kpi-corpo">
+        <div class="label">Em Aberto (Previsto)</div>
+        <div class="big valor aberto" id="card-aberto">R$ 0,00</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="label">Inadimplência</div>
-      <div class="big valor negativo" id="card-inadimplencia">R$ 0,00</div>
+    <div class="card kpi-card">
+      <div class="kpi-icone tom-azul"><i data-lucide="trending-up"></i></div>
+      <div class="kpi-corpo">
+        <div class="label">Saldo Projetado</div>
+        <div class="big valor" id="card-projetado">R$ 0,00</div>
+      </div>
+    </div>
+    <div class="card kpi-card">
+      <div class="kpi-icone tom-vermelho"><i data-lucide="alert-triangle"></i></div>
+      <div class="kpi-corpo">
+        <div class="label">Inadimplência</div>
+        <div class="big valor negativo" id="card-inadimplencia">R$ 0,00</div>
+      </div>
     </div>
   </section>
 
-  <section class="grid grid-2" style="margin-bottom:18px;">
-    <div class="card">
-      <div class="label" style="margin-bottom:18px;">Saldo por Conta Bancária</div>
+  <div class="linha-principal">
+    <section class="card">
+      <div class="card-titulo">
+        <div class="label">Fluxo Mensal — Entradas vs Saídas</div>
+        <div class="grafico-legenda-topo">
+          <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
+          <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
+        </div>
+      </div>
+      <div class="grafico-barras-mensal" id="grafico-fluxo-mensal"></div>
+    </section>
+    <section class="card">
+      <div class="card-titulo"><div class="label">Saldo por Conta Bancária</div></div>
       <div class="donut-box-wrap" id="donut-contas">
         <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
       </div>
-    </div>
-    <div class="card">
-      <div class="label" style="margin-bottom:18px;">Aging de Contas a Receber</div>
+    </section>
+  </div>
+
+  <div class="linha-secundaria">
+    <section class="card">
+      <div class="card-titulo"><div class="label">Aging de Contas a Receber</div></div>
       <div class="donut-box-wrap" id="donut-aging">
         <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
       </div>
-    </div>
-  </section>
-
-  <section class="card" style="margin-bottom:18px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-      <div class="label" style="margin-bottom:0;">Fluxo Mensal — Entradas vs Saídas</div>
-      <div class="grafico-legenda-topo">
-        <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
-        <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
-      </div>
-    </div>
-    <div class="grafico-barras-mensal" id="grafico-fluxo-mensal"></div>
-  </section>
-
-  <section class="grid grid-2" style="margin-bottom:18px;">
-    <div class="card">
-      <div class="label" style="margin-bottom:18px;">Top 5 Favorecidos por Movimentação</div>
+    </section>
+    <section class="card">
+      <div class="card-titulo"><div class="label">Top 5 Favorecidos</div></div>
       <div class="bar-list" id="top-favorecidos">
         <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
       </div>
-    </div>
-    <div class="card">
-      <div class="label" style="margin-bottom:18px;">Distribuição por Plano de Contas</div>
+    </section>
+    <section class="card">
+      <div class="card-titulo"><div class="label">Distribuição por Plano de Contas</div></div>
       <div class="bar-list" id="dist-plano-contas">
         <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
-  <section class="card">
-    <div class="label" style="margin-bottom:14px;">Últimos lançamentos</div>
+  <section class="card card-tabela">
+    <div class="card-titulo"><div class="label">Últimos Lançamentos</div></div>
     <table>
       <thead>
         <tr>
