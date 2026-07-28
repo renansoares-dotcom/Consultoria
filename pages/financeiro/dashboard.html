@@ -258,51 +258,68 @@ if (window.lucide) lucide.createIcons();
   const selGrupo = document.getElementById('f_grupo');
   const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
   selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
-  selGrupo.addEventListener('change', () => { carregarCards(); carregarUltimosLancamentos(); });
 
   // ---------- Cards de saldo (Realizado, Em aberto, Projetado, Inadimplência) ----------
   const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
 
-  async function carregarCards() {
+  // ============================================================================
+  // Carga de dados COMPARTILHADA — antes, cada card/gráfico buscava a mesma
+  // fonte de novo (vw_realizado era consultada 5x, lancamentos 3x,
+  // contas_bancarias 2x, vw_saldo_lancamento 2x, numa carga só). Agora busca
+  // uma vez (por troca de filtro de grupo), e cada função só deriva os
+  // números a partir do que já está em memória — a maioria virou síncrona.
+  // Bônus: trocar o filtro de Grupo Empresarial não dispara nova consulta
+  // nenhuma pros gráficos que não dependem de favorecidos, é só reprocessar.
+  // ============================================================================
+  let dadosCompartilhados = null;
+
+  async function carregarDadosCompartilhados() {
     const grupoId = selGrupo.value;
 
-    let queryContas = supabase.from('contas_bancarias').select('saldo_inicial').eq('ativo', true);
-    if (grupoId) queryContas = queryContas.eq('grupo_empresarial_id', grupoId);
-    const { data: contas } = await queryContas;
-    const saldoInicialContas = (contas || []).reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+    let qContas = supabase.from('contas_bancarias').select('id, nome, saldo_inicial, grupo_empresarial_id').eq('ativo', true);
+    let qRealizado = supabase.from('vw_realizado').select('conta_bancaria_id, conta_destino_id, valor_desembolsado, tipo, grupo_empresarial_id, data_baixa, favorecido_id, plano_conta_id, nome_conta');
+    let qSaldoLancamento = supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto, status');
+    let qLancamentos = supabase.from('lancamentos').select('id, grupo_empresarial_id, data_vencimento, plano_contas(tipo)');
 
-    // Realizado: soma o que já foi de fato baixado (mesmo que parcialmente), pela vw_realizado
-    let queryRealizado = supabase.from('vw_realizado').select('valor_desembolsado, tipo');
-    if (grupoId) queryRealizado = queryRealizado.eq('grupo_empresarial_id', grupoId);
-    const { data: realizados, error: erroRealizado } = await queryRealizado;
+    if (grupoId) {
+      qContas = qContas.eq('grupo_empresarial_id', grupoId);
+      qRealizado = qRealizado.eq('grupo_empresarial_id', grupoId);
+      qLancamentos = qLancamentos.eq('grupo_empresarial_id', grupoId);
+    }
+    // vw_saldo_lancamento não tem grupo_empresarial_id direto (é agregada a
+    // partir de lancamentos) — o filtro de grupo já vale por tabela, porque
+    // cruzamos pelo lancamento_id contra `lancamentos`, que já veio filtrado.
 
-    // Em aberto / inadimplência: saldo que ainda falta pagar, por status.
-    // vw_saldo_lancamento é uma view agregada (GROUP BY) — o PostgREST não
-    // consegue montar embed de FK através dela (não é tabela real), então
-    // buscamos o saldo cru e os dados do lançamento (grupo/tipo) separados,
-    // e juntamos aqui no navegador pelo lancamento_id.
-    let querySaldo = supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto, status');
-    const { data: saldosRaw, error: erroSaldo } = await querySaldo;
+    const [rContas, rRealizado, rSaldoLanc, rLancamentos] = await Promise.all([qContas, qRealizado, qSaldoLancamento, qLancamentos]);
 
-    let queryLancInfo = supabase.from('lancamentos').select('id, grupo_empresarial_id, plano_contas(tipo)');
-    if (grupoId) queryLancInfo = queryLancInfo.eq('grupo_empresarial_id', grupoId);
-    const { data: lancInfo, error: erroLancInfo } = await queryLancInfo;
+    dadosCompartilhados = {
+      contas: rContas.data || [],
+      realizado: rRealizado.data || [],
+      saldoLancamento: rSaldoLanc.data || [],
+      lancamentos: rLancamentos.data || [],
+    };
 
-    if (erroRealizado || erroSaldo || erroLancInfo) { console.error(erroRealizado || erroSaldo || erroLancInfo); return; }
+    const erro = rContas.error || rRealizado.error || rSaldoLanc.error || rLancamentos.error;
+    if (erro) console.error('Erro ao carregar dados do dashboard:', erro);
+  }
 
-    const infoPorLancamento = new Map((lancInfo || []).map(l => [l.id, l]));
-    const saldos = (saldosRaw || [])
+  function carregarCards() {
+    const { contas, realizado, saldoLancamento, lancamentos } = dadosCompartilhados;
+    const saldoInicialContas = contas.reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+
+    let realizadoTotal = saldoInicialContas;
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.tipo) return; // não altera o caixa total da empresa
+      realizadoTotal += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+    });
+
+    const infoPorLancamento = new Map(lancamentos.map(l => [l.id, l]));
+    const saldos = saldoLancamento
       .filter(s => infoPorLancamento.has(s.lancamento_id))
       .map(s => ({ ...s, lancamentos: infoPorLancamento.get(s.lancamento_id) }));
 
-    let realizado = saldoInicialContas;
-    (realizados || []).forEach(r => {
-      if (r.tipo === 'transferencia' || !r.tipo) return; // não altera o caixa total da empresa
-      realizado += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
-    });
-
     let aberto = 0, inadimplencia = 0;
-    (saldos || []).forEach(s => {
+    saldos.forEach(s => {
       const tipo = s.lancamentos?.plano_contas?.tipo;
       if (tipo === 'transferencia' || !tipo) return;
       const sinal = tipo === 'entrada' ? 1 : -1;
@@ -310,17 +327,16 @@ if (window.lucide) lucide.createIcons();
       else if (s.status === 'inadimplente') inadimplencia += Number(s.saldo_aberto);
     });
 
-    const projetado = realizado + aberto;
+    const projetado = realizadoTotal + aberto;
 
-    document.getElementById('card-realizado').textContent = fmt(realizado);
-    document.getElementById('card-realizado').classList.add(realizado >= 0 ? 'positivo' : 'negativo');
+    document.getElementById('card-realizado').textContent = fmt(realizadoTotal);
+    document.getElementById('card-realizado').classList.add(realizadoTotal >= 0 ? 'positivo' : 'negativo');
     document.getElementById('card-aberto').textContent = fmt(aberto);
     document.getElementById('card-projetado').textContent = fmt(projetado);
     document.getElementById('card-projetado').classList.add(projetado >= 0 ? 'positivo' : 'negativo');
     document.getElementById('card-inadimplencia').textContent = fmt(inadimplencia);
-    document.getElementById('saldo-topo').textContent = fmt(realizado);
+    document.getElementById('saldo-topo').textContent = fmt(realizadoTotal);
   }
-  try { await carregarCards(); } catch (e) { console.error('Erro ao carregar cards do dashboard:', e); }
 
   // ============================================================================
   // BI — donuts, fluxo mensal e rankings (tudo em CSS puro, sem biblioteca)
@@ -363,19 +379,12 @@ if (window.lucide) lucide.createIcons();
   }
 
   // ---------- Saldo por Conta Bancária ----------
-  async function carregarDonutContas() {
-    const grupoId = selGrupo.value;
-    let qContas = supabase.from('contas_bancarias').select('id, nome, saldo_inicial').eq('ativo', true);
-    if (grupoId) qContas = qContas.eq('grupo_empresarial_id', grupoId);
-    const { data: contas } = await qContas;
-
-    let qReal = supabase.from('vw_realizado').select('conta_bancaria_id, conta_destino_id, valor_desembolsado, tipo, grupo_empresarial_id');
-    if (grupoId) qReal = qReal.eq('grupo_empresarial_id', grupoId);
-    const { data: realizados } = await qReal;
+  function carregarDonutContas() {
+    const { contas, realizado } = dadosCompartilhados;
 
     const saldos = {};
-    (contas || []).forEach(c => { saldos[c.id] = Number(c.saldo_inicial || 0); });
-    (realizados || []).forEach(r => {
+    contas.forEach(c => { saldos[c.id] = Number(c.saldo_inicial || 0); });
+    realizado.forEach(r => {
       const v = Number(r.valor_desembolsado);
       if (r.tipo === 'transferencia') {
         if (saldos[r.conta_bancaria_id] !== undefined) saldos[r.conta_bancaria_id] -= v;
@@ -386,29 +395,22 @@ if (window.lucide) lucide.createIcons();
     });
 
     const totalGeral = Object.values(saldos).reduce((s,v) => s+v, 0);
-    const segmentos = (contas || []).map((c,i) => ({ nome: c.nome, valor: Math.max(saldos[c.id], 0), cor: CORES_SERIE[i % CORES_SERIE.length] }));
+    const segmentos = contas.map((c,i) => ({ nome: c.nome, valor: Math.max(saldos[c.id], 0), cor: CORES_SERIE[i % CORES_SERIE.length] }));
     renderDonut('donut-contas', segmentos, 'Saldo Total', fmt(totalGeral).replace('R$ ',''));
   }
 
   // ---------- Aging de Contas a Receber ----------
-  async function carregarDonutAging() {
-    const grupoId = selGrupo.value;
+  function carregarDonutAging() {
+    const { saldoLancamento, lancamentos } = dadosCompartilhados;
 
-    let querySaldo = supabase.from('vw_saldo_lancamento').select('lancamento_id, saldo_aberto');
-    const { data: saldosRaw } = await querySaldo;
-
-    let queryLancInfo = supabase.from('lancamentos').select('id, data_vencimento, grupo_empresarial_id, plano_contas!inner(tipo)').eq('plano_contas.tipo', 'entrada');
-    if (grupoId) queryLancInfo = queryLancInfo.eq('grupo_empresarial_id', grupoId);
-    const { data: lancInfo } = await queryLancInfo;
-
-    const infoPorLancamento = new Map((lancInfo || []).map(l => [l.id, l]));
-    const data = (saldosRaw || [])
+    const infoPorLancamento = new Map(lancamentos.filter(l => l.plano_contas?.tipo === 'entrada').map(l => [l.id, l]));
+    const data = saldoLancamento
       .filter(s => infoPorLancamento.has(s.lancamento_id))
       .map(s => ({ saldo_aberto: s.saldo_aberto, lancamentos: infoPorLancamento.get(s.lancamento_id) }));
 
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const buckets = { atual: 0, d30: 0, d60: 0, d90: 0, vencido: 0 };
-    (data || []).forEach(r => {
+    data.forEach(r => {
       const venc = r.lancamentos?.data_vencimento ? new Date(r.lancamentos.data_vencimento + 'T00:00:00') : null;
       const valor = Number(r.saldo_aberto || 0);
       if (valor <= 0) return;
@@ -433,14 +435,12 @@ if (window.lucide) lucide.createIcons();
   }
 
   // ---------- Fluxo Mensal (últimos 6 meses) ----------
-  async function carregarFluxoMensal() {
-    const grupoId = selGrupo.value;
+  function carregarFluxoMensal() {
+    const { realizado } = dadosCompartilhados;
     const hoje = new Date();
     const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
-
-    let q = supabase.from('vw_realizado').select('data_baixa, valor_desembolsado, tipo, grupo_empresarial_id').gte('data_baixa', inicio.toISOString().slice(0,10));
-    if (grupoId) q = q.eq('grupo_empresarial_id', grupoId);
-    const { data } = await q;
+    const inicioStr = inicio.toISOString().slice(0,10);
+    const data = realizado.filter(r => r.data_baixa >= inicioStr);
 
     const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
     const porMes = {};
@@ -449,7 +449,7 @@ if (window.lucide) lucide.createIcons();
       const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
       porMes[chave] = { entrada: 0, saida: 0, label: `${MESES_ABR[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` };
     }
-    (data || []).forEach(r => {
+    data.forEach(r => {
       const chave = r.data_baixa.slice(0,7);
       if (!porMes[chave] || r.tipo === 'transferencia') return;
       porMes[chave][r.tipo === 'entrada' ? 'entrada' : 'saida'] += Number(r.valor_desembolsado);
@@ -469,13 +469,14 @@ if (window.lucide) lucide.createIcons();
   }
 
   // ---------- Top 5 Favorecidos por Movimentação ----------
+  // Único gráfico que ainda faz busca própria — precisa do nome do
+  // favorecido, que não está em vw_realizado, então essa parte não dava
+  // pra eliminar sem mudar a view. Continua async só por causa disso.
   async function carregarTopFavorecidos() {
-    const grupoId = selGrupo.value;
-    let q = supabase.from('vw_realizado').select('favorecido_id, valor_desembolsado, tipo, grupo_empresarial_id').neq('tipo', 'transferencia');
-    if (grupoId) q = q.eq('grupo_empresarial_id', grupoId);
-    const { data } = await q;
+    const { realizado } = dadosCompartilhados;
+    const data = realizado.filter(r => r.tipo !== 'transferencia');
 
-    const idsFavorecidos = [...new Set((data || []).map(r => r.favorecido_id).filter(Boolean))];
+    const idsFavorecidos = [...new Set(data.map(r => r.favorecido_id).filter(Boolean))];
     let nomesPorId = {};
     if (idsFavorecidos.length) {
       const { data: favs } = await supabase.from('favorecidos').select('id, nome').in('id', idsFavorecidos);
@@ -483,7 +484,7 @@ if (window.lucide) lucide.createIcons();
     }
 
     const porFavorecido = {};
-    (data || []).forEach(r => {
+    data.forEach(r => {
       const nome = nomesPorId[r.favorecido_id];
       if (!nome) return;
       porFavorecido[nome] = (porFavorecido[nome] || 0) + Number(r.valor_desembolsado);
@@ -501,14 +502,12 @@ if (window.lucide) lucide.createIcons();
   }
 
   // ---------- Distribuição por Plano de Contas ----------
-  async function carregarDistPlanoContas() {
-    const grupoId = selGrupo.value;
-    let q = supabase.from('vw_realizado').select('valor_desembolsado, tipo, grupo_empresarial_id, plano_conta_id, nome_conta').neq('tipo', 'transferencia');
-    if (grupoId) q = q.eq('grupo_empresarial_id', grupoId);
-    const { data } = await q;
+  function carregarDistPlanoContas() {
+    const { realizado } = dadosCompartilhados;
+    const data = realizado.filter(r => r.tipo !== 'transferencia');
 
     const porPlano = {};
-    (data || []).forEach(r => {
+    data.forEach(r => {
       const nome = r.nome_conta;
       if (!nome) return;
       porPlano[nome] = (porPlano[nome] || 0) + Number(r.valor_desembolsado);
@@ -525,20 +524,29 @@ if (window.lucide) lucide.createIcons();
       </div>`).join('');
   }
 
-  async function carregarBI() {
-    // Promise.allSettled (não Promise.all): se um gráfico falhar, os outros
-    // e o que vem depois no script (Últimos Lançamentos) continuam normalmente.
+  // ---------- Orquestração — uma busca, tudo deriva dela ----------
+  async function recarregarDashboard() {
+    await carregarDadosCompartilhados();
+    carregarCards();
+
+    // Promise.allSettled: se o Top Favorecidos (o único que ainda busca
+    // algo à parte) falhar, os outros gráficos continuam normais.
     const resultados = await Promise.allSettled([
-      carregarDonutContas(),
-      carregarDonutAging(),
-      carregarFluxoMensal(),
+      Promise.resolve(carregarDonutContas()),
+      Promise.resolve(carregarDonutAging()),
+      Promise.resolve(carregarFluxoMensal()),
       carregarTopFavorecidos(),
-      carregarDistPlanoContas(),
+      Promise.resolve(carregarDistPlanoContas()),
     ]);
-    resultados.forEach(r => { if (r.status === 'rejected') console.error('Erro ao carregar gráfico do dashboard:', r.reason); });
+    resultados.forEach(r => { if (r.status === 'rejected') console.error('Erro ao montar gráfico do dashboard:', r.reason); });
   }
-  try { await carregarBI(); } catch (e) { console.error('Erro ao carregar gráficos do dashboard:', e); }
-  selGrupo.addEventListener('change', carregarBI);
+
+  selGrupo.addEventListener('change', () => {
+    recarregarDashboard();
+    carregarUltimosLancamentos();
+  });
+
+  try { await recarregarDashboard(); } catch (e) { console.error('Erro ao carregar dashboard financeiro:', e); }
 
   // Exemplo de carga real: últimos 10 lançamentos do tenant (RLS filtra automaticamente)
   async function carregarUltimosLancamentos() {
