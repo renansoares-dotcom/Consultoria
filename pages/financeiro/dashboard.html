@@ -325,12 +325,12 @@
             <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
             <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
           </div>
-          <div class="periodo-seletor">
-            <button type="button">Hoje</button>
-            <button type="button">7 dias</button>
-            <button type="button">30 dias</button>
-            <button type="button">90 dias</button>
-            <button type="button" class="ativo">Ano</button>
+          <div class="periodo-seletor" id="seletor-periodo-fluxo">
+            <button type="button" data-periodo="hoje">Hoje</button>
+            <button type="button" data-periodo="7dias">7 dias</button>
+            <button type="button" data-periodo="30dias">30 dias</button>
+            <button type="button" data-periodo="90dias">90 dias</button>
+            <button type="button" data-periodo="ano" class="ativo">Ano</button>
           </div>
         </div>
       </div>
@@ -426,6 +426,7 @@ if (window.lucide) lucide.createIcons();
   // nenhuma pros gráficos que não dependem de favorecidos, é só reprocessar.
   // ============================================================================
   let dadosCompartilhados = null;
+  let periodoAtivo = 'ano'; // reflete o botão marcado "ativo" no HTML
 
   async function carregarDadosCompartilhados() {
     const grupoId = selGrupo.value;
@@ -589,30 +590,58 @@ if (window.lucide) lucide.createIcons();
   }
 
   // ---------- Fluxo Mensal (últimos 6 meses) ----------
+  const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+  // Gera os "baldes" (intervalos) do eixo X conforme o período escolhido.
+  // 'ano' agrupa por mês (12 meses); os demais agrupam por dia, mas nunca
+  // mais que ~15 barras (senão o gráfico fica espremido) — 30 e 90 dias
+  // viram faixas de vários dias por barra em vez de 1 barra por dia.
+  function gerarBucketsPeriodo(periodo) {
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+    if (periodo === 'ano') {
+      const buckets = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() - i + 1, 0);
+        buckets.push({ inicio: d, fim: fimMes, label: `${MESES_ABR[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` });
+      }
+      return buckets;
+    }
+
+    const diasPorPeriodo = { hoje: 1, '7dias': 7, '30dias': 30, '90dias': 90 };
+    const totalDias = diasPorPeriodo[periodo] ?? 7;
+    const diasPorBucket = Math.max(1, Math.ceil(totalDias / 15));
+
+    const buckets = [];
+    for (let offsetInicio = totalDias - 1; offsetInicio >= 0; offsetInicio -= diasPorBucket) {
+      const offsetFim = Math.max(0, offsetInicio - diasPorBucket + 1);
+      const dataInicio = new Date(hoje); dataInicio.setDate(hoje.getDate() - offsetInicio);
+      const dataFim = new Date(hoje); dataFim.setDate(hoje.getDate() - offsetFim);
+      const label = diasPorBucket === 1
+        ? `${String(dataInicio.getDate()).padStart(2,'0')}/${String(dataInicio.getMonth()+1).padStart(2,'0')}`
+        : `${String(dataInicio.getDate()).padStart(2,'0')}-${String(dataFim.getDate()).padStart(2,'0')}/${String(dataFim.getMonth()+1).padStart(2,'0')}`;
+      buckets.push({ inicio: dataInicio, fim: dataFim, label });
+    }
+    return buckets;
+  }
+
   function carregarFluxoMensal() {
     const { realizado } = dadosCompartilhados;
-    const hoje = new Date();
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
-    const inicioStr = inicio.toISOString().slice(0,10);
-    const data = realizado.filter(r => r.data_baixa >= inicioStr);
+    const buckets = gerarBucketsPeriodo(periodoAtivo);
+    buckets.forEach(b => { b.entrada = 0; b.saida = 0; });
 
-    const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-    const porMes = {};
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-      const chave = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      porMes[chave] = { entrada: 0, saida: 0, label: `${MESES_ABR[d.getMonth()]}/${String(d.getFullYear()).slice(2)}` };
-    }
-    data.forEach(r => {
-      const chave = r.data_baixa.slice(0,7);
-      if (!porMes[chave] || r.tipo === 'transferencia') return;
-      porMes[chave][r.tipo === 'entrada' ? 'entrada' : 'saida'] += Number(r.valor_desembolsado);
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return;
+      const dataR = new Date(r.data_baixa + 'T00:00:00');
+      const bucket = buckets.find(b => dataR >= b.inicio && dataR <= b.fim);
+      if (!bucket) return;
+      bucket[r.tipo === 'entrada' ? 'entrada' : 'saida'] += Number(r.valor_desembolsado);
     });
 
-    const valores = Object.values(porMes);
-    const max = Math.max(...valores.flatMap(m => [m.entrada, m.saida]), 0.01);
+    const max = Math.max(...buckets.flatMap(b => [b.entrada, b.saida]), 0.01);
 
-    document.getElementById('grafico-fluxo-mensal').innerHTML = valores.map(m => `
+    document.getElementById('grafico-fluxo-mensal').innerHTML = buckets.map(m => `
       <div class="grupo-mes">
         <div class="barras" title="Entradas: ${fmt(m.entrada)} · Saídas: ${fmt(m.saida)}">
           <div class="barra bg-serie-1" style="height:${Math.max(3, m.entrada/max*130)}px;"></div>
@@ -698,6 +727,18 @@ if (window.lucide) lucide.createIcons();
   selGrupo.addEventListener('change', () => {
     recarregarDashboard();
     carregarUltimosLancamentos();
+  });
+
+  // Troca de período do gráfico de Fluxo Mensal — não busca nada de novo no
+  // Supabase, os dados já estão todos carregados em dadosCompartilhados;
+  // só reagrupa e redesenha o mesmo gráfico, por isso é instantâneo.
+  document.getElementById('seletor-periodo-fluxo').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-periodo]');
+    if (!btn || !dadosCompartilhados) return;
+    document.querySelectorAll('#seletor-periodo-fluxo button').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    periodoAtivo = btn.dataset.periodo;
+    carregarFluxoMensal();
   });
 
   try { await recarregarDashboard(); } catch (e) { console.error('Erro ao carregar dashboard financeiro:', e); }
