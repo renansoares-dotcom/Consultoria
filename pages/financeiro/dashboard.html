@@ -9,9 +9,11 @@
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://esm.sh">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <style>
   /* ============================================================================
      Redesign visual do Dashboard Financeiro — SOMENTE CSS/HTML, escopado a
@@ -90,6 +92,7 @@
   .kpi-card .kpi-icone.tom-azul     { color: var(--accent); }
   .kpi-card .kpi-icone.tom-vermelho { color: var(--red); }
   .kpi-card .big { font-size: 23px; font-weight: 700; }
+  .kpi-sparkline { margin-top: 10px; opacity: .85; }
 
   /* ---------- Grade assimétrica de gráficos ---------- */
   .linha-principal { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
@@ -121,6 +124,7 @@
   .grafico-barras-mensal { border-top: 1px solid var(--line); padding-top: 18px; }
   .grafico-barras-mensal .grupo-mes[data-mes] { cursor: pointer; border-radius: var(--radius-sm); }
   .grafico-barras-mensal .grupo-mes[data-mes]:hover { background: var(--paper); }
+  .grafico-barras-mensal .mes-yoy { font-size: 9.5px; font-weight: 600; margin-top: 1px; }
 
   /* ---------- Bar-lists: barra de preenchimento com leve gradiente ---------- */
   .bar-list .trilho .fill { background-image: linear-gradient(90deg, currentColor, currentColor); filter: brightness(1); }
@@ -289,6 +293,7 @@
       <div class="kpi-corpo">
         <div class="label"><i data-lucide="check-circle-2" class="kpi-icone tom-verde"></i> Saldo Realizado (Pago)</div>
         <div class="big valor" id="card-realizado">R$ 0,00</div>
+        <div id="sparkline-realizado" class="kpi-sparkline"></div>
       </div>
     </div>
     <div class="card kpi-card">
@@ -361,7 +366,10 @@
   </div>
 
   <section class="card card-tabela">
-    <div class="card-titulo"><div class="label">Últimos Lançamentos</div></div>
+    <div class="card-titulo">
+      <div class="label">Últimos Lançamentos</div>
+      <button type="button" class="btn ghost" id="btn-exportar-lancamentos" style="padding:6px 12px; font-size:12.5px;"><i data-lucide="download"></i> Exportar</button>
+    </div>
     <table>
       <thead>
         <tr>
@@ -651,6 +659,59 @@ if (window.lucide) lucide.createIcons();
     }
   }
 
+  // ---------- Sparkline do Saldo Realizado ----------
+  // Só existe pro card Realizado porque é o único com histórico de datas
+  // reais por trás (vw_realizado). "Em Aberto"/"Projetado"/"Inadimplência"
+  // são fotografias do momento atual — o sistema não guarda o que era esse
+  // número há 7 dias, então não dá pra desenhar uma trajetória de verdade
+  // sem inventar dado. Por isso só este card ganha sparkline.
+  function calcularTrajetoriaSaldo(dias) {
+    const { contas, realizado } = dadosCompartilhados;
+    const saldoInicialContas = contas.reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+    let realizadoTotal = saldoInicialContas;
+    const porDia = {};
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.tipo) return;
+      const sinal = r.tipo === 'entrada' ? 1 : -1;
+      realizadoTotal += Number(r.valor_desembolsado) * sinal;
+      if (r.data_baixa) porDia[r.data_baixa] = (porDia[r.data_baixa] || 0) + Number(r.valor_desembolsado) * sinal;
+    });
+
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    let somaNaJanela = 0;
+    for (let i = 0; i < dias; i++) {
+      const d = new Date(hoje); d.setDate(hoje.getDate() - i);
+      somaNaJanela += porDia[d.toISOString().slice(0,10)] || 0;
+    }
+
+    let saldoCorrente = realizadoTotal - somaNaJanela;
+    const pontos = [saldoCorrente];
+    for (let i = dias - 1; i >= 0; i--) {
+      const d = new Date(hoje); d.setDate(hoje.getDate() - i);
+      saldoCorrente += porDia[d.toISOString().slice(0,10)] || 0;
+      pontos.push(saldoCorrente);
+    }
+    return pontos;
+  }
+
+  function renderSparklineRealizado() {
+    const pontos = calcularTrajetoriaSaldo(30);
+    const min = Math.min(...pontos), max = Math.max(...pontos);
+    const largura = 100, altura = 28;
+    const amplitude = (max - min) || 1;
+    const coords = pontos.map((v, i) => {
+      const x = (i / (pontos.length - 1)) * largura;
+      const y = altura - ((v - min) / amplitude) * (altura - 3) - 1.5;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const subiu = pontos[pontos.length - 1] >= pontos[0];
+    const cor = subiu ? 'var(--accent)' : 'var(--red)';
+    document.getElementById('sparkline-realizado').innerHTML =
+      `<svg viewBox="0 0 ${largura} ${altura}" preserveAspectRatio="none" style="width:100%; height:${altura}px; display:block;">
+        <polyline points="${coords}" fill="none" stroke="${cor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>`;
+  }
+
   // Gera os "baldes" (intervalos) do eixo X conforme o período escolhido.
   // 'ano' agrupa por mês (12 meses); os demais agrupam por dia, mas nunca
   // mais que ~15 barras (senão o gráfico fica espremido) — 30 e 90 dias
@@ -708,7 +769,40 @@ if (window.lucide) lucide.createIcons();
           <div class="barra bg-serie-6" style="height:${Math.max(3, m.saida/max*130)}px;"></div>
         </div>
         <span class="mes-label">${m.label}</span>
+        ${m.chave ? `<span class="mes-yoy">${formatarComparacaoAnoAnterior(m.chave, m.entrada - m.saida)}</span>` : ''}
       </div>`).join('');
+  }
+
+  // Compara o saldo do mês (entrada-saída) contra o MESMO MÊS do ano
+  // anterior — só faz sentido no modo "Ano" (cada barra já é um mês
+  // fechado). Se não existir nenhum lançamento no mesmo mês do ano
+  // passado, não inventa número: mostra "—".
+  function calcularNetFlowMesAnoAnterior(chaveMes) {
+    const [ano, mes] = chaveMes.split('-').map(Number);
+    const inicio = new Date(ano - 1, mes - 1, 1);
+    const fim = new Date(ano - 1, mes, 0);
+    let net = 0, teveDado = false;
+    dadosCompartilhados.realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      if (d >= inicio && d <= fim) {
+        net += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+        teveDado = true;
+      }
+    });
+    return teveDado ? net : null;
+  }
+
+  function formatarComparacaoAnoAnterior(chaveMes, netAtual) {
+    const netAnterior = calcularNetFlowMesAnoAnterior(chaveMes);
+    if (netAnterior === null) return '<span style="color:var(--ink-faint);">vs. ano ant. —</span>';
+    if (Math.abs(netAnterior) < 0.01) {
+      const diferenca = netAtual - netAnterior;
+      return `<span style="color:var(--ink-faint);">${diferenca >= 0 ? '+' : ''}${fmt(diferenca)} vs. ano ant.</span>`;
+    }
+    const variacao = ((netAtual - netAnterior) / Math.abs(netAnterior)) * 100;
+    const cor = variacao >= 0 ? 'var(--accent)' : 'var(--red)';
+    return `<span style="color:${cor};">${variacao >= 0 ? '▲' : '▼'} ${Math.abs(variacao).toFixed(0)}%</span>`;
   }
 
   // ---------- Top 5 Favorecidos por Movimentação ----------
@@ -782,6 +876,7 @@ if (window.lucide) lucide.createIcons();
     await carregarDadosCompartilhados();
     carregarCards();
     atualizarTendenciaHero();
+    renderSparklineRealizado();
 
     // Promise.allSettled: se o Top Favorecidos (o único que ainda busca
     // algo à parte) falhar, os outros gráficos continuam normais.
@@ -858,6 +953,51 @@ if (window.lucide) lucide.createIcons();
     }
   }
   await carregarUltimosLancamentos();
+
+  // ---------- Exportar lançamentos (XLSX) ----------
+  // Busca própria e maior (até 1000, não os 10 da tela) — só dispara quando
+  // o usuário clica, não pesa a carga normal do dashboard.
+  document.getElementById('btn-exportar-lancamentos').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-exportar-lancamentos');
+    const textoOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Exportando…';
+
+    try {
+      const grupoId = selGrupo.value;
+      let query = supabase
+        .from('lancamentos')
+        .select('data, descricao, status, valor, plano_contas(nome_conta), favorecidos(nome), centros_custo(nome)')
+        .order('data', { ascending: false })
+        .limit(1000);
+      if (grupoId) query = query.eq('grupo_empresarial_id', grupoId);
+
+      const { data, error } = await query;
+      if (error) { alert('Erro ao exportar: ' + error.message); return; }
+      if (!data?.length) { alert('Não há lançamentos para exportar.'); return; }
+
+      const LABEL_STATUS_EXPORT = { pago: 'Pago', em_aberto: 'Em Aberto', inadimplente: 'Inadimplente', parcial: 'Parcial' };
+      const linhas = data.map(l => ({
+        'Data': new Date(l.data).toLocaleDateString('pt-BR'),
+        'Plano de Contas': l.plano_contas?.nome_conta ?? '',
+        'Favorecido': l.favorecidos?.nome ?? '',
+        'Centro de Custo': l.centros_custo?.nome ?? '',
+        'Status': LABEL_STATUS_EXPORT[l.status] ?? l.status,
+        'Valor (R$)': Number(l.valor),
+      }));
+
+      const planilha = XLSX.utils.json_to_sheet(linhas);
+      planilha['!cols'] = [{wch:12},{wch:28},{wch:26},{wch:22},{wch:14},{wch:14}];
+      const livro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(livro, planilha, 'Lançamentos');
+      const nomeArquivo = `lancamentos-datativo-${new Date().toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(livro, nomeArquivo);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = textoOriginal;
+      if (window.lucide) lucide.createIcons();
+    }
+  });
 </script>
   </div>
 </div>
