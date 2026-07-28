@@ -39,14 +39,16 @@ export async function exigirSessaoPortal() {
 }
 
 // Retorna o registro do usuário do portal logado (tabela usuarios_portal),
-// nunca `usuarios`.
+// nunca `usuarios`. Usa getSession() (local) em vez de getUser() (rede) —
+// mesmo trade-off documentado em js/supabase-client.js: RLS e a validação
+// de JWT do Supabase continuam protegendo todo dado real de qualquer jeito.
 export async function usuarioPortalAtual() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
   const { data, error } = await supabase
     .from('usuarios_portal')
     .select('*, favorecidos(nome)')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .eq('ativo', true)
     .maybeSingle();
   if (error) { console.error(error); return null; }

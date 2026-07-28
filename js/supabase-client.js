@@ -26,14 +26,24 @@ export async function exigirSessao() {
   return session;
 }
 
-// Retorna o registro de negócio do usuário logado (tabela usuarios)
+// Retorna o registro de negócio do usuário logado (tabela usuarios).
+// Usa getSession() (leitura local, sem ida ao servidor) em vez de
+// getUser() (que sempre faz uma chamada de rede pra revalidar o token).
+// Trade-off consciente: getUser() pegaria um token revogado nos últimos
+// segundos (ex: usuário banido/apagado agora mesmo); getSession() não.
+// Isso não abre brecha de segurança de dado — toda leitura/escrita real
+// ainda passa pela validação de JWT do próprio Supabase e pelas políticas
+// de RLS a cada chamada; o que muda é só a UI poder abrir por uma fração
+// de segundo antes da primeira consulta de dado falhar, num caso raríssimo
+// (sessão revogada nos últimos segundos). Troca vale a pena: elimina uma
+// ida-e-volta de rede em TODA carga de página do sistema.
 export async function usuarioAtual() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
   const { data, error } = await supabase
     .from('usuarios')
     .select('*, perfis_acesso(nome, permissoes)')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single();
   if (error) { console.error(error); return null; }
   return data;
