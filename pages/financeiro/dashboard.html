@@ -20,19 +20,20 @@
      apresentação visual dos mesmos elementos que já existiam.
   ============================================================================ */
 
-  .app-main .page { padding: 28px 32px 64px; }
+  .app-main .page { padding: 24px 32px 56px; }
+  .page-header { margin-bottom: 18px; }
 
   /* ---------- Hero: Saldo Atual em destaque ---------- */
   .hero-saldo {
     background: linear-gradient(135deg, var(--accent) 0%, #145c44 100%);
     border-radius: var(--radius-lg);
-    padding: 28px 32px;
-    margin-bottom: 20px;
+    padding: 16px 28px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 16px;
     box-shadow: var(--shadow-md);
     position: relative;
     overflow: hidden;
@@ -45,54 +46,61 @@
   }
   .hero-saldo .rotulo {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: .1em;
-    color: rgba(255,255,255,.75);
+    color: rgba(255,255,255,.72);
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
   }
   .hero-saldo .saldo-ticker { display: flex; flex-direction: column; position: relative; z-index: 1; }
   .hero-saldo .saldo-ticker span:first-child { display: none; } /* rótulo textual antigo "SALDO ATUAL" some — vira .rotulo acima, mesmo texto, tratamento maior */
   .hero-saldo #saldo-topo {
     font-family: var(--font-mono);
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: #fff;
-    line-height: 1.1;
+    line-height: 1.05;
   }
+  /* Ajuste 2 — indicador de tendência: SÓ ESTRUTURA VISUAL, texto fixo,
+     sem nenhum cálculo ou dado real. Trocar pelo valor de verdade exige
+     lógica nova em JS, fora do escopo deste ajuste (visual apenas). */
+  .hero-saldo .hero-tendencia {
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,.82);
+    position: relative; z-index: 1;
+  }
+  .hero-saldo .hero-tendencia svg { width: 13px; height: 13px; }
   .hero-saldo .hero-icone {
-    width: 56px; height: 56px; border-radius: var(--radius-md);
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
     background: rgba(255,255,255,.14);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; position: relative; z-index: 1;
   }
-  .hero-saldo .hero-icone svg { width: 28px; height: 28px; color: #fff; }
+  .hero-saldo .hero-icone svg { width: 20px; height: 20px; color: #fff; }
 
-  /* ---------- KPI cards modernos ---------- */
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
-  .kpi-card {
-    display: flex; align-items: flex-start; gap: 14px;
-    padding: 20px 22px;
+  /* ---------- KPI cards — ajuste 3 e 4: ícone pequeno e discreto, embutido
+     no rótulo (padrão Stripe), hierarquia mais clara ---------- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+  .kpi-card { padding: 18px 20px; }
+  .kpi-card .label {
+    display: flex; align-items: center; gap: 7px;
+    margin-bottom: 10px;
   }
-  .kpi-card .kpi-icone {
-    width: 40px; height: 40px; border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .kpi-card .kpi-icone svg { width: 19px; height: 19px; }
-  .kpi-card .kpi-icone.tom-verde   { background: var(--accent-soft); color: var(--accent); }
-  .kpi-card .kpi-icone.tom-ambar   { background: var(--amber-soft); color: var(--amber); }
-  .kpi-card .kpi-icone.tom-azul    { background: rgba(31, 122, 92, .14); color: var(--accent); }
-  .kpi-card .kpi-icone.tom-vermelho{ background: var(--red-soft); color: var(--red); }
-  .kpi-card .kpi-corpo { min-width: 0; }
-  .kpi-card .label { margin-bottom: 8px; }
-  .kpi-card .big { font-size: 22px; }
+  .kpi-card .kpi-icone { width: 15px; height: 15px; flex-shrink: 0; opacity: .8; }
+  .kpi-card .kpi-icone.tom-verde    { color: var(--accent); }
+  .kpi-card .kpi-icone.tom-ambar    { color: var(--amber); }
+  .kpi-card .kpi-icone.tom-azul     { color: var(--accent); }
+  .kpi-card .kpi-icone.tom-vermelho { color: var(--red); }
+  .kpi-card .big { font-size: 23px; font-weight: 700; }
 
   /* ---------- Grade assimétrica de gráficos ---------- */
   .linha-principal { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
-  .linha-secundaria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .linha-secundaria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
   @media (max-width: 1100px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .linha-principal, .linha-secundaria { grid-template-columns: 1fr; }
@@ -100,9 +108,21 @@
 
   .card-titulo {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
   }
   .card-titulo .label { margin-bottom: 0; }
+
+  /* Ajuste 5 — seletor de período: SÓ VISUAL, nenhum clique/lógica associada */
+  .periodo-seletor { display: flex; gap: 2px; background: var(--paper); border-radius: 999px; padding: 3px; }
+  .periodo-seletor button {
+    border: none; background: none; cursor: default;
+    font-size: 11.5px; font-weight: 500; color: var(--ink-soft);
+    padding: 5px 10px; border-radius: 999px;
+    font-family: var(--font-body);
+  }
+  .periodo-seletor button.ativo { background: var(--paper-raised); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-xs); }
 
   /* ---------- Gráfico de barras mensal: baseline + mais respiro ---------- */
   .grafico-barras-mensal { border-top: 1px solid var(--line); padding-top: 18px; }
@@ -112,7 +132,7 @@
 
   /* ---------- Tabela: cabeçalho mais forte, badge corrigido ---------- */
   .card-tabela { padding: 0; overflow: hidden; }
-  .card-tabela .card-titulo { padding: 20px 24px 0; margin-bottom: 12px; }
+  .card-tabela .card-titulo { padding: 18px 24px 0; margin-bottom: 10px; }
   .card-tabela table { font-size: 13px; }
   .card-tabela tbody td { padding: 13px 16px; }
   .card-tabela tbody tr:hover { background: var(--paper); }
@@ -264,36 +284,33 @@
         <span>SALDO ATUAL</span>
         <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
       </div>
+      <div class="hero-tendencia"><i data-lucide="trending-up"></i><span>+12% em relação ao mês anterior</span></div>
     </div>
     <div class="hero-icone"><i data-lucide="wallet"></i></div>
   </div>
 
   <section class="kpi-grid">
     <div class="card kpi-card">
-      <div class="kpi-icone tom-verde"><i data-lucide="check-circle-2"></i></div>
       <div class="kpi-corpo">
-        <div class="label">Saldo Realizado (Pago)</div>
+        <div class="label"><i data-lucide="check-circle-2" class="kpi-icone tom-verde"></i> Saldo Realizado (Pago)</div>
         <div class="big valor" id="card-realizado">R$ 0,00</div>
       </div>
     </div>
     <div class="card kpi-card">
-      <div class="kpi-icone tom-ambar"><i data-lucide="clock"></i></div>
       <div class="kpi-corpo">
-        <div class="label">Em Aberto (Previsto)</div>
+        <div class="label"><i data-lucide="clock" class="kpi-icone tom-ambar"></i> Em Aberto (Previsto)</div>
         <div class="big valor aberto" id="card-aberto">R$ 0,00</div>
       </div>
     </div>
     <div class="card kpi-card">
-      <div class="kpi-icone tom-azul"><i data-lucide="trending-up"></i></div>
       <div class="kpi-corpo">
-        <div class="label">Saldo Projetado</div>
+        <div class="label"><i data-lucide="trending-up" class="kpi-icone tom-azul"></i> Saldo Projetado</div>
         <div class="big valor" id="card-projetado">R$ 0,00</div>
       </div>
     </div>
     <div class="card kpi-card">
-      <div class="kpi-icone tom-vermelho"><i data-lucide="alert-triangle"></i></div>
       <div class="kpi-corpo">
-        <div class="label">Inadimplência</div>
+        <div class="label"><i data-lucide="alert-triangle" class="kpi-icone tom-vermelho"></i> Inadimplência</div>
         <div class="big valor negativo" id="card-inadimplencia">R$ 0,00</div>
       </div>
     </div>
@@ -303,9 +320,18 @@
     <section class="card">
       <div class="card-titulo">
         <div class="label">Fluxo Mensal — Entradas vs Saídas</div>
-        <div class="grafico-legenda-topo">
-          <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
-          <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="grafico-legenda-topo">
+            <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
+            <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
+          </div>
+          <div class="periodo-seletor">
+            <button type="button">Hoje</button>
+            <button type="button">7 dias</button>
+            <button type="button">30 dias</button>
+            <button type="button">90 dias</button>
+            <button type="button" class="ativo">Ano</button>
+          </div>
         </div>
       </div>
       <div class="grafico-barras-mensal" id="grafico-fluxo-mensal"></div>
