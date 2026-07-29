@@ -232,6 +232,58 @@
      (JS faz status.replace('_','')), mas o design-system.css só define
      .badge.aberto — esse badge nunca teve cor. Só CSS, não mexe no JS. */
   .badge.emaberto { background: var(--amber-soft); color: var(--amber); }
+
+  /* ============================================================================
+     HEALTH SCORE FINANCEIRO — arquitetura visual, SEM cálculo implementado.
+     renderHealthScore(nota, subMetricas) só desenha; a nota e os valores dos
+     8 cards internos vêm de fora (regra de negócio futura), não daqui.
+  ============================================================================ */
+  .health-score { margin-bottom: 16px; }
+  .hs-topo { display: flex; align-items: center; gap: 24px; padding-bottom: 18px; margin-bottom: 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .hs-nota-box { display: flex; align-items: baseline; gap: 4px; flex-shrink: 0; }
+  .hs-nota { font-family: var(--font-mono); font-size: 44px; font-weight: 800; line-height: 1; }
+  .hs-nota-max { font-family: var(--font-mono); font-size: 16px; color: var(--ink-faint); }
+  .hs-nota.tom-excelente { color: var(--accent); }
+  .hs-nota.tom-boa { color: #5b8def; }
+  .hs-nota.tom-atencao { color: var(--amber); }
+  .hs-nota.tom-critica { color: var(--red); }
+  .hs-legenda { min-width: 160px; }
+  .hs-legenda .hs-rotulo-texto { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .hs-legenda .hs-rotulo-texto.tom-excelente { color: var(--accent); }
+  .hs-legenda .hs-rotulo-texto.tom-boa { color: #5b8def; }
+  .hs-legenda .hs-rotulo-texto.tom-atencao { color: var(--amber); }
+  .hs-legenda .hs-rotulo-texto.tom-critica { color: var(--red); }
+  .hs-legenda .hs-rotulo-sub { font-size: 12px; color: var(--ink-soft); }
+  .hs-barra-trilho { flex: 1; min-width: 140px; height: 8px; border-radius: 999px; background: var(--paper); overflow: hidden; }
+  .hs-barra-fill { height: 100%; border-radius: 999px; }
+  .hs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 1100px) { .hs-grid { grid-template-columns: repeat(2, 1fr); } }
+  .hs-card { padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper); }
+  .hs-card .hs-card-rotulo { font-size: 11px; font-weight: 600; color: var(--ink-soft); margin-bottom: 4px; }
+  .hs-card .hs-card-valor { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--ink-faint); }
+
+  /* ============================================================================
+     CENTRO DE DECISÃO — arquitetura visual, SEM regra/IA implementada.
+     renderCentroDecisao(recomendacoes) só desenha; cada recomendação vem de
+     fora (regra de negócio e/ou IA futura). Botão "Executar" não tem ação
+     ligada — estrutura pronta, comportamento fica pra quando a IA existir.
+  ============================================================================ */
+  .centro-decisao { margin-bottom: 16px; }
+  .cd-lista { display: flex; flex-direction: column; gap: 10px; }
+  .cd-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); }
+  .cd-corpo { flex: 1; min-width: 0; }
+  .cd-topo { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .cd-titulo { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+  .cd-badge { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: 999px; }
+  .cd-badge.urgencia-alta { background: var(--red-soft); color: var(--red); }
+  .cd-badge.urgencia-media { background: var(--amber-soft); color: var(--amber); }
+  .cd-badge.urgencia-baixa { background: var(--paper); color: var(--ink-soft); }
+  .cd-descricao { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; margin-bottom: 8px; }
+  .cd-rodape { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-faint); }
+  .cd-rodape .cd-impacto { font-weight: 700; color: var(--accent); }
+  .cd-rodape .cd-origem { padding: 2px 7px; border-radius: 999px; background: rgba(139,92,246,.14); color: #8b5cf6; font-weight: 600; }
+  .cd-acoes { flex-shrink: 0; }
+  .cd-acoes button { font-size: 12px; padding: 7px 14px; }
 </style>
 </head>
 <body>
@@ -268,17 +320,6 @@
 
   <nav class="nav-cascade">
     <div class="nav-item active"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--accent);">Início</a></div>
-    <div class="nav-item">
-      <button>Cadastros</button>
-      <div class="nav-panel">
-        <span class="group-label">Base</span>
-        <a href="cadastros.html#plano_contas">Plano de Contas</a>
-        <a href="cadastros.html#grupos_empresariais">Grupos Empresariais</a>
-        <a href="cadastros.html#contas_bancarias">Contas Bancárias</a>
-        <a href="cadastros.html#centros_custo">Centros de Custo</a>
-        <a href="cadastros.html#favorecidos">Favorecidos</a>
-      </div>
-    </div>
 
     <div class="nav-item">
       <button>Lançamentos</button>
@@ -368,6 +409,23 @@
     </div>
   </div>
 
+  <!-- ============================================================================
+       CENTRAL DE ATENÇÃO — componente reutilizável, SEM regra de negócio.
+       renderCentralAtencao(alertas) é a única função; quem decide o que vira
+       alerta (regra determinística e/ou IA) é uma camada futura, ainda não
+       implementada por instrução explícita. Populado abaixo com 2 alertas
+       DE EXEMPLO só pra mostrar o componente funcionando — não são reais.
+       Posicionada em PRIMEIRO lugar na hierarquia visual (prioridade máxima),
+       antes até do Saldo Atual — decisão explícita de hierarquia.
+  ============================================================================ -->
+  <section class="central-atencao" id="central-atencao">
+    <div class="ca-header">
+      <span class="ca-titulo"><i data-lucide="bell"></i> Central de Atenção</span>
+      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
+    </div>
+    <div class="ca-lista" id="ca-lista"></div>
+  </section>
+
   <div class="hero-saldo">
     <div>
       <div class="rotulo">Saldo Atual</div>
@@ -381,18 +439,16 @@
   </div>
 
   <!-- ============================================================================
-       CENTRAL DE ATENÇÃO — componente reutilizável, SEM regra de negócio.
-       renderCentralAtencao(alertas) é a única função; quem decide o que vira
-       alerta (regra determinística e/ou IA) é uma camada futura, ainda não
-       implementada por instrução explícita. Populado abaixo com 2 alertas
-       DE EXEMPLO só pra mostrar o componente funcionando — não são reais.
+       HEALTH SCORE FINANCEIRO — arquitetura visual, SEM cálculo. Nota,
+       cor/rótulo e os 8 valores internos vêm de fora no futuro (regra de
+       negócio); aqui só existe a estrutura pra receber isso.
   ============================================================================ -->
-  <section class="central-atencao" id="central-atencao">
-    <div class="ca-header">
-      <span class="ca-titulo"><i data-lucide="bell"></i> Central de Atenção</span>
-      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
+  <section class="card health-score">
+    <div class="card-titulo">
+      <div class="label">Saúde Financeira</div>
+      <span class="ca-tag-exemplo">dado de exemplo — aguardando regra de cálculo</span>
     </div>
-    <div class="ca-lista" id="ca-lista"></div>
+    <div id="hs-conteudo"></div>
   </section>
 
   <section class="kpi-grid">
@@ -436,6 +492,20 @@
       <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
     </div>
     <div class="insights-grid" id="insights-grid"></div>
+  </section>
+
+  <!-- ============================================================================
+       CENTRO DE DECISÃO — arquitetura visual, SEM regra/IA implementada.
+       renderCentroDecisao(recomendacoes) só desenha; botão "Executar" não
+       tem ação ligada (estrutura pronta pra quando a IA existir). Populado
+       com 3 recomendações DE EXEMPLO.
+  ============================================================================ -->
+  <section class="card centro-decisao">
+    <div class="card-titulo">
+      <div class="label">Centro de Decisão</div>
+      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
+    </div>
+    <div class="cd-lista" id="cd-lista"></div>
   </section>
 
   <div class="linha-principal">
@@ -668,14 +738,93 @@ if (window.lucide) lucide.createIcons();
     { categoria: 'Capital de Giro', texto: 'Capital de giro melhorou em relação ao período anterior', tendencia: 'alta', grauConfianca: 81, origem: 'IA' },
   ];
 
+  // ============================================================================
+  // HEALTH SCORE FINANCEIRO — arquitetura visual, SEM cálculo implementado.
+  // renderHealthScore(nota, subMetricas) só desenha; quem calcula a nota e os
+  // 8 valores internos é uma regra de negócio futura, não implementada aqui.
+  // ============================================================================
+  function classificarHealthScore(nota) {
+    if (nota >= 80) return { tom: 'excelente', texto: 'Excelente' };
+    if (nota >= 60) return { tom: 'boa', texto: 'Boa' };
+    if (nota >= 40) return { tom: 'atencao', texto: 'Atenção' };
+    return { tom: 'critica', texto: 'Crítica' };
+  }
+
+  function renderHealthScore(nota, subMetricas) {
+    const { tom, texto } = classificarHealthScore(nota);
+    const cont = document.getElementById('hs-conteudo');
+    cont.innerHTML = `
+      <div class="hs-topo">
+        <div class="hs-nota-box">
+          <span class="hs-nota tom-${tom}">${nota}</span>
+          <span class="hs-nota-max">/100</span>
+        </div>
+        <div class="hs-legenda">
+          <div class="hs-rotulo-texto tom-${tom}">${texto}</div>
+          <div class="hs-rotulo-sub">Saúde financeira geral</div>
+        </div>
+        <div class="hs-barra-trilho"><div class="hs-barra-fill tom-${tom}" style="width:${nota}%; background:currentColor; color:var(--${tom === 'excelente' ? 'accent' : tom === 'boa' ? 'accent' : tom === 'atencao' ? 'amber' : 'red'});"></div></div>
+      </div>
+      <div class="hs-grid">
+        ${subMetricas.map(m => `
+          <div class="hs-card">
+            <div class="hs-card-rotulo">${m.nome}</div>
+            <div class="hs-card-valor">${m.valor}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // Dado DE EXEMPLO — nota e os 8 valores não vêm de cálculo real nenhum.
+  const HEALTH_SCORE_EXEMPLO = { nota: 78, subMetricas: [
+    { nome: 'Liquidez', valor: '—' }, { nome: 'Fluxo', valor: '—' },
+    { nome: 'Capital de Giro', valor: '—' }, { nome: 'Inadimplência', valor: '—' },
+    { nome: 'Concentração', valor: '—' }, { nome: 'Endividamento', valor: '—' },
+    { nome: 'Recebimentos', valor: '—' }, { nome: 'Pagamentos', valor: '—' },
+  ]};
+
+  // ============================================================================
+  // CENTRO DE DECISÃO — arquitetura visual, SEM regra/IA implementada.
+  // renderCentroDecisao(recomendacoes) só desenha; botão "Executar" não tem
+  // ação ligada nenhuma — estrutura pronta pra quando existir.
+  // ============================================================================
+  function renderCentroDecisao(recomendacoes) {
+    const cont = document.getElementById('cd-lista');
+    if (!recomendacoes.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Nenhuma recomendação no momento.</p>`; return; }
+    cont.innerHTML = recomendacoes.map(r => `
+      <div class="cd-item">
+        <div class="cd-corpo">
+          <div class="cd-topo">
+            <span class="cd-titulo">${r.titulo}</span>
+            <span class="cd-badge urgencia-${r.urgencia}">${r.urgencia === 'alta' ? 'Urgente' : r.urgencia === 'media' ? 'Em breve' : 'Quando puder'}</span>
+          </div>
+          <div class="cd-descricao">${r.descricao}</div>
+          <div class="cd-rodape">
+            <span class="cd-impacto">Impacto: ${r.impactoFinanceiro}</span>
+            <span>Confiança: ${r.confianca}%</span>
+            <span class="cd-origem">${r.origem}</span>
+          </div>
+        </div>
+        <div class="cd-acoes"><button type="button" class="btn ghost" disabled title="Sem ação ligada — estrutura pronta pra IA futura">Executar</button></div>
+      </div>`).join('');
+  }
+
+  // Dados DE EXEMPLO — nenhuma recomendação real, só demonstram a estrutura.
+  const RECOMENDACOES_EXEMPLO = [
+    { titulo: 'Renegociar prazo com maior fornecedor', descricao: 'Concentração de 18% num único fornecedor aumenta risco de dependência.', impactoFinanceiro: 'R$ 12.400/mês', urgencia: 'media', confianca: 78, origem: 'IA' },
+    { titulo: 'Cobrar títulos vencidos há mais de 60 dias', descricao: 'Grupo de títulos em atraso prolongado ainda sem ação de cobrança registrada.', impactoFinanceiro: 'R$ 8.900', urgencia: 'alta', confianca: 91, origem: 'Regra' },
+    { titulo: 'Revisar limite de crédito de clientes recorrentes', descricao: 'Clientes com histórico de pagamento pontual podem receber prazo maior.', impactoFinanceiro: 'Indireto', urgencia: 'baixa', confianca: 64, origem: 'IA' },
+  ];
+
   // Componentes de apresentação pura — não dependem de dado do banco, então
   // renderizam de cara. Populados com dado de exemplo (ver comentário acima
-  // de cada array). Chamados AQUI, depois dos dois arrays já declarados —
-  // chamar antes quebra o script inteiro em silêncio (const referenciado
-  // antes da declaração, mesma classe de bug já registrada nos Aprendizados
-  // Críticos do projeto).
+  // de cada array). Chamados AQUI, depois de TODOS os arrays e funções acima
+  // já declarados — chamar antes quebra o script inteiro em silêncio (const
+  // referenciado antes da declaração, mesma classe de bug já registrada nos
+  // Aprendizados Críticos do projeto, e que já mordeu esta mesma tela uma vez).
   renderCentralAtencao(ALERTAS_EXEMPLO);
   renderInsightsFinanceiros(INSIGHTS_EXEMPLO);
+  renderHealthScore(HEALTH_SCORE_EXEMPLO.nota, HEALTH_SCORE_EXEMPLO.subMetricas);
+  renderCentroDecisao(RECOMENDACOES_EXEMPLO);
 
   // ============================================================================
   // PAINEL DE DRILL-DOWN — genérico e reutilizável por qualquer gráfico.
