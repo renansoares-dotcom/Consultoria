@@ -572,12 +572,6 @@ if (window.lucide) lucide.createIcons();
     }
   });
 
-  // Componentes de apresentação pura — não dependem de dado do banco, então
-  // renderizam de cara. Populados com dado de exemplo (ver comentário acima
-  // de cada array).
-  renderCentralAtencao(ALERTAS_EXEMPLO);
-  renderInsightsFinanceiros(INSIGHTS_EXEMPLO);
-
   const MESES_EXT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const agora = new Date();
   document.getElementById('eyebrow-mes').textContent = `Visão geral · ${MESES_EXT[agora.getMonth()]} ${agora.getFullYear()}`;
@@ -673,6 +667,15 @@ if (window.lucide) lucide.createIcons();
     { categoria: 'Ticket Médio', texto: 'Ticket médio de recebimento aumentou no período', tendencia: 'alta', grauConfianca: 74, origem: 'IA' },
     { categoria: 'Capital de Giro', texto: 'Capital de giro melhorou em relação ao período anterior', tendencia: 'alta', grauConfianca: 81, origem: 'IA' },
   ];
+
+  // Componentes de apresentação pura — não dependem de dado do banco, então
+  // renderizam de cara. Populados com dado de exemplo (ver comentário acima
+  // de cada array). Chamados AQUI, depois dos dois arrays já declarados —
+  // chamar antes quebra o script inteiro em silêncio (const referenciado
+  // antes da declaração, mesma classe de bug já registrada nos Aprendizados
+  // Críticos do projeto).
+  renderCentralAtencao(ALERTAS_EXEMPLO);
+  renderInsightsFinanceiros(INSIGHTS_EXEMPLO);
 
   // ============================================================================
   // PAINEL DE DRILL-DOWN — genérico e reutilizável por qualquer gráfico.
