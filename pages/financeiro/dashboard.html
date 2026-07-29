@@ -130,6 +130,98 @@
   .bar-list .trilho .fill { background-image: linear-gradient(90deg, currentColor, currentColor); filter: brightness(1); }
 
   /* ---------- Tabela: cabeçalho mais forte, badge corrigido ---------- */
+  /* ============================================================================
+     Central de Atenção — componente reutilizável de alertas. SEM regra de
+     negócio nenhuma implementada aqui (nem devia): só recebe um array de
+     objetos { tipo, prioridade, icone, mensagem, acaoSugerida, link } e
+     desenha. Quem decide o que vira alerta é uma camada futura (regra de
+     negócio determinística e/ou IA) — este componente só apresenta.
+  ============================================================================ */
+  .central-atencao { margin-bottom: 16px; }
+  .central-atencao .ca-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .central-atencao .ca-titulo { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .central-atencao .ca-titulo svg { width: 16px; height: 16px; color: var(--amber); }
+  .central-atencao .ca-tag-exemplo { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); background: var(--paper); padding: 3px 8px; border-radius: 999px; }
+  .ca-lista { display: flex; flex-direction: column; gap: 8px; }
+  .ca-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); }
+  .ca-item .ca-icone { width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ca-item .ca-icone svg { width: 16px; height: 16px; }
+  .ca-item.prioridade-critica .ca-icone { background: var(--red-soft); color: var(--red); }
+  .ca-item.prioridade-alta .ca-icone { background: var(--amber-soft); color: var(--amber); }
+  .ca-item.prioridade-media .ca-icone { background: rgba(31,122,92,.14); color: var(--accent); }
+  .ca-item.prioridade-baixa .ca-icone { background: var(--paper); color: var(--ink-soft); }
+  .ca-item .ca-corpo { flex: 1; min-width: 0; }
+  .ca-item .ca-topo { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap; }
+  .ca-item .ca-tipo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
+  .ca-item .ca-mensagem { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+  .ca-item .ca-acao { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+  .ca-item .ca-acao a { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
+  .ca-item .ca-acao a:hover { text-decoration: underline; }
+
+  /* ============================================================================
+     Insights Financeiros — componente reutilizável, mesma lógica: estrutura
+     pronta pra receber insight { categoria, texto, tendencia, grauConfianca,
+     origem } vindo de regra de negócio ou IA. Nenhum cálculo acontece aqui.
+  ============================================================================ */
+  .insights-financeiros { margin-bottom: 16px; }
+  .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 1100px) { .insights-grid { grid-template-columns: repeat(2, 1fr); } }
+  .insight-card { padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); }
+  .insight-card .in-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .insight-card .in-categoria { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
+  .insight-card .in-origem { font-size: 9.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
+  .insight-card .in-origem.origem-ia { background: rgba(139,92,246,.14); color: #8b5cf6; }
+  .insight-card .in-origem.origem-regra { background: var(--paper); color: var(--ink-soft); }
+  .insight-card .in-texto { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.4; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .insight-card .in-texto .in-seta { font-size: 12px; }
+  .insight-card .in-texto .in-seta.alta { color: var(--accent); }
+  .insight-card .in-texto .in-seta.baixa { color: var(--red); }
+  .insight-card .in-confianca { display: flex; align-items: center; gap: 6px; }
+  .insight-card .in-confianca-trilho { flex: 1; height: 4px; border-radius: 999px; background: var(--paper); overflow: hidden; }
+  .insight-card .in-confianca-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .insight-card .in-confianca-texto { font-size: 10px; font-weight: 600; color: var(--ink-faint); white-space: nowrap; }
+
+  /* ============================================================================
+     Painel de drill-down — genérico e reutilizável: abrirDrilldown(titulo,
+     resumo, linhas) monta o mesmo painel lateral pra qualquer gráfico que
+     chamar. Fecha no X, no fundo escurecido, ou tecla Esc.
+  ============================================================================ */
+  .drilldown-fundo { position: fixed; inset: 0; background: rgba(15,23,32,.45); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .drilldown-fundo.aberto { opacity: 1; pointer-events: auto; }
+  .drilldown-painel { position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 92vw; background: var(--paper-raised); box-shadow: var(--shadow-md); z-index: 201; transform: translateX(100%); transition: transform .2s ease; display: flex; flex-direction: column; }
+  .drilldown-painel.aberto { transform: translateX(0); }
+  .drilldown-painel .dd-cabecalho { padding: 20px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .drilldown-painel .dd-titulo { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .drilldown-painel .dd-resumo { font-size: 12.5px; color: var(--ink-soft); }
+  .drilldown-painel .dd-fechar { border: none; background: var(--paper); width: 28px; height: 28px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .drilldown-painel .dd-fechar svg { width: 15px; height: 15px; color: var(--ink-soft); }
+  .drilldown-painel .dd-lista { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .drilldown-painel .dd-linha { padding: 11px 22px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+  .drilldown-painel .dd-linha .dd-linha-desc { color: var(--ink); font-weight: 500; }
+  .drilldown-painel .dd-linha .dd-linha-sub { color: var(--ink-faint); font-size: 11px; margin-top: 2px; }
+  .drilldown-painel .dd-vazio { padding: 30px 22px; text-align: center; color: var(--ink-soft); font-size: 12.5px; }
+  .grafico-clicavel { cursor: pointer; }
+
+  /* ============================================================================
+     Timeline Financeira — feed cronológico com filtros.
+  ============================================================================ */
+  .timeline-financeira { margin-bottom: 16px; }
+  .tl-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .tl-filtros select, .tl-filtros input { font-size: 12px; padding: 6px 10px; }
+  .tl-lista { position: relative; padding-left: 6px; }
+  .tl-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-item .tl-hora { width: 46px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); padding-top: 2px; }
+  .tl-item .tl-marcador { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .tl-item.tipo-entrada .tl-marcador { background: var(--accent); }
+  .tl-item.tipo-saida .tl-marcador { background: var(--red); }
+  .tl-item.tipo-transferencia .tl-marcador { background: var(--ink-faint); }
+  .tl-item .tl-corpo { flex: 1; min-width: 0; }
+  .tl-item .tl-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .tl-item .tl-desc { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .tl-item .tl-valor { font-family: var(--font-mono); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .tl-item .tl-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
   .card-tabela { padding: 0; overflow: hidden; }
   .card-tabela .card-titulo { padding: 18px 24px 0; margin-bottom: 10px; }
   .card-tabela table { font-size: 13px; }
@@ -288,6 +380,21 @@
     <div class="hero-icone"><i data-lucide="wallet"></i></div>
   </div>
 
+  <!-- ============================================================================
+       CENTRAL DE ATENÇÃO — componente reutilizável, SEM regra de negócio.
+       renderCentralAtencao(alertas) é a única função; quem decide o que vira
+       alerta (regra determinística e/ou IA) é uma camada futura, ainda não
+       implementada por instrução explícita. Populado abaixo com 2 alertas
+       DE EXEMPLO só pra mostrar o componente funcionando — não são reais.
+  ============================================================================ -->
+  <section class="central-atencao" id="central-atencao">
+    <div class="ca-header">
+      <span class="ca-titulo"><i data-lucide="bell"></i> Central de Atenção</span>
+      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
+    </div>
+    <div class="ca-lista" id="ca-lista"></div>
+  </section>
+
   <section class="kpi-grid">
     <div class="card kpi-card">
       <div class="kpi-corpo">
@@ -314,6 +421,21 @@
         <div class="big valor negativo" id="card-inadimplencia">R$ 0,00</div>
       </div>
     </div>
+  </section>
+
+  <!-- ============================================================================
+       INSIGHTS FINANCEIROS — componente reutilizável, estrutura pronta pra
+       receber insight { categoria, texto, tendencia, grauConfianca, origem }
+       vindo de IA ou regra de negócio. renderInsightsFinanceiros(insights) é
+       a única função; nenhum cálculo é feito aqui. Populado com 6 insights
+       DE EXEMPLO — não são calculados a partir de dado real.
+  ============================================================================ -->
+  <section class="insights-financeiros">
+    <div class="card-titulo">
+      <div class="label">Insights Financeiros</div>
+      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
+    </div>
+    <div class="insights-grid" id="insights-grid"></div>
   </section>
 
   <div class="linha-principal">
@@ -381,7 +503,50 @@
       </tbody>
     </table>
   </section>
+
+  <!-- ============================================================================
+       TIMELINE FINANCEIRA — feed cronológico real (entradas, saídas e
+       transferências), com filtros. Busca própria (inclui transferências,
+       que vw_realizado tem mas a tabela de Últimos Lançamentos não mostra).
+  ============================================================================ -->
+  <section class="card timeline-financeira">
+    <div class="card-titulo"><div class="label">Timeline Financeira</div></div>
+    <div class="tl-filtros">
+      <select class="input" id="tl_f_banco"><option value="">Todos os bancos</option></select>
+      <select class="input" id="tl_f_favorecido"><option value="">Todos os clientes/fornecedores</option></select>
+      <select class="input" id="tl_f_tipo">
+        <option value="">Todos os tipos</option>
+        <option value="entrada">Recebimento</option>
+        <option value="saida">Pagamento</option>
+        <option value="transferencia">Transferência</option>
+      </select>
+      <select class="input" id="tl_f_status">
+        <option value="">Todos os status</option>
+        <option value="pago">Pago</option>
+        <option value="em_aberto">Em Aberto</option>
+        <option value="parcial">Parcial</option>
+        <option value="inadimplente">Inadimplente</option>
+      </select>
+      <input class="input" type="date" id="tl_f_data" style="width:150px;">
+      <input class="input" type="number" step="0.01" id="tl_f_valor_min" placeholder="Valor mín." style="width:110px;">
+      <button type="button" class="btn ghost" id="tl_btn_limpar" style="padding:6px 12px; font-size:12.5px;">Limpar filtros</button>
+    </div>
+    <div class="tl-lista" id="tl-lista"><p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p></div>
+  </section>
 </main>
+
+<!-- Painel de drill-down — um único elemento reutilizável por todos os gráficos -->
+<div class="drilldown-fundo" id="dd-fundo"></div>
+<div class="drilldown-painel" id="dd-painel">
+  <div class="dd-cabecalho">
+    <div>
+      <div class="dd-titulo" id="dd-titulo">—</div>
+      <div class="dd-resumo" id="dd-resumo"></div>
+    </div>
+    <button type="button" class="dd-fechar" id="dd-fechar"><i data-lucide="x"></i></button>
+  </div>
+  <div class="dd-lista" id="dd-lista"></div>
+</div>
 
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
@@ -407,6 +572,12 @@ if (window.lucide) lucide.createIcons();
     }
   });
 
+  // Componentes de apresentação pura — não dependem de dado do banco, então
+  // renderizam de cara. Populados com dado de exemplo (ver comentário acima
+  // de cada array).
+  renderCentralAtencao(ALERTAS_EXEMPLO);
+  renderInsightsFinanceiros(INSIGHTS_EXEMPLO);
+
   const MESES_EXT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const agora = new Date();
   document.getElementById('eyebrow-mes').textContent = `Visão geral · ${MESES_EXT[agora.getMonth()]} ${agora.getFullYear()}`;
@@ -418,6 +589,7 @@ if (window.lucide) lucide.createIcons();
 
   // ---------- Cards de saldo (Realizado, Em aberto, Projetado, Inadimplência) ----------
   const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
   // ============================================================================
   // Carga de dados COMPARTILHADA — antes, cada card/gráfico buscava a mesma
@@ -428,8 +600,120 @@ if (window.lucide) lucide.createIcons();
   // Bônus: trocar o filtro de Grupo Empresarial não dispara nova consulta
   // nenhuma pros gráficos que não dependem de favorecidos, é só reprocessar.
   // ============================================================================
+  // ============================================================================
+  // CENTRAL DE ATENÇÃO — componente reutilizável, SEM regra de negócio.
+  // Recebe um array de { tipo, prioridade, icone, mensagem, acaoSugerida, link }
+  // e desenha. Quem decide o que vira alerta (regra determinística e/ou IA)
+  // é responsabilidade de uma camada futura — não implementada aqui por
+  // instrução explícita.
+  // ============================================================================
+  function renderCentralAtencao(alertas) {
+    const cont = document.getElementById('ca-lista');
+    if (!alertas || !alertas.length) {
+      cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Nenhum alerta no momento.</p>`;
+      return;
+    }
+    cont.innerHTML = alertas.map(a => `
+      <div class="ca-item prioridade-${a.prioridade}">
+        <div class="ca-icone"><i data-lucide="${a.icone}"></i></div>
+        <div class="ca-corpo">
+          <div class="ca-topo"><span class="ca-tipo">${a.tipo}</span></div>
+          <div class="ca-mensagem">${a.mensagem}</div>
+          <div class="ca-acao"><a href="${a.link}">${a.acaoSugerida} →</a></div>
+        </div>
+      </div>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Dados DE EXEMPLO — não vêm de regra de negócio nem de IA, só demonstram
+  // o componente. Estrutura pronta pra receber alertas reais no futuro.
+  const ALERTAS_EXEMPLO = [
+    { tipo: 'Concentração de Cliente', prioridade: 'alta', icone: 'alert-triangle',
+      mensagem: 'Um único cliente representa mais de 20% do faturamento do mês.',
+      acaoSugerida: 'Ver detalhamento por cliente', link: 'lancamentos.html' },
+    { tipo: 'Inadimplência', prioridade: 'media', icone: 'circle-alert',
+      mensagem: 'Títulos em atraso somam valor acima da média dos últimos 3 meses.',
+      acaoSugerida: 'Ver contas a receber em atraso', link: 'lancamentos.html?status=inadimplente' },
+  ];
+
+  // ============================================================================
+  // INSIGHTS FINANCEIROS — componente reutilizável, mesma lógica: recebe
+  // { categoria, texto, tendencia, grauConfianca, origem } vindo de regra de
+  // negócio ou IA. Nenhum cálculo é feito aqui.
+  // ============================================================================
+  function renderInsightsFinanceiros(insights) {
+    const cont = document.getElementById('insights-grid');
+    if (!insights || !insights.length) {
+      cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem insights no momento.</p>`;
+      return;
+    }
+    cont.innerHTML = insights.map(ins => `
+      <div class="insight-card">
+        <div class="in-topo">
+          <span class="in-categoria">${ins.categoria}</span>
+          <span class="in-origem origem-${ins.origem === 'IA' ? 'ia' : 'regra'}">${ins.origem}</span>
+        </div>
+        <div class="in-texto">
+          ${ins.tendencia !== 'neutra' ? `<span class="in-seta ${ins.tendencia}">${ins.tendencia === 'alta' ? '▲' : '▼'}</span>` : ''}
+          <span>${ins.texto}</span>
+        </div>
+        <div class="in-confianca">
+          <div class="in-confianca-trilho"><div class="in-confianca-fill" style="width:${ins.grauConfianca}%;"></div></div>
+          <span class="in-confianca-texto">${ins.grauConfianca}% confiança</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Dados DE EXEMPLO — mesma ressalva do array de alertas acima.
+  const INSIGHTS_EXEMPLO = [
+    { categoria: 'Recebimentos', texto: 'Recebimentos cresceram 18% em relação ao período anterior', tendencia: 'alta', grauConfianca: 92, origem: 'Regra' },
+    { categoria: 'Pagamentos', texto: 'Pagamentos reduziram 6% em relação ao período anterior', tendencia: 'baixa', grauConfianca: 88, origem: 'Regra' },
+    { categoria: 'Clientes', texto: 'Maior cliente representa 24% da receita do período', tendencia: 'neutra', grauConfianca: 95, origem: 'Regra' },
+    { categoria: 'Fornecedores', texto: 'Maior fornecedor representa 18% das saídas do período', tendencia: 'neutra', grauConfianca: 95, origem: 'Regra' },
+    { categoria: 'Ticket Médio', texto: 'Ticket médio de recebimento aumentou no período', tendencia: 'alta', grauConfianca: 74, origem: 'IA' },
+    { categoria: 'Capital de Giro', texto: 'Capital de giro melhorou em relação ao período anterior', tendencia: 'alta', grauConfianca: 81, origem: 'IA' },
+  ];
+
+  // ============================================================================
+  // PAINEL DE DRILL-DOWN — genérico e reutilizável por qualquer gráfico.
+  // abrirDrilldown(titulo, resumo, linhas) monta o painel; linhas é um array
+  // de { desc, sub, valor, corValor } já prontos pra desenhar — quem chama
+  // decide o que aparece, este núcleo só desenha.
+  // ============================================================================
+  const ddFundo = document.getElementById('dd-fundo');
+  const ddPainel = document.getElementById('dd-painel');
+
+  function abrirDrilldown(titulo, resumo, linhas, linkVerTudo) {
+    document.getElementById('dd-titulo').textContent = titulo;
+    document.getElementById('dd-resumo').textContent = resumo;
+    const listaEl = document.getElementById('dd-lista');
+    if (!linhas.length) {
+      listaEl.innerHTML = `<div class="dd-vazio">Nenhum lançamento neste recorte.</div>`;
+    } else {
+      listaEl.innerHTML = linhas.map(l => `
+        <div class="dd-linha">
+          <div><div class="dd-linha-desc">${l.desc}</div>${l.sub ? `<div class="dd-linha-sub">${l.sub}</div>` : ''}</div>
+          <span class="mono" style="color:${l.corValor}; font-weight:600; white-space:nowrap;">${l.valor}</span>
+        </div>`).join('');
+    }
+    if (linkVerTudo) {
+      listaEl.innerHTML += `<div style="padding:14px 22px;"><a href="${linkVerTudo}" style="font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none;">Ver tudo em Lançamentos →</a></div>`;
+    }
+    ddFundo.classList.add('aberto');
+    ddPainel.classList.add('aberto');
+    if (window.lucide) lucide.createIcons();
+  }
+  function fecharDrilldown() {
+    ddFundo.classList.remove('aberto');
+    ddPainel.classList.remove('aberto');
+  }
+  ddFundo.addEventListener('click', fecharDrilldown);
+  document.getElementById('dd-fechar').addEventListener('click', fecharDrilldown);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharDrilldown(); });
+
   let dadosCompartilhados = null;
   let periodoAtivo = 'ano'; // reflete o botão marcado "ativo" no HTML
+  let timelineDadosBrutos = [];
 
   async function carregarDadosCompartilhados() {
     const grupoId = selGrupo.value;
@@ -513,6 +797,9 @@ if (window.lucide) lucide.createIcons();
     return `conic-gradient(${partes.join(', ')})`;
   }
 
+  // Cada segmento pode opcionalmente ter um `onClick` (função) — quando tem,
+  // o item da legenda vira clicável e abre o drill-down. Quem chama decide
+  // o que o clique faz; renderDonut só desenha e liga o evento.
   function renderDonut(containerId, segmentos, totalLabel, totalTexto) {
     const cont = document.getElementById(containerId);
     const validos = segmentos.filter(s => s.valor > 0);
@@ -527,13 +814,18 @@ if (window.lucide) lucide.createIcons();
         </div>
       </div>
       <div class="chart-legend">
-        ${validos.map(s => `
-          <div class="item">
+        ${validos.map((s, i) => `
+          <div class="item${s.onClick ? ' grafico-clicavel' : ''}" data-idx="${i}">
             <span class="dot" style="background:${s.cor};"></span>
             <span class="nome">${s.nome}</span>
             <span class="valor">${fmt(s.valor)}</span>
           </div>`).join('')}
       </div>`;
+
+    cont.querySelectorAll('.chart-legend .item[data-idx]').forEach(el => {
+      const seg = validos[Number(el.dataset.idx)];
+      if (seg.onClick) el.addEventListener('click', seg.onClick);
+    });
   }
 
   // ---------- Saldo por Conta Bancária ----------
@@ -553,7 +845,22 @@ if (window.lucide) lucide.createIcons();
     });
 
     const totalGeral = Object.values(saldos).reduce((s,v) => s+v, 0);
-    const segmentos = contas.map((c,i) => ({ nome: c.nome, valor: Math.max(saldos[c.id], 0), cor: CORES_SERIE[i % CORES_SERIE.length] }));
+    const segmentos = contas.map((c,i) => ({
+      nome: c.nome, valor: Math.max(saldos[c.id], 0), cor: CORES_SERIE[i % CORES_SERIE.length],
+      onClick: () => {
+        const linhas = realizado
+          .filter(r => r.conta_bancaria_id === c.id || r.conta_destino_id === c.id)
+          .sort((a, b) => (b.data_baixa || '').localeCompare(a.data_baixa || ''))
+          .map(r => {
+            const ehTransferenciaEntrada = r.tipo === 'transferencia' && r.conta_destino_id === c.id;
+            const ehTransferenciaSaida = r.tipo === 'transferencia' && r.conta_bancaria_id === c.id;
+            const positivo = r.tipo === 'entrada' || ehTransferenciaEntrada;
+            const rotuloTipo = ehTransferenciaEntrada ? 'Transferência recebida' : ehTransferenciaSaida ? 'Transferência enviada' : (r.nome_conta || (r.tipo === 'entrada' ? 'Entrada' : 'Saída'));
+            return { desc: rotuloTipo, sub: fmtData(r.data_baixa), valor: (positivo ? '+' : '-') + fmt(r.valor_desembolsado), corValor: positivo ? 'var(--accent)' : 'var(--red)' };
+          });
+        abrirDrilldown(c.nome, `${linhas.length} movimentação(ões) · Saldo atual ${fmt(saldos[c.id])}`, linhas, null);
+      },
+    }));
     renderDonut('donut-contas', segmentos, 'Saldo Total', fmt(totalGeral).replace('R$ ',''));
   }
 
@@ -567,27 +874,34 @@ if (window.lucide) lucide.createIcons();
       .map(s => ({ saldo_aberto: s.saldo_aberto, lancamentos: infoPorLancamento.get(s.lancamento_id) }));
 
     const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const buckets = { atual: 0, d30: 0, d60: 0, d90: 0, vencido: 0 };
+    // cada bucket guarda soma E as linhas que caíram nele, pro drill-down usar
+    const buckets = {
+      atual: { valor: 0, linhas: [] }, d30: { valor: 0, linhas: [] }, d60: { valor: 0, linhas: [] },
+      d90: { valor: 0, linhas: [] }, vencido: { valor: 0, linhas: [] },
+    };
     data.forEach(r => {
       const venc = r.lancamentos?.data_vencimento ? new Date(r.lancamentos.data_vencimento + 'T00:00:00') : null;
       const valor = Number(r.saldo_aberto || 0);
       if (valor <= 0) return;
-      if (!venc) { buckets.atual += valor; return; }
-      const dias = Math.round((venc - hoje) / 86400000);
-      if (dias < 0) buckets.vencido += valor;
-      else if (dias <= 30) buckets.atual += valor;
-      else if (dias <= 60) buckets.d30 += valor;
-      else if (dias <= 90) buckets.d60 += valor;
-      else buckets.d90 += valor;
+      const linha = { desc: 'Título a receber', sub: venc ? `Vence ${fmtData(r.lancamentos.data_vencimento)}` : 'Sem vencimento', valor: fmt(valor), corValor: 'var(--ink)' };
+      let chave;
+      if (!venc) chave = 'atual';
+      else {
+        const dias = Math.round((venc - hoje) / 86400000);
+        chave = dias < 0 ? 'vencido' : dias <= 30 ? 'atual' : dias <= 60 ? 'd30' : dias <= 90 ? 'd60' : 'd90';
+      }
+      buckets[chave].valor += valor;
+      buckets[chave].linhas.push(linha);
     });
 
-    const total = Object.values(buckets).reduce((s,v) => s+v, 0);
+    const total = Object.values(buckets).reduce((s,b) => s+b.valor, 0);
+    const fazerOnClick = (nome, b) => () => abrirDrilldown(nome, `${b.linhas.length} título(s) · ${fmt(b.valor)}`, b.linhas, 'lancamentos.html?status=em_aberto');
     const segmentos = [
-      { nome: 'A vencer (até 30d)', valor: buckets.atual, cor: CORES_SERIE[0] },
-      { nome: '31–60 dias', valor: buckets.d30, cor: CORES_SERIE[1] },
-      { nome: '61–90 dias', valor: buckets.d60, cor: CORES_SERIE[2] },
-      { nome: 'Acima de 90 dias', valor: buckets.d90, cor: CORES_SERIE[3] },
-      { nome: 'Vencido', valor: buckets.vencido, cor: CORES_SERIE[5] },
+      { nome: 'A vencer (até 30d)', valor: buckets.atual.valor, cor: CORES_SERIE[0], onClick: fazerOnClick('A vencer (até 30 dias)', buckets.atual) },
+      { nome: '31–60 dias', valor: buckets.d30.valor, cor: CORES_SERIE[1], onClick: fazerOnClick('31–60 dias', buckets.d30) },
+      { nome: '61–90 dias', valor: buckets.d60.valor, cor: CORES_SERIE[2], onClick: fazerOnClick('61–90 dias', buckets.d60) },
+      { nome: 'Acima de 90 dias', valor: buckets.d90.valor, cor: CORES_SERIE[3], onClick: fazerOnClick('Acima de 90 dias', buckets.d90) },
+      { nome: 'Vencido', valor: buckets.vencido.valor, cor: CORES_SERIE[5], onClick: fazerOnClick('Vencido', buckets.vencido) },
     ];
     renderDonut('donut-aging', segmentos, 'Total a Receber', fmt(total).replace('R$ ',''));
   }
@@ -747,6 +1061,8 @@ if (window.lucide) lucide.createIcons();
     return buckets;
   }
 
+  let bucketsFluxoAtuais = []; // guardado pro drill-down usar sem reprocessar
+
   function carregarFluxoMensal() {
     const { realizado } = dadosCompartilhados;
     const buckets = gerarBucketsPeriodo(periodoAtivo);
@@ -760,10 +1076,11 @@ if (window.lucide) lucide.createIcons();
       bucket[r.tipo === 'entrada' ? 'entrada' : 'saida'] += Number(r.valor_desembolsado);
     });
 
+    bucketsFluxoAtuais = buckets;
     const max = Math.max(...buckets.flatMap(b => [b.entrada, b.saida]), 0.01);
 
-    document.getElementById('grafico-fluxo-mensal').innerHTML = buckets.map(m => `
-      <div class="grupo-mes"${m.chave ? ` data-mes="${m.chave}"` : ''}>
+    document.getElementById('grafico-fluxo-mensal').innerHTML = buckets.map((m, idx) => `
+      <div class="grupo-mes grafico-clicavel" data-idx="${idx}">
         <div class="barras" title="Entradas: ${fmt(m.entrada)} · Saídas: ${fmt(m.saida)}">
           <div class="barra bg-serie-1" style="height:${Math.max(3, m.entrada/max*130)}px;"></div>
           <div class="barra bg-serie-6" style="height:${Math.max(3, m.saida/max*130)}px;"></div>
@@ -809,6 +1126,23 @@ if (window.lucide) lucide.createIcons();
   // Único gráfico que ainda faz busca própria — precisa do nome do
   // favorecido, que não está em vw_realizado, então essa parte não dava
   // pra eliminar sem mudar a view. Continua async só por causa disso.
+  // Compartilhado pelas duas listas de barra abaixo — item pode ter um
+  // `onClick` opcional (mesmo espírito do renderDonut).
+  function renderBarList(containerId, itens) {
+    const cont = document.getElementById(containerId);
+    if (!itens.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
+    const max = itens[0].valor || 1;
+    cont.innerHTML = itens.map((it, i) => `
+      <div class="linha${it.onClick ? ' grafico-clicavel' : ''}" data-idx="${i}">
+        <div class="topo"><span class="nome">${it.nome}</span><span class="valor">${fmt(it.valor)}</span></div>
+        <div class="trilho"><div class="fill" style="width:${(it.valor/max*100).toFixed(1)}%; background:${CORES_SERIE[i % CORES_SERIE.length]};"></div></div>
+      </div>`).join('');
+    cont.querySelectorAll('.linha[data-idx]').forEach(el => {
+      const it = itens[Number(el.dataset.idx)];
+      if (it.onClick) el.addEventListener('click', it.onClick);
+    });
+  }
+
   async function carregarTopFavorecidos() {
     const { realizado } = dadosCompartilhados;
     const { inicio, fim } = obterIntervaloPeriodo(periodoAtivo);
@@ -825,22 +1159,24 @@ if (window.lucide) lucide.createIcons();
       (favs || []).forEach(f => { nomesPorId[f.id] = f.nome; });
     }
 
-    const porFavorecido = {};
+    // agrupa por ID (não só nome) pra poder reconstituir as linhas no drill-down
+    const porFavorecido = {}; // id -> { nome, valor, linhas: [] }
     data.forEach(r => {
       const nome = nomesPorId[r.favorecido_id];
       if (!nome) return;
-      porFavorecido[nome] = (porFavorecido[nome] || 0) + Number(r.valor_desembolsado);
+      if (!porFavorecido[r.favorecido_id]) porFavorecido[r.favorecido_id] = { nome, valor: 0, linhas: [] };
+      porFavorecido[r.favorecido_id].valor += Number(r.valor_desembolsado);
+      porFavorecido[r.favorecido_id].linhas.push({
+        desc: r.nome_conta || (r.tipo === 'entrada' ? 'Entrada' : 'Saída'), sub: fmtData(r.data_baixa),
+        valor: (r.tipo === 'entrada' ? '+' : '-') + fmt(r.valor_desembolsado), corValor: r.tipo === 'entrada' ? 'var(--accent)' : 'var(--red)',
+      });
     });
 
-    const top = Object.entries(porFavorecido).sort((a,b) => b[1]-a[1]).slice(0,5);
-    const cont = document.getElementById('top-favorecidos');
-    if (!top.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
-    const max = top[0][1] || 1;
-    cont.innerHTML = top.map(([nome, valor], i) => `
-      <div class="linha">
-        <div class="topo"><span class="nome">${nome}</span><span class="valor">${fmt(valor)}</span></div>
-        <div class="trilho"><div class="fill" style="width:${(valor/max*100).toFixed(1)}%; background:${CORES_SERIE[i % CORES_SERIE.length]};"></div></div>
-      </div>`).join('');
+    const top = Object.values(porFavorecido).sort((a,b) => b.valor-a.valor).slice(0,5).map(f => ({
+      nome: f.nome, valor: f.valor,
+      onClick: () => abrirDrilldown(f.nome, `${f.linhas.length} lançamento(s) · ${fmt(f.valor)} no período`, f.linhas, null),
+    }));
+    renderBarList('top-favorecidos', top);
   }
 
   // ---------- Distribuição por Plano de Contas ----------
@@ -853,22 +1189,24 @@ if (window.lucide) lucide.createIcons();
       return d >= inicio && d <= fim;
     });
 
-    const porPlano = {};
+    const porPlano = {}; // plano_conta_id -> { nome, valor, linhas: [] }
     data.forEach(r => {
       const nome = r.nome_conta;
       if (!nome) return;
-      porPlano[nome] = (porPlano[nome] || 0) + Number(r.valor_desembolsado);
+      const chave = r.plano_conta_id || nome;
+      if (!porPlano[chave]) porPlano[chave] = { nome, valor: 0, linhas: [] };
+      porPlano[chave].valor += Number(r.valor_desembolsado);
+      porPlano[chave].linhas.push({
+        desc: r.tipo === 'entrada' ? 'Entrada' : 'Saída', sub: fmtData(r.data_baixa),
+        valor: (r.tipo === 'entrada' ? '+' : '-') + fmt(r.valor_desembolsado), corValor: r.tipo === 'entrada' ? 'var(--accent)' : 'var(--red)',
+      });
     });
 
-    const top = Object.entries(porPlano).sort((a,b) => b[1]-a[1]).slice(0,6);
-    const cont = document.getElementById('dist-plano-contas');
-    if (!top.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
-    const max = top[0][1] || 1;
-    cont.innerHTML = top.map(([nome, valor], i) => `
-      <div class="linha">
-        <div class="topo"><span class="nome">${nome}</span><span class="valor">${fmt(valor)}</span></div>
-        <div class="trilho"><div class="fill" style="width:${(valor/max*100).toFixed(1)}%; background:${CORES_SERIE[i % CORES_SERIE.length]};"></div></div>
-      </div>`).join('');
+    const top = Object.values(porPlano).sort((a,b) => b.valor-a.valor).slice(0,6).map(p => ({
+      nome: p.nome, valor: p.valor,
+      onClick: () => abrirDrilldown(p.nome, `${p.linhas.length} lançamento(s) · ${fmt(p.valor)} no período`, p.linhas, null),
+    }));
+    renderBarList('dist-plano-contas', top);
   }
 
   // ---------- Orquestração — uma busca, tudo deriva dela ----------
@@ -910,15 +1248,36 @@ if (window.lucide) lucide.createIcons();
     carregarDistPlanoContas();
   });
 
-  // Clique numa barra do Fluxo Mensal abre os lançamentos daquele mês —
-  // só faz sentido quando o período é "Ano" (cada barra = 1 mês exato).
-  // lancamentos.html só sabe filtrar por status/mês pela URL hoje; ligar
-  // isso a Top Favorecidos/Distribuição exigiria adicionar filtro por
-  // favorecido/plano de contas lá também — fica pra uma próxima rodada.
+  // Clique em qualquer barra do Fluxo Mensal abre o painel de drill-down
+  // com os lançamentos reais daquele recorte — funciona em qualquer período
+  // (Hoje/7/30/90 dias/Ano), não só no modo Ano. No modo Ano, o painel ainda
+  // oferece "Ver tudo em Lançamentos" (link por mês, que já existia).
   document.getElementById('grafico-fluxo-mensal').addEventListener('click', (e) => {
-    const grupo = e.target.closest('.grupo-mes[data-mes]');
-    if (!grupo) return;
-    window.location.href = `lancamentos.html?mes=${grupo.dataset.mes}`;
+    const grupo = e.target.closest('.grupo-mes[data-idx]');
+    if (!grupo || !dadosCompartilhados) return;
+    const bucket = bucketsFluxoAtuais[Number(grupo.dataset.idx)];
+    if (!bucket) return;
+
+    const linhas = dadosCompartilhados.realizado
+      .filter(r => {
+        if (r.tipo === 'transferencia' || !r.data_baixa) return false;
+        const d = new Date(r.data_baixa + 'T00:00:00');
+        return d >= bucket.inicio && d <= bucket.fim;
+      })
+      .sort((a, b) => b.data_baixa.localeCompare(a.data_baixa))
+      .map(r => ({
+        desc: r.nome_conta || '(sem plano de contas)',
+        sub: fmtData(r.data_baixa),
+        valor: (r.tipo === 'entrada' ? '+' : '-') + fmt(r.valor_desembolsado),
+        corValor: r.tipo === 'entrada' ? 'var(--accent)' : 'var(--red)',
+      }));
+
+    abrirDrilldown(
+      bucket.label,
+      `${linhas.length} lançamento(s) · Entradas ${fmt(bucket.entrada)} · Saídas ${fmt(bucket.saida)}`,
+      linhas,
+      bucket.chave ? `lancamentos.html?mes=${bucket.chave}` : null
+    );
   });
 
   try { await recarregarDashboard(); } catch (e) { console.error('Erro ao carregar dashboard financeiro:', e); }
@@ -998,6 +1357,134 @@ if (window.lucide) lucide.createIcons();
       if (window.lucide) lucide.createIcons();
     }
   });
+
+  // ============================================================================
+  // TIMELINE FINANCEIRA — feed cronológico real. Busca baixas (que têm
+  // criado_em, timestamp de verdade) + lançamento embutido; resolve nomes de
+  // conta/favorecido em memória (busca as duas tabelas inteiras uma vez, são
+  // pequenas) em vez de embed duplo de FK via PostgREST, que exigiria saber
+  // o nome exato das duas constraints de conta_bancaria_id/conta_destino_id.
+  // Filtros são aplicados no cliente sobre o mesmo lote já carregado.
+  // ============================================================================
+  async function carregarTimeline() {
+    const listaEl = document.getElementById('tl-lista');
+    listaEl.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>`;
+
+    const { data: baixasData, error } = await supabase.from('baixas')
+      .select('id, data, criado_em, valor_pago, juros, multa, lancamento_id, lancamentos(id, valor, status, plano_conta_id, favorecido_id, conta_bancaria_id, conta_destino_id, grupo_empresarial_id, plano_contas(nome_conta, tipo))')
+      .order('criado_em', { ascending: false })
+      .limit(200);
+
+    if (error) { listaEl.innerHTML = `<p style="color:var(--red); font-size:12.5px;">Erro: ${error.message}</p>`; return; }
+
+    const [{ data: todasContas }, { data: todosFavorecidos }] = await Promise.all([
+      supabase.from('contas_bancarias').select('id, nome'),
+      supabase.from('favorecidos').select('id, nome, tipo'),
+    ]);
+    const nomeContaPorId = Object.fromEntries((todasContas || []).map(c => [c.id, c.nome]));
+    const favorecidoPorId = Object.fromEntries((todosFavorecidos || []).map(f => [f.id, f]));
+
+    timelineDadosBrutos = (baixasData || [])
+      .filter(b => b.lancamentos) // guarda contra baixa órfã (lançamento deletado)
+      .map(b => {
+        const l = b.lancamentos;
+        const tipo = l.plano_contas?.tipo; // 'entrada' | 'saida' | 'transferencia'
+        const favorecido = favorecidoPorId[l.favorecido_id];
+        const contaOrigemNome = nomeContaPorId[l.conta_bancaria_id] || '—';
+        const contaDestinoNome = nomeContaPorId[l.conta_destino_id] || '—';
+        let desc, sub;
+        if (tipo === 'transferencia') {
+          desc = 'Transferência';
+          sub = `${contaOrigemNome} → ${contaDestinoNome}`;
+        } else {
+          desc = tipo === 'entrada' ? 'Recebimento' : 'Pagamento';
+          sub = favorecido ? favorecido.nome : (l.plano_contas?.nome_conta || contaOrigemNome);
+        }
+        return {
+          criadoEm: b.criado_em, tipo, desc, sub,
+          banco: contaOrigemNome,
+          favorecidoNome: favorecido?.nome || null,
+          valor: Number(b.valor_pago) + Number(b.juros || 0) + Number(b.multa || 0),
+          status: l.status, data: b.data, grupoId: l.grupo_empresarial_id,
+        };
+      });
+
+    popularFiltrosTimeline();
+    aplicarFiltrosTimeline();
+  }
+
+  function popularFiltrosTimeline() {
+    const bancos = [...new Set(timelineDadosBrutos.map(t => t.banco).filter(b => b && b !== '—'))].sort();
+    document.getElementById('tl_f_banco').innerHTML = '<option value="">Todos os bancos</option>' + bancos.map(b => `<option value="${b}">${b}</option>`).join('');
+
+    const favorecidos = [...new Set(timelineDadosBrutos.map(t => t.favorecidoNome).filter(Boolean))].sort();
+    document.getElementById('tl_f_favorecido').innerHTML = '<option value="">Todos os clientes/fornecedores</option>' + favorecidos.map(f => `<option value="${f}">${f}</option>`).join('');
+  }
+
+  function aplicarFiltrosTimeline() {
+    const grupoId = selGrupo.value;
+    const fBanco = document.getElementById('tl_f_banco').value;
+    const fFavorecido = document.getElementById('tl_f_favorecido').value;
+    const fTipo = document.getElementById('tl_f_tipo').value;
+    const fStatus = document.getElementById('tl_f_status').value;
+    const fData = document.getElementById('tl_f_data').value;
+    const fValorMin = parseFloat(document.getElementById('tl_f_valor_min').value) || 0;
+
+    const filtrado = timelineDadosBrutos.filter(t => {
+      if (grupoId && t.grupoId !== grupoId) return false;
+      if (fBanco && t.banco !== fBanco) return false;
+      if (fFavorecido && t.favorecidoNome !== fFavorecido) return false;
+      if (fTipo && t.tipo !== fTipo) return false;
+      if (fStatus && t.status !== fStatus) return false;
+      if (fData && t.data !== fData) return false;
+      if (fValorMin && t.valor < fValorMin) return false;
+      return true;
+    });
+
+    renderTimeline(filtrado);
+  }
+
+  const LABEL_STATUS_TL = { pago: 'Pago', em_aberto: 'Em Aberto', parcial: 'Parcial', inadimplente: 'Inadimplente' };
+
+  function renderTimeline(itens) {
+    const listaEl = document.getElementById('tl-lista');
+    if (!itens.length) { listaEl.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px; padding:12px 0;">Nenhuma movimentação encontrada com esses filtros.</p>`; return; }
+
+    listaEl.innerHTML = itens.map(t => {
+      const hora = t.criadoEm ? new Date(t.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+      const sinal = t.tipo === 'entrada' ? '+' : t.tipo === 'saida' ? '-' : '';
+      const cor = t.tipo === 'entrada' ? 'var(--accent)' : t.tipo === 'saida' ? 'var(--red)' : 'var(--ink-soft)';
+      const statusClasse = t.status ? t.status.replace('_', '') : '';
+      return `
+        <div class="tl-item tipo-${t.tipo}">
+          <div class="tl-hora" title="Hora de registro no sistema">${hora}</div>
+          <div class="tl-marcador"></div>
+          <div class="tl-corpo">
+            <div class="tl-topo">
+              <span class="tl-desc">${t.desc}</span>
+              <span class="tl-valor mono" style="color:${cor};">${sinal}${fmt(t.valor)}</span>
+            </div>
+            <div class="tl-sub">${t.sub} · ${fmtData(t.data)}${t.status ? ` · <span class="badge ${statusClasse}">${LABEL_STATUS_TL[t.status] || t.status}</span>` : ''}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  ['tl_f_banco', 'tl_f_favorecido', 'tl_f_tipo', 'tl_f_status', 'tl_f_data', 'tl_f_valor_min'].forEach(id => {
+    document.getElementById(id).addEventListener('input', aplicarFiltrosTimeline);
+  });
+  document.getElementById('tl_btn_limpar').addEventListener('click', () => {
+    document.getElementById('tl_f_banco').value = '';
+    document.getElementById('tl_f_favorecido').value = '';
+    document.getElementById('tl_f_tipo').value = '';
+    document.getElementById('tl_f_status').value = '';
+    document.getElementById('tl_f_data').value = '';
+    document.getElementById('tl_f_valor_min').value = '';
+    aplicarFiltrosTimeline();
+  });
+  selGrupo.addEventListener('change', aplicarFiltrosTimeline);
+
+  await carregarTimeline();
 </script>
   </div>
 </div>
