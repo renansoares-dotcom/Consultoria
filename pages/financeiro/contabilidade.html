@@ -196,7 +196,7 @@
   const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
   selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
 
-  const { data: contasLista } = await supabase.from('plano_contas').select('id, codigo_conta, nome_conta').eq('ativo', true).order('codigo_conta');
+  const { data: contasLista } = await supabase.from('plano_contas').select('id, codigo_conta, nome_conta, tipo').eq('ativo', true).order('codigo_conta');
   selConta.innerHTML = '<option value="">Selecione a conta…</option>' + (contasLista || []).map(c => `<option value="${c.id}">${c.codigo_conta} — ${c.nome_conta}</option>`).join('');
 
   const hoje = new Date();
@@ -228,6 +228,14 @@
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Carregando…</td></tr>`;
     const grupoId = selGrupo.value;
 
+    // `lancamentos.valor` é sempre gravado positivo — a direção (soma ou
+    // subtrai do saldo) vem do tipo da conta no plano de contas (entrada
+    // soma, saída subtrai), mesmo padrão já usado em vw_realizado e no
+    // dashboard Financeiro. Sem isso, uma conta de despesa apareceria
+    // como saldo positivo crescente, o que não faz sentido contábil.
+    const contaSelecionada = contasLista.find(c => c.id === contaId);
+    const sinalConta = contaSelecionada?.tipo === 'saida' ? -1 : 1;
+
     // Saldo anterior: soma de tudo antes do período nesta conta
     let queryAnterior = supabase.from('lancamentos').select('valor').eq('plano_conta_id', contaId).lt('data', dataInicio);
     if (grupoId) queryAnterior = queryAnterior.eq('grupo_empresarial_id', grupoId);
@@ -243,8 +251,8 @@
 
     if (erroAnt || erroPeriodo) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px;">Erro: ${(erroAnt||erroPeriodo).message}</td></tr>`; return; }
 
-    const saldoAnterior = (anteriores || []).reduce((s, l) => s + Number(l.valor), 0);
-    const movimento = (linhas || []).reduce((s, l) => s + Number(l.valor), 0);
+    const saldoAnterior = (anteriores || []).reduce((s, l) => s + Number(l.valor) * sinalConta, 0);
+    const movimento = (linhas || []).reduce((s, l) => s + Number(l.valor) * sinalConta, 0);
 
     document.getElementById('card-saldo-anterior').textContent = fmt(saldoAnterior);
     document.getElementById('card-saldo-anterior').className = `big valor ${saldoAnterior >= 0 ? 'positivo' : 'negativo'}`;
@@ -261,13 +269,14 @@
 
     let acumulado = saldoAnterior;
     const linhasHtml = linhas.map(l => {
-      acumulado += Number(l.valor);
+      const valorAssinado = Number(l.valor) * sinalConta;
+      acumulado += valorAssinado;
       return `<tr>
         <td>${fmtData(l.data)}</td>
         <td>${l.descricao ?? '(sem descrição)'}</td>
         <td>${l.favorecidos?.nome ?? '—'}</td>
         <td>${l.centros_custo?.nome ?? '—'}</td>
-        <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">${fmt(l.valor)}</td>
+        <td class="num valor ${valorAssinado >= 0 ? 'positivo' : 'negativo'}">${fmt(valorAssinado)}</td>
         <td class="num valor ${acumulado >= 0 ? 'positivo' : 'negativo'}">${fmt(acumulado)}</td>
       </tr>`;
     }).join('');
