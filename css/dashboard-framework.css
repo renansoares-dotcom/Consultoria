@@ -1,0 +1,244 @@
+/* ============================================================================
+   DATATIVO DESIGN FRAMEWORK (SYS-001)
+   Framework oficial de interface pra dashboards executivos de módulo.
+   Nenhum novo módulo deve ser desenvolvido fora deste padrão (ADR-004).
+
+   Estrutura das 10 seções oficiais:
+   01. Cabeçalho Executivo   -> .dtv-cabecalho-executivo
+   02. Central de Atenção    -> .central-atencao
+   03. KPIs                  -> .kpi-grid / .kpi-card.kpi-clicavel
+   04. Insights               -> .insights-grid (renomear o container pai por
+                                  módulo: .insights-financeiros, .insights-comerciais...)
+   05. Área Analítica         -> .linha-principal / .linha-secundaria +
+                                  .donut-box-wrap / .bar-list / .grafico-barras-mensal
+                                  (drill-down obrigatório: classe .grafico-clicavel)
+   06. Área Operacional       -> .card-tabela (tabelas/listagens/filtros)
+   07. Timeline               -> .tl-item / .tl-filtros
+   08. Drawers                -> .drilldown-painel (detalhe rápido) e
+                                  .kpid-painel (detalhe de KPI) — SEMPRE painel
+                                  lateral, nunca página nova pra detalhe
+   09. Recomendações          -> .kpid-recomendacoes / .kpid-analise-ia
+                                  (reservadas, display:none até existir IA/regra)
+   10. Rodapé Técnico         -> .dtv-rodape-tecnico
+
+   Requer que a página já carregue css/design-system.css antes deste arquivo
+   — usa os tokens de cor/raio/sombra de lá (--accent, --line, --paper-raised
+   etc.), não redefine nada.
+============================================================================ */
+
+.app-main .page { padding: 24px 32px 56px; }
+.page-header { margin-bottom: 18px; }
+.ca-tag-exemplo { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); background: var(--paper); padding: 3px 8px; border-radius: 999px; }
+
+/* ============================================================================
+   01. CABEÇALHO EXECUTIVO — nome do módulo + breadcrumb ficam no .page-header
+   já existente (eyebrow + h1). Os 3 elementos novos deste framework:
+   pesquisa global, ações rápidas, favoritos.
+============================================================================ */
+.dtv-cabecalho-executivo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dtv-busca-global { position: relative; }
+.dtv-busca-global input { width: 220px; padding-left: 34px; font-size: 12.5px; }
+.dtv-busca-global svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--ink-faint); pointer-events: none; }
+.dtv-favoritos-btn { border: none; background: var(--paper); width: 34px; height: 34px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.dtv-favoritos-btn:hover { background: var(--line); }
+.dtv-favoritos-btn svg { width: 16px; height: 16px; color: var(--ink-soft); }
+.dtv-favoritos-btn.ativo svg { color: var(--amber); fill: var(--amber); }
+.dtv-acoes-rapidas { display: flex; gap: 8px; }
+
+/* ============================================================================
+   Hero (posição de destaque — Saldo Atual, Receita do Período, etc.)
+============================================================================ */
+.hero-saldo { background: linear-gradient(135deg, var(--accent) 0%, #145c44 100%); border-radius: var(--radius-lg); padding: 16px 28px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; box-shadow: var(--shadow-md); position: relative; overflow: hidden; }
+.hero-saldo::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 85% 20%, rgba(255,255,255,.10), transparent 55%); pointer-events: none; }
+.hero-saldo .rotulo { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.72); font-weight: 600; margin-bottom: 5px; }
+.hero-saldo .valor-hero { font-family: var(--font-mono); font-size: 32px; font-weight: 700; letter-spacing: -0.02em; color: #fff; line-height: 1.05; }
+.hero-saldo .hero-tendencia { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.82); }
+.hero-saldo .hero-icone { width: 40px; height: 40px; border-radius: var(--radius-sm); background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hero-saldo .hero-icone svg { width: 20px; height: 20px; color: #fff; }
+
+/* ============================================================================
+   02. CENTRAL DE ATENÇÃO — alertas priorizados
+============================================================================ */
+.central-atencao { margin-bottom: 16px; }
+.ca-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ca-titulo { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.ca-titulo svg { width: 16px; height: 16px; color: var(--amber); }
+.ca-lista { display: flex; flex-direction: column; gap: 8px; }
+.ca-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); }
+.ca-item .ca-icone { width: 32px; height: 32px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ca-item .ca-icone svg { width: 16px; height: 16px; }
+.ca-item.prioridade-alta .ca-icone, .ca-item.prioridade-critica .ca-icone { background: var(--red-soft); color: var(--red); }
+.ca-item.prioridade-media .ca-icone { background: var(--amber-soft); color: var(--amber); }
+.ca-item.prioridade-baixa .ca-icone { background: var(--paper); color: var(--ink-soft); }
+.ca-item .ca-corpo { flex: 1; min-width: 0; }
+.ca-item .ca-tipo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); margin-bottom: 3px; display: block; }
+.ca-item .ca-mensagem { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.ca-item .ca-acao { margin-top: 5px; }
+.ca-item .ca-acao a { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
+
+/* ============================================================================
+   03. KPIs — cards inteligentes, todos clicáveis (obrigatório)
+============================================================================ */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+.kpi-card { padding: 18px 20px; }
+.kpi-card.kpi-clicavel { cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; position: relative; overflow: hidden; }
+.kpi-card.kpi-clicavel:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-ripple { position: absolute; border-radius: 50%; background: rgba(31,122,92,.18); transform: scale(0); animation: kpi-ripple-anim .5s ease-out; pointer-events: none; }
+@keyframes kpi-ripple-anim { to { transform: scale(3.2); opacity: 0; } }
+.kpi-card .label { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+.kpi-card .kpi-icone { width: 15px; height: 15px; flex-shrink: 0; opacity: .8; }
+.kpi-card .kpi-icone.tom-verde { color: var(--accent); }
+.kpi-card .kpi-icone.tom-ambar { color: var(--amber); }
+.kpi-card .kpi-icone.tom-azul { color: #5b8def; }
+.kpi-card .kpi-icone.tom-roxo { color: #8b5cf6; }
+.kpi-card .kpi-icone.tom-vermelho { color: var(--red); }
+.kpi-card .big { font-size: 23px; font-weight: 700; }
+
+/* ============================================================================
+   04. INSIGHTS — análises automáticas
+============================================================================ */
+.insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 1100px) { .insights-grid { grid-template-columns: repeat(2, 1fr); } .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+.insight-card { padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); }
+.insight-card .in-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.insight-card .in-categoria { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
+.insight-card .in-origem { font-size: 9.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: var(--paper); color: var(--ink-soft); }
+.insight-card .in-origem.origem-ia { background: rgba(139,92,246,.14); color: #8b5cf6; }
+.insight-card .in-texto { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.4; }
+
+/* ============================================================================
+   05. ÁREA ANALÍTICA — gráficos, mapas, comparativos. Drill-down
+   OBRIGATÓRIO: todo elemento clicável leva a classe .grafico-clicavel.
+============================================================================ */
+.linha-principal { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+.linha-secundaria { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 1100px) { .linha-principal, .linha-secundaria { grid-template-columns: 1fr; } }
+.card-titulo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.card-titulo .label { margin-bottom: 0; }
+
+.grafico-barras-mensal { display: flex; align-items: flex-end; gap: 18px; height: 160px; border-top: 1px solid var(--line); padding-top: 18px; overflow-x: auto; }
+.grupo-mes { flex: 1; min-width: 34px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.grupo-mes.grafico-clicavel { cursor: pointer; border-radius: var(--radius-sm); transition: background .15s; }
+.grupo-mes.grafico-clicavel:hover { background: var(--paper); }
+.grupo-mes .barras { display: flex; align-items: flex-end; gap: 4px; height: 130px; }
+.grupo-mes .barra { width: 14px; border-radius: 3px 3px 0 0; }
+.grupo-mes .mes-label { font-size: 10.5px; color: var(--ink-faint); font-weight: 500; }
+
+.donut-box-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.donut-box { position: relative; width: 128px; height: 128px; flex-shrink: 0; }
+.donut { width: 100%; height: 100%; border-radius: 50%; }
+.donut-hole { position: absolute; inset: 18px; border-radius: 50%; background: var(--paper-raised); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut-hole .big { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--ink); }
+.donut-hole .small { font-size: 9.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .03em; }
+.chart-legend { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 8px; }
+.chart-legend .item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.chart-legend .item.grafico-clicavel { cursor: pointer; border-radius: var(--radius-sm); padding: 3px 4px; margin: -3px -4px; transition: background .15s; }
+.chart-legend .item.grafico-clicavel:hover { background: var(--paper); }
+.chart-legend .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chart-legend .nome { flex: 1; color: var(--ink); }
+.chart-legend .valor { font-family: var(--font-mono); font-weight: 600; color: var(--ink-soft); }
+
+.bar-list { display: flex; flex-direction: column; gap: 12px; }
+.bar-list .linha.grafico-clicavel { cursor: pointer; border-radius: var(--radius-sm); padding: 4px; margin: -4px; transition: background .15s; }
+.bar-list .linha.grafico-clicavel:hover { background: var(--paper); }
+.bar-list .topo { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 5px; }
+.bar-list .nome { color: var(--ink); font-weight: 500; }
+.bar-list .valor { font-family: var(--font-mono); font-weight: 600; color: var(--ink-soft); }
+.bar-list .trilho { height: 6px; border-radius: 999px; background: var(--paper); overflow: hidden; }
+.bar-list .fill { height: 100%; border-radius: 999px; }
+
+/* Placeholder de mapa — módulos com componente geográfico real substituem
+   o conteúdo interno, a moldura/cabeçalho seguem o mesmo card-titulo. */
+.dtv-mapa-placeholder { height: 220px; border-radius: var(--radius-md); background: var(--paper); display: flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 12.5px; }
+
+/* ============================================================================
+   06. ÁREA OPERACIONAL — tabelas, listagens, filtros
+============================================================================ */
+.card-tabela { padding: 0; overflow: hidden; }
+.card-tabela .card-titulo { padding: 18px 24px 0; margin-bottom: 10px; }
+.card-tabela table { font-size: 13px; }
+.card-tabela tbody td { padding: 13px 16px; }
+.card-tabela tbody tr:hover { background: var(--paper); }
+.dtv-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.dtv-filtros select, .dtv-filtros input { font-size: 12px; padding: 6px 10px; }
+
+/* ============================================================================
+   07. TIMELINE — eventos recentes
+============================================================================ */
+.tl-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.tl-item:last-child { border-bottom: none; }
+.tl-item .tl-hora { width: 46px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); padding-top: 2px; }
+.tl-item .tl-marcador { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--accent); }
+.tl-item .tl-corpo { flex: 1; min-width: 0; }
+.tl-item .tl-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.tl-item .tl-desc { font-size: 13px; font-weight: 600; color: var(--ink); }
+.tl-item .tl-valor { font-family: var(--font-mono); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.tl-item .tl-sub { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+/* ============================================================================
+   08. DRAWERS — TODO detalhe abre em painel lateral, nunca página nova.
+   Dois níveis: drilldown (detalhe rápido de um ponto de gráfico/lista) e
+   kpid (detalhe completo de um KPI, com Composição/Recomendações/IA).
+============================================================================ */
+.drilldown-fundo { position: fixed; inset: 0; background: rgba(15,23,32,.45); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .15s; }
+.drilldown-fundo.aberto { opacity: 1; pointer-events: auto; }
+.drilldown-painel { position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 92vw; background: var(--paper-raised); box-shadow: var(--shadow-md); z-index: 201; transform: translateX(100%); transition: transform .2s ease; display: flex; flex-direction: column; }
+.drilldown-painel.aberto { transform: translateX(0); }
+.drilldown-painel .dd-cabecalho { padding: 20px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.drilldown-painel .dd-titulo { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.drilldown-painel .dd-resumo { font-size: 12.5px; color: var(--ink-soft); }
+.drilldown-painel .dd-fechar { border: none; background: var(--paper); width: 28px; height: 28px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.drilldown-painel .dd-fechar svg { width: 15px; height: 15px; color: var(--ink-soft); }
+.drilldown-painel .dd-lista { flex: 1; overflow-y: auto; padding: 8px 0; }
+.drilldown-painel .dd-linha { padding: 11px 22px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+.drilldown-painel .dd-linha .dd-linha-desc { color: var(--ink); font-weight: 500; }
+.drilldown-painel .dd-linha .dd-linha-sub { color: var(--ink-faint); font-size: 11px; margin-top: 2px; }
+.drilldown-painel .dd-vazio { padding: 30px 22px; text-align: center; color: var(--ink-soft); font-size: 12.5px; }
+
+.kpid-fundo { position: fixed; inset: 0; background: rgba(15,23,32,.45); z-index: 300; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.kpid-fundo.aberto { opacity: 1; pointer-events: auto; }
+.kpid-painel { position: fixed; top: 0; right: 0; bottom: 0; width: 40vw; min-width: 420px; max-width: 640px; background: var(--paper-raised); box-shadow: var(--shadow-md); z-index: 301; transform: translateX(100%); transition: transform .22s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
+@media (max-width: 900px) { .kpid-painel { width: 92vw; min-width: 0; } }
+.kpid-painel.aberto { transform: translateX(0); }
+.kpid-cabecalho { padding: 22px 24px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.kpid-cabecalho-topo { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.kpid-nome { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 6px; }
+.kpid-valor { font-family: var(--font-mono); font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+.kpid-comparacao { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 12.5px; font-weight: 600; }
+.kpid-atualizacao { font-size: 11px; color: var(--ink-faint); margin-top: 8px; }
+.kpid-fechar { border: none; background: var(--paper); width: 30px; height: 30px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpid-fechar svg { width: 16px; height: 16px; color: var(--ink-soft); }
+.kpid-corpo { flex: 1; overflow-y: auto; padding: 0 24px 32px; }
+.kpid-secao { padding-top: 20px; }
+.kpid-secao-titulo { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 10px; }
+.kpid-resumo { font-size: 13px; line-height: 1.55; color: var(--ink); background: var(--paper); border-radius: var(--radius-md); padding: 12px 14px; }
+.kpid-composicao-linha { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.kpid-composicao-linha:last-child { border-bottom: none; }
+.kpid-periodo-tabs { display: flex; gap: 2px; background: var(--paper); border-radius: 999px; padding: 3px; margin-bottom: 12px; width: fit-content; }
+.kpid-periodo-tabs button { border: none; background: none; cursor: pointer; font-size: 11px; font-weight: 500; color: var(--ink-soft); padding: 5px 10px; border-radius: 999px; font-family: var(--font-body); }
+.kpid-periodo-tabs button.ativo { background: var(--paper-raised); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-xs); }
+.kpid-acoes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.kpid-acao-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper); font-size: 12.5px; font-weight: 600; color: var(--ink); text-decoration: none; transition: background .15s, border-color .15s; }
+.kpid-acao-btn:hover { background: var(--paper-raised); border-color: var(--accent); }
+.kpid-acao-btn svg { width: 14px; height: 14px; color: var(--accent); flex-shrink: 0; }
+.kpid-vazio { color: var(--ink-soft); font-size: 12.5px; padding: 8px 0; }
+
+/* ============================================================================
+   09. RECOMENDAÇÕES — área reservada pra IA. Oculta por padrão (display:none)
+   até o módulo ter regra/IA de verdade — tirar o display:none é a ÚNICA
+   mudança necessária quando a IA existir, sem alterar HTML/JS do drawer.
+============================================================================ */
+.kpid-recomendacoes, .kpid-analise-ia { display: none; }
+.kpid-recomendacao { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper); margin-bottom: 8px; }
+.kpid-recomendacao:last-child { margin-bottom: 0; }
+.kpid-recomendacao .rec-titulo { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+.kpid-recomendacao .rec-beneficio { font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
+.kpid-recomendacao .rec-impacto { font-size: 11.5px; font-weight: 700; color: var(--accent); }
+.kpid-recomendacao button { flex-shrink: 0; font-size: 11.5px; padding: 6px 12px; }
+
+/* ============================================================================
+   10. RODAPÉ TÉCNICO — última atualização, fonte, empresa, versão
+============================================================================ */
+.dtv-rodape-tecnico { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; padding: 16px 4px 0; margin-top: 8px; border-top: 1px solid var(--line); font-size: 11px; color: var(--ink-faint); }
+.dtv-rodape-tecnico .rt-grupo { display: flex; gap: 20px; flex-wrap: wrap; }
+.dtv-rodape-tecnico .rt-item b { color: var(--ink-soft); font-weight: 600; }
