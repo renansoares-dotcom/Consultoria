@@ -699,3 +699,247 @@ export function WorkspaceLayout(mainContainerId, config) {
 
   return { slots: slotIds };
 }
+
+// ============================================================================
+// UNIVERSAL DRAWER SYSTEM (SYS-011)
+//
+// Um ÚNICO mecanismo por baixo (_abrirUniversalDrawer) — mesmo header,
+// mesmo footer, mesmo sistema de ações, mesmo comportamento (Esc/clique
+// fora/botão fechar), mesma animação, mesmo tamanho (40vw), mesmo sistema
+// de carregamento (skeleton) — pros 6 tipos pedidos. Cada tipo
+// (DetailDrawer/EditDrawer/CreateDrawer/AnalysisDrawer/HistoryDrawer/
+// DecisionDrawer) é só uma função fina que chama o mesmo núcleo com um
+// rótulo/ícone/ações padrão diferentes. Nunca cria HTML de drawer próprio
+// em nenhum módulo — quem precisar de um drawer usa uma destas 6 funções.
+//
+// Nota de convivência: createSimpleDrawer/createDetailDrawer (SYS-002) já
+// existiam antes deste sistema e continuam funcionando (nada foi quebrado),
+// mas ficam como primitivas de nível mais baixo — a partir de agora, o
+// caminho recomendado pra qualquer drawer novo é um dos 6 tipos abaixo.
+// ============================================================================
+
+const UDW_TIPOS = {
+  detail:   { label: 'Detalhe',   icone: 'info' },
+  edit:     { label: 'Editar',    icone: 'pencil' },
+  create:   { label: 'Criar',     icone: 'plus-circle' },
+  analysis: { label: 'Análise',   icone: 'sparkles' },
+  history:  { label: 'Histórico', icone: 'history' },
+  decision: { label: 'Decisão',   icone: 'target' },
+};
+
+function _garantirUniversalDrawer() {
+  if (document.getElementById('udw-fundo')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="udw-fundo" id="udw-fundo"></div>
+    <div class="udw-painel" id="udw-painel">
+      <div class="udw-header">
+        <div class="udw-header-texto">
+          <div class="udw-tipo-badge" id="udw-tipo-badge"></div>
+          <div class="udw-titulo" id="udw-titulo">—</div>
+          <div class="udw-subtitulo" id="udw-subtitulo"></div>
+        </div>
+        <button type="button" class="udw-fechar" id="udw-fechar"><i data-lucide="x"></i></button>
+      </div>
+      <div class="udw-corpo" id="udw-corpo"></div>
+      <div class="udw-footer" id="udw-footer"></div>
+    </div>`);
+
+  const fundo = document.getElementById('udw-fundo');
+  const painel = document.getElementById('udw-painel');
+  fundo.addEventListener('click', _fecharUniversalDrawer);
+  document.getElementById('udw-fechar').addEventListener('click', _fecharUniversalDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _fecharUniversalDrawer(); });
+}
+
+function _fecharUniversalDrawer() {
+  const fundo = document.getElementById('udw-fundo');
+  const painel = document.getElementById('udw-painel');
+  if (!fundo) return;
+  fundo.classList.remove('aberto');
+  painel.classList.remove('aberto');
+}
+
+// Núcleo único — todo tipo passa por aqui. Mesmo header/footer/ação/
+// comportamento/animação/tamanho/loading, sempre.
+function _abrirUniversalDrawer(tipo, { titulo, subtitulo, corpo, acoes, carregando }) {
+  _garantirUniversalDrawer();
+  const info = UDW_TIPOS[tipo] || UDW_TIPOS.detail;
+
+  document.getElementById('udw-tipo-badge').innerHTML = `<i data-lucide="${info.icone}"></i> ${info.label}`;
+  document.getElementById('udw-titulo').textContent = titulo || '—';
+  document.getElementById('udw-subtitulo').textContent = subtitulo || '';
+
+  const corpoEl = document.getElementById('udw-corpo');
+  if (carregando) {
+    corpoEl.innerHTML = `<div class="udw-loading"><div class="udw-loading-linha"></div><div class="udw-loading-linha" style="width:70%;"></div><div class="udw-loading-linha" style="width:85%;"></div></div>`;
+  } else {
+    corpoEl.innerHTML = corpo || '';
+  }
+
+  const footerEl = document.getElementById('udw-footer');
+  const listaAcoes = acoes || [];
+  if (!listaAcoes.length) {
+    footerEl.style.display = 'none';
+  } else {
+    footerEl.style.display = 'flex';
+    footerEl.innerHTML = listaAcoes.map((a, i) => `<button type="button" class="btn ${a.tipo === 'primary' ? 'primary' : 'ghost'}" data-acao-idx="${i}"${a.desabilitado ? ' disabled' : ''}>${a.label}</button>`).join('');
+    listaAcoes.forEach((a, i) => { if (a.onClick) footerEl.querySelector(`[data-acao-idx="${i}"]`).addEventListener('click', a.onClick); });
+  }
+
+  document.getElementById('udw-fundo').classList.add('aberto');
+  document.getElementById('udw-painel').classList.add('aberto');
+  icones();
+}
+
+/** Atualiza o corpo de um drawer já aberto — usado pro "sistema de
+ * carregamento": abre com carregando:true, busca o dado, chama isto quando
+ * pronto. Mesmo mecanismo pros 6 tipos. */
+export function atualizarCorpoDrawer(corpoHtml) {
+  const el = document.getElementById('udw-corpo');
+  if (el) el.innerHTML = corpoHtml;
+  icones();
+}
+
+export function fecharUniversalDrawer() { _fecharUniversalDrawer(); }
+
+export function DetailDrawer(opts) { _abrirUniversalDrawer('detail', { acoes: [{ label: 'Fechar', tipo: 'ghost', onClick: _fecharUniversalDrawer }], ...opts }); }
+export function EditDrawer(opts) { _abrirUniversalDrawer('edit', { acoes: [{ label: 'Cancelar', tipo: 'ghost', onClick: _fecharUniversalDrawer }, { label: 'Salvar', tipo: 'primary', onClick: opts.onSalvar }], ...opts }); }
+export function CreateDrawer(opts) { _abrirUniversalDrawer('create', { acoes: [{ label: 'Cancelar', tipo: 'ghost', onClick: _fecharUniversalDrawer }, { label: 'Criar', tipo: 'primary', onClick: opts.onCriar }], ...opts }); }
+export function AnalysisDrawer(opts) { _abrirUniversalDrawer('analysis', { acoes: [{ label: 'Fechar', tipo: 'ghost', onClick: _fecharUniversalDrawer }], ...opts }); }
+export function HistoryDrawer(opts) { _abrirUniversalDrawer('history', { acoes: [{ label: 'Fechar', tipo: 'ghost', onClick: _fecharUniversalDrawer }], ...opts }); }
+export function DecisionDrawer(opts) { _abrirUniversalDrawer('decision', { acoes: [{ label: 'Descartar', tipo: 'ghost', onClick: _fecharUniversalDrawer }, { label: 'Executar', tipo: 'primary', onClick: opts.onExecutar, desabilitado: !opts.onExecutar }], ...opts }); }
+
+// ============================================================================
+// TIMELINE ENGINE (SYS-012)
+//
+// Componente único pra QUALQUER tipo de evento (Pagamento, Venda, Pedido,
+// Produção, Chamado, Aprovação, Transferência, Auditoria, Login, ou
+// qualquer outro string livre em `tipo`) — puro, sem Supabase aqui dentro.
+// Filtro por tipo, agrupamento (dia/tipo/nenhum), busca por texto, expansão
+// por clique (revela descrição/anexos/comentários), tudo no cliente sobre
+// o array já recebido — mesmo princípio de "busca uma vez, deriva em
+// memória" já usado no resto do sistema.
+//
+// TimelineEngine(containerId, eventos, opts?)
+// evento: { id, tipo, icone?, titulo, descricao?, data (YYYY-MM-DD), hora?,
+//   autor?, valorTexto?, anexos?: [{nome, href}], comentarios?: [{autor, texto, data}] }
+// opts: { filtros?: bool (default true), busca?: bool (default true),
+//   agrupamento?: 'dia'|'tipo'|'nenhum' (default 'dia'), tiposDisponiveis?: [...] }
+//
+// Nota de convivência: Timeline() (SYS-002) continua existindo como
+// primitiva mais simples pra lista cronológica sem filtro/agrupamento —
+// TimelineEngine é o caminho recomendado quando o módulo precisa de
+// verdade de filtro/busca/expansão/anexos/comentários.
+// ============================================================================
+
+const TLE_TIPO_ICONES = {
+  'Pagamento': 'arrow-up-circle', 'Venda': 'shopping-bag', 'Pedido': 'clipboard-list',
+  'Produção': 'factory', 'Chamado': 'headphones', 'Aprovação': 'check-circle-2',
+  'Transferência': 'arrow-left-right', 'Auditoria': 'shield-check', 'Login': 'log-in',
+};
+
+function _tleFmtDataGrupo(iso) {
+  if (!iso) return 'Sem data';
+  const d = new Date(iso + 'T00:00:00');
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const diff = Math.round((hoje - d) / 86400000);
+  if (diff === 0) return 'Hoje';
+  if (diff === 1) return 'Ontem';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function _tleRenderItem(e, expandido) {
+  const icone = e.icone || TLE_TIPO_ICONES[e.tipo] || 'circle';
+  return `
+    <div class="tle-item${expandido ? ' expandido' : ''}" data-evento-id="${e.id}">
+      <div class="tle-item-topo">
+        <div class="tle-item-icone"><i data-lucide="${icone}"></i></div>
+        <div class="tle-item-corpo">
+          <div class="tle-item-linha1"><span class="tle-item-titulo">${e.titulo}</span>${e.valorTexto ? `<span class="tle-item-valor">${e.valorTexto}</span>` : ''}</div>
+          <div class="tle-item-meta"><span class="tle-item-tipo">${e.tipo}</span>${e.autor ? ` · ${e.autor}` : ''}${e.hora ? ` · ${e.hora}` : ''}</div>
+        </div>
+        <i data-lucide="chevron-down" class="tle-item-seta"></i>
+      </div>
+      ${expandido ? `
+      <div class="tle-item-expandido">
+        ${e.descricao ? `<p class="tle-item-descricao">${e.descricao}</p>` : ''}
+        ${(e.anexos || []).length ? `<div class="tle-anexos">${e.anexos.map(a => `<a href="${a.href}" target="_blank" rel="noopener" class="tle-anexo"><i data-lucide="paperclip"></i>${a.nome}</a>`).join('')}</div>` : ''}
+        ${(e.comentarios || []).length ? `<div class="tle-comentarios">${e.comentarios.map(c => `<div class="tle-comentario"><b>${c.autor}</b> ${c.texto} <span class="tle-comentario-data">${c.data}</span></div>`).join('')}</div>` : ''}
+      </div>` : ''}
+    </div>`;
+}
+
+export function TimelineEngine(containerId, eventos, opts = {}) {
+  const cont = document.getElementById(containerId);
+  const comFiltros = opts.filtros !== false;
+  const comBusca = opts.busca !== false;
+  const estado = { tipo: '', busca: '', agrupamento: opts.agrupamento || 'dia', expandidos: new Set() };
+  const tiposDisponiveis = opts.tiposDisponiveis || [...new Set(eventos.map(e => e.tipo))].sort();
+
+  cont.innerHTML = `
+    ${(comFiltros || comBusca) ? `
+    <div class="tle-filtros">
+      ${comBusca ? `<input class="input" type="search" id="${containerId}-busca" placeholder="Buscar na timeline...">` : ''}
+      ${comFiltros ? `<select class="input" id="${containerId}-tipo"><option value="">Todos os tipos</option>${tiposDisponiveis.map(t => `<option value="${t}">${t}</option>`).join('')}</select>` : ''}
+      <div class="tle-agrupamento-tabs" id="${containerId}-agrupamento">
+        <button type="button" data-agrupar="dia" class="${estado.agrupamento === 'dia' ? 'ativo' : ''}">Por dia</button>
+        <button type="button" data-agrupar="tipo" class="${estado.agrupamento === 'tipo' ? 'ativo' : ''}">Por tipo</button>
+        <button type="button" data-agrupar="nenhum" class="${estado.agrupamento === 'nenhum' ? 'ativo' : ''}">Sem agrupar</button>
+      </div>
+    </div>` : ''}
+    <div class="tle-lista" id="${containerId}-lista"></div>`;
+
+  function renderLista(itens) {
+    const listaEl = document.getElementById(`${containerId}-lista`);
+    if (!itens.length) { listaEl.innerHTML = `<p class="tle-vazio">Nenhum evento encontrado.</p>`; return; }
+
+    let grupos;
+    if (estado.agrupamento === 'tipo') {
+      const porTipo = {};
+      itens.forEach(e => { (porTipo[e.tipo] = porTipo[e.tipo] || []).push(e); });
+      grupos = Object.entries(porTipo).map(([chave, itens]) => ({ chave, itens }));
+    } else if (estado.agrupamento === 'dia') {
+      const porDia = {};
+      itens.forEach(e => { const d = (e.data || '').slice(0, 10); (porDia[d] = porDia[d] || []).push(e); });
+      grupos = Object.entries(porDia).sort((a, b) => b[0].localeCompare(a[0])).map(([chave, itens]) => ({ chave: _tleFmtDataGrupo(chave), itens }));
+    } else {
+      grupos = [{ chave: null, itens }];
+    }
+
+    listaEl.innerHTML = grupos.map(g => `${g.chave ? `<div class="tle-grupo-titulo">${g.chave}</div>` : ''}${g.itens.map(e => _tleRenderItem(e, estado.expandidos.has(String(e.id)))).join('')}`).join('');
+
+    listaEl.querySelectorAll('.tle-item').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        if (ev.target.closest && ev.target.closest('a')) return;
+        const id = el.dataset.eventoId;
+        if (estado.expandidos.has(id)) estado.expandidos.delete(id); else estado.expandidos.add(id);
+        aplicarEFiltrar();
+      });
+    });
+    icones();
+  }
+
+  function aplicarEFiltrar() {
+    let filtrados = eventos;
+    if (estado.tipo) filtrados = filtrados.filter(e => e.tipo === estado.tipo);
+    if (estado.busca) {
+      const b = estado.busca.toLowerCase();
+      filtrados = filtrados.filter(e => (e.titulo || '').toLowerCase().includes(b) || (e.descricao || '').toLowerCase().includes(b) || (e.autor || '').toLowerCase().includes(b));
+    }
+    renderLista(filtrados);
+  }
+
+  aplicarEFiltrar();
+  if (comBusca) document.getElementById(`${containerId}-busca`).addEventListener('input', (ev) => { estado.busca = ev.target.value; aplicarEFiltrar(); });
+  if (comFiltros) {
+    document.getElementById(`${containerId}-tipo`).addEventListener('change', (ev) => { estado.tipo = ev.target.value; aplicarEFiltrar(); });
+    const tabsEl = document.getElementById(`${containerId}-agrupamento`);
+    tabsEl.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        estado.agrupamento = btn.dataset.agrupar;
+        tabsEl.querySelectorAll('button').forEach(b => b.classList.toggle('ativo', b === btn));
+        aplicarEFiltrar();
+      });
+    });
+  }
+}
