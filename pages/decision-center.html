@@ -93,7 +93,7 @@
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
-import { ExecutiveHeader, DecisionCenter, ORIGEM_CORES, GlobalSearch, CommandPalette } from '../js/dtv-components.js';
+import { ExecutiveHeader, DecisionCenter, ORIGEM_CORES, GlobalSearch } from '../js/dtv-components.js';
 import { buscarGlobalReal } from '../js/dtv-search-provider.js';
 initNav();
 
@@ -111,7 +111,7 @@ ExecutiveHeader('cabecalho', {
   titulo: 'Decision Center',
   breadcrumb: 'Centro único de recomendações — todos os módulos',
   buscaGlobal: true,
-  buscaPlaceholder: 'Buscar clientes, pedidos, notas...',
+  buscaPlaceholder: 'Buscar clientes, pedidos, notas... (Ctrl+K)',
 });
 
 // SYS-006 — Pesquisa Global real: componente (GlobalSearch) importado de
@@ -119,32 +119,6 @@ ExecutiveHeader('cabecalho', {
 // separado — no futuro troca por interpretação em linguagem natural sem
 // mexer no componente nem nesta linha de wiring).
 GlobalSearch('cabecalho-busca', 'cabecalho-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
-
-// SYS-007 — Command Palette: Ctrl/Cmd+K global (único dono do atalho no
-// sistema — GlobalSearch teve o Ctrl+K removido pra não colidir). Reaproveita
-// o MESMO buscarGlobalReal do SYS-006 pra Clientes/Produtos/Documentos etc,
-// nunca duplica a lógica de busca.
-CommandPalette({
-  telas: [
-    { label: 'Minha Manhã', icone: 'sunrise', href: 'minha-manha.html' },
-    { label: 'Decision Center', icone: 'sparkles', href: 'decision-center.html' },
-    { label: 'Financeiro', icone: 'wallet', href: 'financeiro/dashboard.html' },
-    { label: 'Comercial', icone: 'trending-up', href: 'vendas/dashboard.html' },
-    { label: 'Compras', icone: 'shopping-cart', href: 'compras/dashboard.html' },
-    { label: 'Estoque', icone: 'package', href: 'estoque/dashboard.html' },
-    { label: 'Produção', icone: 'factory', href: 'producao/dashboard.html' },
-    { label: 'Qualidade', icone: 'badge-check', href: 'qualidade/dashboard.html' },
-    { label: 'Manutenção', icone: 'wrench', href: 'manutencao/dashboard.html' },
-    { label: 'Logística/Expedição', icone: 'truck', href: 'logistica/dashboard.html' },
-    { label: 'Fiscal', icone: 'file-text', href: 'fiscal/dashboard.html' },
-    { label: 'RH', icone: 'users-round', href: 'rh/dashboard.html' },
-    { label: 'Cadastro', icone: 'database', href: 'cadastro/dashboard.html' },
-  ],
-  acoes: [
-    { label: 'Sair do sistema', icone: 'log-out', onExecutar: async () => { if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; } } },
-  ],
-  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
-});
 
 // ============================================================================
 // SYS-004 — Decision Center. TODA recomendação abaixo é dado DE EXEMPLO,
