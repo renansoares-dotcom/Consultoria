@@ -255,19 +255,31 @@ export function DecisionCenter(containerId, recomendacoes) {
 }
 
 // ============================================================================
-// 09. HEALTH SCORE
-// HealthScore(containerId, nota /* 0-100 */, subMetricas: [{nome, valorTexto}])
+// 09. SCORE (genérico — SYS-003: mesmo componente, mesma identidade visual,
+// mesmo comportamento pra Health Score/Sales Score/Production Score/
+// Inventory Score/Supplier Score/Quality Score/People Score). "nome" é o
+// rótulo mostrado embaixo da nota (ex: "Saúde Financeira", "Saúde Comercial").
+// Score(containerId, opts: { nome, nota /* 0-100 */, subMetricas: [{nome, valorTexto}] })
+//
+// HealthScore(containerId, nota, subMetricas) continua existindo como atalho
+// pro caso espec\u00edfico do Financeiro (rótulo fixo "Saúde Financeira") — por
+// baixo dos panos chama Score(), então corrigir o componente genérico
+// corrige os dois ao mesmo tempo, nunca diverge.
 // ============================================================================
-export function HealthScore(containerId, nota, subMetricas) {
+export function Score(containerId, opts) {
+  const { nome, nota, subMetricas } = opts;
   const tom = nota >= 80 ? 'excelente' : nota >= 60 ? 'boa' : nota >= 40 ? 'atencao' : 'critica';
   const texto = { excelente: 'Excelente', boa: 'Boa', atencao: 'Atenção', critica: 'Crítica' }[tom];
   document.getElementById(containerId).innerHTML = `
     <div class="hs-topo">
       <div class="hs-nota-box"><span class="hs-nota tom-${tom}">${nota}</span><span class="hs-nota-max">/100</span></div>
-      <div class="hs-legenda"><div class="hs-rotulo-texto tom-${tom}">${texto}</div><div class="hs-rotulo-sub">Saúde geral</div></div>
+      <div class="hs-legenda"><div class="hs-rotulo-texto tom-${tom}">${texto}</div><div class="hs-rotulo-sub">${nome}</div></div>
       <div class="hs-barra-trilho"><div class="hs-barra-fill" style="width:${nota}%; background:var(--${tom === 'atencao' ? 'amber' : tom === 'critica' ? 'red' : 'accent'});"></div></div>
     </div>
     <div class="hs-grid">${subMetricas.map(m => `<div class="hs-card"><div class="hs-card-rotulo">${m.nome}</div><div class="hs-card-valor">${m.valorTexto}</div></div>`).join('')}</div>`;
+}
+export function HealthScore(containerId, nota, subMetricas) {
+  Score(containerId, { nome: 'Saúde Financeira', nota, subMetricas });
 }
 
 // ============================================================================
