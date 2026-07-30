@@ -475,10 +475,124 @@ export function GlobalSearch(inputId, dropdownId, buscarFn, opts = {}) {
     else if (e.key === 'Enter' && selecionado >= 0) { e.preventDefault(); const item = itensAtuais[selecionado]; if (item?.href) window.location.href = item.href; }
   });
 
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); input.focus(); input.select(); }
-  });
+  // Ctrl/Cmd+K NÃO é ligado aqui — pertence ao CommandPalette (SYS-007),
+  // que é o atalho global único do sistema. GlobalSearch continua
+  // funcionando por clique/digitação direta no campo.
   document.addEventListener('click', (e) => { if (!input.contains(e.target) && !dropdown.contains(e.target)) fechar(); });
 
   return { fechar };
+}
+
+// ============================================================================
+// COMMAND PALETTE (SYS-007)
+// Injeta a própria marcação em document.body — não precisa de HTML
+// pré-existente na página, é literalmente "o mesmo componente pra todo o
+// sistema": uma chamada de CommandPalette(opts) em qualquer página já
+// aciona o Ctrl/Cmd+K nela. Dono único do atalho Ctrl/Cmd+K no sistema
+// (GlobalSearch, SYS-006, teve o atalho removido pra não colidir).
+//
+// CommandPalette({
+//   telas: [{ label, icone, href }],           // navegação entre módulos
+//   acoes: [{ label, icone, onExecutar }],      // comandos da página atual
+//   buscarEntidades: async (termo) => [...],    // reaproveita buscarGlobalReal
+//     do SYS-006 — retorna o mesmo formato do GlobalSearch, [{categoria, itens}]
+// })
+// Sem termo digitado: mostra Ações + Telas direto (atalho de navegação
+// rápida). Com termo: filtra Ações/Telas por texto E busca entidades.
+// ============================================================================
+export function CommandPalette(opts) {
+  if (document.getElementById('cmdp-fundo')) return; // já existe nesta página, não duplica
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="cmdp-fundo" id="cmdp-fundo"></div>
+    <div class="cmdp-painel" id="cmdp-painel">
+      <div class="cmdp-input-linha">
+        <i data-lucide="search"></i>
+        <input type="text" id="cmdp-input" placeholder="Buscar telas, ações, clientes, produtos, documentos...">
+        <span class="cmdp-esc">ESC</span>
+      </div>
+      <div class="cmdp-resultados" id="cmdp-resultados"></div>
+    </div>`);
+
+  const fundo = document.getElementById('cmdp-fundo');
+  const painel = document.getElementById('cmdp-painel');
+  const input = document.getElementById('cmdp-input');
+  const resultados = document.getElementById('cmdp-resultados');
+  let selecionado = -1, itensAtuais = [], timer = null;
+
+  function renderGrupos(grupos) {
+    itensAtuais = grupos.flatMap(g => g.itens.map(it => ({ ...it, categoria: g.categoria })));
+    if (!itensAtuais.length) { resultados.innerHTML = `<div class="cmdp-vazio">Nenhum resultado.</div>`; selecionado = -1; return; }
+    let idx = 0;
+    resultados.innerHTML = grupos.filter(g => g.itens.length).map(g => `
+      <div class="cmdp-grupo">
+        <div class="cmdp-grupo-titulo">${g.categoria}</div>
+        ${g.itens.map(it => `<div class="cmdp-item" data-idx="${idx++}">${it.icone ? `<i data-lucide="${it.icone}"></i>` : '<span class="cmdp-item-vazio-icone"></span>'}<span>${it.texto}</span></div>`).join('')}
+      </div>`).join('');
+    icones();
+    selecionado = -1;
+  }
+
+  function renderInicial() {
+    renderGrupos([
+      { categoria: 'Ações', itens: (opts.acoes || []).map(a => ({ texto: a.label, icone: a.icone, onClick: a.onExecutar })) },
+      { categoria: 'Telas', itens: (opts.telas || []).map(t => ({ texto: t.label, icone: t.icone, href: t.href })) },
+    ]);
+  }
+
+  function marcarSelecionado() {
+    resultados.querySelectorAll('.cmdp-item').forEach((el, i) => el.classList.toggle('ativo', i === selecionado));
+    const ativo = resultados.querySelector('.cmdp-item.ativo');
+    if (ativo) ativo.scrollIntoView({ block: 'nearest' });
+  }
+
+  function executarItem(item) {
+    if (!item) return;
+    if (item.onClick) { fechar(); item.onClick(); }
+    else if (item.href) { window.location.href = item.href; }
+  }
+
+  resultados.addEventListener('click', (e) => {
+    const el = e.target.closest('.cmdp-item[data-idx]');
+    if (!el) return;
+    executarItem(itensAtuais[Number(el.dataset.idx)]);
+  });
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const termo = input.value.trim();
+    if (!termo) { renderInicial(); return; }
+    timer = setTimeout(async () => {
+      const termoLower = termo.toLowerCase();
+      const telasFiltradas = (opts.telas || []).filter(t => t.label.toLowerCase().includes(termoLower));
+      const acoesFiltradas = (opts.acoes || []).filter(a => a.label.toLowerCase().includes(termoLower));
+      const gruposEntidades = opts.buscarEntidades ? await opts.buscarEntidades(termo) : [];
+      renderGrupos([
+        { categoria: 'Ações', itens: acoesFiltradas.map(a => ({ texto: a.label, icone: a.icone, onClick: a.onExecutar })) },
+        { categoria: 'Telas', itens: telasFiltradas.map(t => ({ texto: t.label, icone: t.icone, href: t.href })) },
+        ...gruposEntidades,
+      ]);
+    }, 250);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { fechar(); return; }
+    if (!itensAtuais.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); selecionado = Math.min(selecionado + 1, itensAtuais.length - 1); marcarSelecionado(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); selecionado = Math.max(selecionado - 1, 0); marcarSelecionado(); }
+    else if (e.key === 'Enter' && selecionado >= 0) { e.preventDefault(); executarItem(itensAtuais[selecionado]); }
+  });
+
+  function abrir() {
+    painel.classList.add('aberto'); fundo.classList.add('aberto');
+    input.value = ''; renderInicial(); input.focus();
+  }
+  function fechar() { painel.classList.remove('aberto'); fundo.classList.remove('aberto'); }
+
+  fundo.addEventListener('click', fechar);
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); abrir(); }
+  });
+
+  return { abrir, fechar };
 }
