@@ -596,3 +596,106 @@ export function CommandPalette(opts) {
 
   return { abrir, fechar };
 }
+
+// ============================================================================
+// WORKSPACE LAYOUT (SYS-010)
+// Componente de mais alto nível — organiza AUTOMATICAMENTE todos os outros
+// (ExecutiveHeader, AttentionCenter, Score, KPIs, Insights, DecisionCenter,
+// AnalyticsArea, OperationalArea, Timeline) na ordem oficial do framework.
+// O módulo só declara QUAIS seções quer e com que dado — nunca escreve o
+// HTML de layout na mão. Seção omitida (undefined/null) simplesmente não
+// aparece, nunca deixa buraco em branco.
+//
+// AnalyticsArea e OperationalArea são estruturalmente variados demais (cada
+// módulo tem gráficos/tabelas diferentes) — WorkspaceLayout monta só a
+// GRADE (linha-principal 2fr+1fr, linha-secundaria, card da tabela) e
+// devolve os IDs dos containers; quem desenha o conteúdo de dentro é o
+// módulo chamador, usando Charts.*/DataGrid já existentes (nunca duplica
+// lógica de gráfico aqui).
+//
+// WorkspaceLayout(mainContainerId, config) -> { slots: { [chave]: id } }
+//
+// config: {
+//   header: { ...opts do ExecutiveHeader } | null,
+//   attentionCenter: { titulo?, alertas: [...], exemplo? } | null,
+//   healthScore: { nome, nota, subMetricas, tituloSecao?, exemplo? } | null,
+//   kpis: { itens: [...], onClickKpi?, exemplo? } | null,
+//   insights: { titulo?, itens: [...], exemplo? } | null,
+//   decisionCenter: { titulo?, recomendacoes: [...], exemplo? } | null,
+//   analyticsArea: { slots: [{ chave, id, titulo, linha?: 'secundaria' }] } | null,
+//   operationalArea: { titulo?, id? } | null,
+//   timeline: { titulo?, itens: [...] } | null,
+// }
+// ============================================================================
+export function WorkspaceLayout(mainContainerId, config) {
+  const partes = [];
+
+  if (config.header) partes.push(`<div id="wl-header"></div>`);
+
+  if (config.attentionCenter) partes.push(`
+    <section class="central-atencao">
+      <div class="ca-header"><span class="ca-titulo"><i data-lucide="bell"></i> ${config.attentionCenter.titulo || 'Central de Atenção'}</span>${config.attentionCenter.exemplo ? '<span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>' : ''}</div>
+      <div class="ca-lista" id="wl-attention"></div>
+    </section>`);
+
+  if (config.healthScore) partes.push(`
+    <section class="card health-score">
+      <div class="card-titulo"><div class="label">${config.healthScore.tituloSecao || 'Saúde Geral'}</div>${config.healthScore.exemplo ? '<span class="ca-tag-exemplo">dado de exemplo — aguardando regra de cálculo</span>' : ''}</div>
+      <div id="wl-healthscore"></div>
+    </section>`);
+
+  if (config.kpis) partes.push(`<section class="kpi-grid" id="wl-kpis"></section>`);
+
+  if (config.insights) partes.push(`
+    <section>
+      <div class="card-titulo"><div class="label">${config.insights.titulo || 'Insights'}</div>${config.insights.exemplo ? '<span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>' : ''}</div>
+      <div class="insights-grid" id="wl-insights"></div>
+    </section>`);
+
+  if (config.decisionCenter) partes.push(`
+    <section class="card centro-decisao">
+      <div class="card-titulo"><div class="label">${config.decisionCenter.titulo || 'Centro de Decisão'}</div>${config.decisionCenter.exemplo ? '<span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>' : ''}</div>
+      <div id="wl-decisions"></div>
+    </section>`);
+
+  const slotIds = {};
+  if (config.analyticsArea) {
+    const slots = config.analyticsArea.slots || [];
+    const principais = slots.filter(s => s.linha !== 'secundaria');
+    const secundarios = slots.filter(s => s.linha === 'secundaria');
+    if (principais.length) partes.push(`<div class="linha-principal">${principais.map(s => `<section class="card"><div class="card-titulo"><div class="label">${s.titulo}</div></div><div id="${s.id}"></div></section>`).join('')}</div>`);
+    if (secundarios.length) partes.push(`<div class="linha-secundaria">${secundarios.map(s => `<section class="card"><div class="card-titulo"><div class="label">${s.titulo}</div></div><div id="${s.id}"></div></section>`).join('')}</div>`);
+    slots.forEach(s => { slotIds[s.chave || s.id] = s.id; });
+  }
+
+  if (config.operationalArea) {
+    const opId = config.operationalArea.id || 'wl-operational';
+    partes.push(`<section class="card card-tabela"><div class="card-titulo"><div class="label">${config.operationalArea.titulo || 'Área Operacional'}</div></div><div id="${opId}"></div></section>`);
+    slotIds.operational = opId;
+  }
+
+  if (config.timeline) partes.push(`
+    <section class="card">
+      <div class="card-titulo"><div class="label">${config.timeline.titulo || 'Timeline'}</div></div>
+      <div id="wl-timeline"></div>
+    </section>`);
+
+  partes.push(`
+    <div class="dtv-rodape-tecnico">
+      <div class="rt-grupo"><span class="rt-item">Última atualização: <b id="wl-rt-atualizacao">—</b></span><span class="rt-item">Fonte: <b id="wl-rt-fonte">Supabase</b></span></div>
+      <div class="rt-grupo"><span class="rt-item">Empresa: <b id="wl-rt-empresa">—</b></span><span class="rt-item">Versão: <b>Datativo Design Framework v1.0</b></span></div>
+    </div>`);
+
+  document.getElementById(mainContainerId).innerHTML = partes.join('\n');
+
+  if (config.header) ExecutiveHeader('wl-header', config.header);
+  if (config.attentionCenter) AttentionCenter('wl-attention', config.attentionCenter.alertas || []);
+  if (config.healthScore) Score('wl-healthscore', config.healthScore);
+  if (config.kpis) KPIGrid('wl-kpis', config.kpis.itens || [], config.kpis.onClickKpi);
+  if (config.insights) InsightGrid('wl-insights', config.insights.itens || []);
+  if (config.decisionCenter) DecisionCenter('wl-decisions', config.decisionCenter.recomendacoes || []);
+  if (config.timeline) Timeline('wl-timeline', config.timeline.itens || []);
+  icones();
+
+  return { slots: slotIds };
+}
