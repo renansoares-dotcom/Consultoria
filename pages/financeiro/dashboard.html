@@ -345,6 +345,65 @@
   .kpid-analise-ia { display: none; }
 
   .kpid-vazio { color: var(--ink-soft); font-size: 12.5px; padding: 8px 0; }
+
+  /* ============================================================================
+     FIN-009 — FinancialAnalysisDrawer. Mesma linguagem visual do
+     FinancialKPIDrawer (FIN-010) — cores, raio, sombra, tipografia — pra
+     manter consistência de layout com o resto do Dashboard Financeiro.
+  ============================================================================ */
+  .fad-fundo { position: fixed; inset: 0; background: rgba(15,23,32,.45); z-index: 300; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  .fad-fundo.aberto { opacity: 1; pointer-events: auto; }
+  .fad-painel { position: fixed; top: 0; right: 0; bottom: 0; width: 44vw; min-width: 480px; max-width: 680px; background: var(--paper-raised); box-shadow: var(--shadow-md); z-index: 301; transform: translateX(100%); transition: transform .22s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
+  @media (max-width: 960px) { .fad-painel { width: 96vw; min-width: 0; } }
+  .fad-painel.aberto { transform: translateX(0); }
+
+  .fad-cabecalho { padding: 22px 24px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .fad-titulo-box .fad-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .fad-titulo-box .fad-eyebrow svg { width: 13px; height: 13px; color: #8b5cf6; }
+  .fad-titulo-box h2 { font-size: 17px; font-weight: 700; color: var(--ink); }
+  .fad-fechar { border: none; background: var(--paper); width: 30px; height: 30px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s; }
+  .fad-fechar:hover { background: var(--line); }
+  .fad-fechar svg { width: 16px; height: 16px; color: var(--ink-soft); }
+
+  .fad-corpo { flex: 1; overflow-y: auto; padding: 0 24px 32px; }
+  .fad-secao { padding-top: 20px; }
+  .fad-secao-titulo { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .fad-secao-titulo .fad-tag-exemplo { font-size: 9px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ink-faint); background: var(--paper); padding: 2px 7px; border-radius: 999px; }
+
+  .fad-resumo { font-size: 13.5px; line-height: 1.6; color: var(--ink); background: var(--paper); border-radius: var(--radius-md); padding: 14px 16px; }
+
+  .fad-lista-check { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .fad-lista-check li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--ink); }
+  .fad-lista-check li svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+  .fad-lista-check.positivos li svg { color: var(--accent); }
+  .fad-lista-check.atencao li svg { color: var(--amber); }
+  .fad-lista-check.oportunidades li svg { color: #5b8def; }
+
+  .fad-risco-card { padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper); margin-bottom: 8px; }
+  .fad-risco-card:last-child { margin-bottom: 0; }
+  .fad-risco-titulo { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .fad-risco-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; }
+  .fad-risco-meta span { display: flex; align-items: center; gap: 4px; color: var(--ink-soft); }
+  .fad-risco-meta b { font-weight: 700; }
+  .fad-risco-meta .gravidade-alta b, .fad-risco-meta .probabilidade-alta b { color: var(--red); }
+  .fad-risco-meta .gravidade-media b, .fad-risco-meta .probabilidade-media b { color: var(--amber); }
+  .fad-risco-meta .gravidade-baixa b, .fad-risco-meta .probabilidade-baixa b { color: var(--ink-soft); }
+
+  .fad-recomendacao { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); margin-bottom: 8px; }
+  .fad-recomendacao:last-child { margin-bottom: 0; }
+  .fad-recomendacao .fad-rec-numero { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--ink-faint); flex-shrink: 0; padding-top: 2px; }
+  .fad-recomendacao .fad-rec-corpo { flex: 1; min-width: 0; }
+  .fad-recomendacao .fad-rec-titulo { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .fad-recomendacao .fad-rec-beneficio { font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
+  .fad-recomendacao .fad-rec-impacto { font-size: 11.5px; font-weight: 700; color: var(--accent); }
+  .fad-recomendacao button { flex-shrink: 0; font-size: 11.5px; padding: 6px 12px; }
+
+  .fad-historico-item { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .fad-historico-item:last-child { border-bottom: none; }
+  .fad-historico-item .fad-hist-situacao { color: var(--ink); }
+  .fad-historico-item .fad-hist-meta { color: var(--ink-faint); font-size: 11px; text-align: right; white-space: nowrap; }
+
+  .fad-vazio { color: var(--ink-soft); font-size: 12.5px; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -466,6 +525,7 @@
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       <select class="input" id="f_grupo" style="width:170px;"></select>
+      <button type="button" class="btn ghost" id="btn-analisar-financeiro"><i data-lucide="sparkles"></i> Analisar Financeiro</button>
       <a href="lancamento-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo lançamento</a>
     </div>
   </div>
@@ -730,6 +790,52 @@
     <div class="kpid-secao kpid-analise-ia" id="kpid-analise-ia">
       <div class="kpid-secao-titulo">Análise Inteligente</div>
       <div id="kpid-analise-corpo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================================
+     FIN-009 — FinancialAnalysisDrawer. Painel único, gerado por
+     gerarAnaliseFinanceira() (regras fixas hoje, desacoplada da interface —
+     ver comentário no JS pra troca futura por IA sem mexer aqui).
+============================================================================ -->
+<div class="fad-fundo" id="fad-fundo"></div>
+<div class="fad-painel" id="fad-painel">
+  <div class="fad-cabecalho">
+    <div class="fad-titulo-box">
+      <div class="fad-eyebrow"><i data-lucide="sparkles"></i> Análise Financeira Inteligente</div>
+      <h2>Diagnóstico Executivo</h2>
+    </div>
+    <button type="button" class="fad-fechar" id="fad-fechar"><i data-lucide="x"></i></button>
+  </div>
+  <div class="fad-corpo" id="fad-corpo">
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Resumo Executivo</div>
+      <div class="fad-resumo" id="fad-resumo"></div>
+    </div>
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Pontos Positivos</div>
+      <ul class="fad-lista-check positivos" id="fad-positivos"></ul>
+    </div>
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Pontos de Atenção</div>
+      <ul class="fad-lista-check atencao" id="fad-atencao"></ul>
+    </div>
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Oportunidades <span class="fad-tag-exemplo">dado de exemplo — aguardando regras/IA</span></div>
+      <ul class="fad-lista-check oportunidades" id="fad-oportunidades"></ul>
+    </div>
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Riscos</div>
+      <div id="fad-riscos"></div>
+    </div>
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Recomendações</div>
+      <div id="fad-recomendacoes"></div>
+    </div>
+    <div class="fad-secao">
+      <div class="fad-secao-titulo">Histórico de Análises <span class="fad-tag-exemplo">dado de exemplo — sem persistência real ainda</span></div>
+      <div id="fad-historico"></div>
     </div>
   </div>
 </div>
@@ -2144,6 +2250,201 @@ if (window.lucide) lucide.createIcons();
       abrirKPIDrawer(tipoKPI);
     });
   });
+
+  // ============================================================================
+  // FIN-009 — FinancialAnalysisDrawer
+  //
+  // gerarAnaliseFinanceira() é o motor — TODA a análise (regras fixas hoje)
+  // fica aqui, desacoplada das funções renderFAD* (que só desenham o que
+  // recebem). Trocar regras fixas por IA no futuro = trocar só esta função,
+  // mantendo a mesma forma de retorno — as funções de render não precisam
+  // mudar nada. Lazy: só roda quando o botão "Analisar Financeiro" é clicado,
+  // nunca no carregamento do dashboard.
+  //
+  // Honestidade sobre o que é real e o que é exemplo, mesmo princípio de
+  // sempre: Resumo Executivo, Pontos Positivos, Pontos de Atenção e Riscos
+  // são calculados de verdade a partir de dadosCompartilhados (regras fixas
+  // simples, sem IA). Oportunidades ficam de exemplo — são genuinamente
+  // especulativas, não dá pra derivar "negociar fornecedor" de um threshold
+  // sem julgamento de verdade. Histórico também fica de exemplo — salvar
+  // análises de verdade exige uma tabela nova no banco, decisão que não
+  // tomei sozinho aqui. Recomendações mistura os dois: as disparadas por um
+  // Ponto de Atenção real são reais, o resto é marcado "exemplo".
+  // ============================================================================
+
+  const LABEL_NIVEL_FAD = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+
+  function fadCalcularBase() {
+    const { contas, realizado, saldoLancamento, lancamentos } = dadosCompartilhados;
+    const saldoInicialContas = contas.reduce((s, c) => s + Number(c.saldo_inicial || 0), 0);
+
+    let realizadoTotal = saldoInicialContas;
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.tipo) return;
+      realizadoTotal += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+    });
+
+    const { inicio, fim } = obterIntervaloPeriodo('30dias');
+    let netFlow30d = 0;
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      if (d >= inicio && d <= fim) netFlow30d += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+    });
+
+    const infoPorLancamento = new Map(lancamentos.map(l => [l.id, l]));
+    let inadimplencia = 0, aberto = 0;
+    saldoLancamento.filter(s => infoPorLancamento.has(s.lancamento_id)).forEach(s => {
+      const tipo = infoPorLancamento.get(s.lancamento_id)?.plano_contas?.tipo;
+      if (tipo === 'transferencia' || !tipo) return;
+      const sinal = tipo === 'entrada' ? 1 : -1;
+      if (s.status === 'em_aberto' || s.status === 'parcial') aberto += Number(s.saldo_aberto) * sinal;
+      else if (s.status === 'inadimplente') inadimplencia += Number(s.saldo_aberto);
+    });
+
+    // Concentração de cliente: maior cliente / total de entradas nos últimos 30 dias
+    const entradasDoPeriodo = realizado.filter(r => {
+      if (r.tipo !== 'entrada' || !r.data_baixa) return false;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      return d >= inicio && d <= fim;
+    });
+    const totalEntradas30d = entradasDoPeriodo.reduce((s,r) => s + Number(r.valor_desembolsado), 0);
+    const porFavorecidoId = {};
+    entradasDoPeriodo.forEach(r => { if (r.favorecido_id) porFavorecidoId[r.favorecido_id] = (porFavorecidoId[r.favorecido_id] || 0) + Number(r.valor_desembolsado); });
+    const maiorClienteValor = Math.max(0, ...Object.values(porFavorecidoId), 0);
+    const concentracaoCliente = totalEntradas30d > 0 ? (maiorClienteValor / totalEntradas30d) * 100 : 0;
+
+    return { realizadoTotal, netFlow30d, inadimplencia, aberto, concentracaoCliente, totalEntradas30d };
+  }
+
+  async function gerarAnaliseFinanceira() {
+    const base = fadCalcularBase();
+    const { realizadoTotal, netFlow30d, inadimplencia, aberto, concentracaoCliente, totalEntradas30d } = base;
+    const inadimplenciaPct = realizadoTotal > 0 ? (inadimplencia / realizadoTotal) * 100 : 0;
+
+    const positivos = [], atencao = [], riscos = [];
+
+    if (netFlow30d > 0) positivos.push('Fluxo de caixa positivo nos últimos 30 dias');
+    if (inadimplenciaPct < 5) positivos.push('Baixa inadimplência em relação ao saldo atual');
+    if (aberto >= 0) positivos.push('Saldo a receber em aberto supera o saldo a pagar em aberto');
+    if (!positivos.length) positivos.push('Nenhum indicador positivo identificado no momento com as regras atuais.');
+
+    if (concentracaoCliente > 20) {
+      atencao.push(`Maior cliente representa ${concentracaoCliente.toFixed(0)}% da receita dos últimos 30 dias`);
+      riscos.push({ titulo: 'Concentração de receita em um único cliente', gravidade: concentracaoCliente > 35 ? 'alta' : 'media', impacto: fmt(totalEntradas30d * concentracaoCliente / 100), probabilidade: 'media' });
+    }
+    if (inadimplenciaPct >= 5) {
+      atencao.push(`Inadimplência corresponde a ${inadimplenciaPct.toFixed(1)}% do saldo atual`);
+      riscos.push({ titulo: 'Inadimplência acima do saudável', gravidade: inadimplenciaPct >= 15 ? 'alta' : 'media', impacto: fmt(inadimplencia), probabilidade: 'alta' });
+    }
+    if (netFlow30d < 0) {
+      atencao.push('Fluxo de caixa negativo nos últimos 30 dias');
+      riscos.push({ titulo: 'Fluxo de caixa negativo no período recente', gravidade: 'alta', impacto: fmt(Math.abs(netFlow30d)), probabilidade: 'alta' });
+    }
+    if (!atencao.length) atencao.push('Nenhum ponto de atenção identificado no momento com as regras atuais.');
+
+    const saudavel = netFlow30d > 0 && inadimplenciaPct < 5;
+    let resumo = saudavel
+      ? 'A empresa apresenta uma situação financeira saudável nos últimos 30 dias.'
+      : 'A situação financeira dos últimos 30 dias pede atenção em pelo menos um indicador.';
+    resumo += aberto >= 0 ? ' O saldo a receber em aberto cobre o saldo a pagar em aberto.' : ' O saldo a pagar em aberto supera o saldo a receber em aberto.';
+    if (concentracaoCliente > 20) resumo += ` Existe atenção para concentração de receita em um cliente (${concentracaoCliente.toFixed(0)}% do faturamento recente).`;
+
+    const recomendacoes = [];
+    if (concentracaoCliente > 20) recomendacoes.push({ titulo: 'Diversificar carteira de clientes', beneficio: 'Reduz a dependência de um único cliente concentrando receita', impacto: `${concentracaoCliente.toFixed(0)}% da receita concentrada`, exemplo: false });
+    if (inadimplenciaPct >= 5) recomendacoes.push({ titulo: 'Intensificar cobrança de inadimplentes', beneficio: 'Recupera caixa parado em títulos vencidos', impacto: fmt(inadimplencia), exemplo: false });
+    recomendacoes.push({ titulo: 'Antecipar cobrança de recebíveis', beneficio: 'Melhora a posição de caixa no curto prazo', impacto: 'A definir', exemplo: true });
+    recomendacoes.push({ titulo: 'Negociar prazo com maior fornecedor', beneficio: 'Alivia a pressão de caixa nas próximas semanas', impacto: 'A definir', exemplo: true });
+
+    return {
+      resumo, positivos, atencao,
+      oportunidades: ['Antecipar cobrança de recebíveis em atraso', 'Negociar prazo com o maior fornecedor', 'Redistribuir saldo entre contas bancárias'],
+      riscos, recomendacoes,
+      historico: [
+        { data: 'Hoje', usuario: 'Sistema', situacao: saudavel ? 'Situação saudável, sem pontos críticos' : 'Pontos de atenção identificados' },
+        { data: 'Exemplo — 15/07/2026', usuario: 'Sistema', situacao: 'Atenção: concentração de cliente acima de 20%' },
+      ],
+    };
+  }
+
+  function renderFADPositivos(lista) { document.getElementById('fad-positivos').innerHTML = lista.map(t => `<li><i data-lucide="check-circle-2"></i> ${t}</li>`).join(''); }
+  function renderFADAtencao(lista) { document.getElementById('fad-atencao').innerHTML = lista.map(t => `<li><i data-lucide="alert-triangle"></i> ${t}</li>`).join(''); }
+  function renderFADOportunidades(lista) { document.getElementById('fad-oportunidades').innerHTML = lista.map(t => `<li><i data-lucide="lightbulb"></i> ${t}</li>`).join(''); }
+
+  function renderFADRiscos(riscos) {
+    const cont = document.getElementById('fad-riscos');
+    if (!riscos.length) { cont.innerHTML = `<div class="fad-vazio">Nenhum risco identificado no momento com as regras atuais.</div>`; return; }
+    cont.innerHTML = riscos.map(r => `
+      <div class="fad-risco-card">
+        <div class="fad-risco-titulo">${r.titulo}</div>
+        <div class="fad-risco-meta">
+          <span class="gravidade-${r.gravidade}">Gravidade <b>${LABEL_NIVEL_FAD[r.gravidade]}</b></span>
+          <span>Impacto <b>${r.impacto}</b></span>
+          <span class="probabilidade-${r.probabilidade}">Probabilidade <b>${LABEL_NIVEL_FAD[r.probabilidade]}</b></span>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderFADRecomendacoes(recs) {
+    document.getElementById('fad-recomendacoes').innerHTML = recs.map((r, i) => `
+      <div class="fad-recomendacao">
+        <span class="fad-rec-numero">${String(i+1).padStart(2,'0')}</span>
+        <div class="fad-rec-corpo">
+          <div class="fad-rec-titulo">${r.titulo}${r.exemplo ? ' <span class="fad-tag-exemplo">exemplo</span>' : ''}</div>
+          <div class="fad-rec-beneficio">${r.beneficio}</div>
+          <div class="fad-rec-impacto">Impacto estimado: ${r.impacto}</div>
+        </div>
+        <button type="button" class="btn ghost" disabled title="Sem ação ligada — estrutura pronta pra IA futura">Executar</button>
+      </div>`).join('');
+  }
+
+  function renderFADHistorico(hist) {
+    document.getElementById('fad-historico').innerHTML = hist.map(h => `
+      <div class="fad-historico-item">
+        <span class="fad-hist-situacao">${h.situacao}</span>
+        <span class="fad-hist-meta">${h.data}<br>${h.usuario}</span>
+      </div>`).join('');
+  }
+
+  let fadAberto = false;
+
+  async function abrirFAD() {
+    fadFundo.classList.add('aberto');
+    fadPainel.classList.add('aberto');
+    fadAberto = true;
+    document.getElementById('fad-resumo').textContent = 'Gerando análise…';
+    ['fad-positivos','fad-atencao','fad-oportunidades'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+    document.getElementById('fad-riscos').innerHTML = `<div class="fad-vazio">Carregando…</div>`;
+    document.getElementById('fad-recomendacoes').innerHTML = '';
+    document.getElementById('fad-historico').innerHTML = '';
+    if (window.lucide) lucide.createIcons();
+
+    if (!dadosCompartilhados) { document.getElementById('fad-resumo').textContent = 'Aguardando o dashboard terminar de carregar…'; return; }
+
+    const analise = await gerarAnaliseFinanceira(); // lazy — só roda ao abrir, nunca no carregamento do dashboard
+    if (!fadAberto) return; // usuário fechou antes de terminar
+    document.getElementById('fad-resumo').textContent = analise.resumo;
+    renderFADPositivos(analise.positivos);
+    renderFADAtencao(analise.atencao);
+    renderFADOportunidades(analise.oportunidades);
+    renderFADRiscos(analise.riscos);
+    renderFADRecomendacoes(analise.recomendacoes);
+    renderFADHistorico(analise.historico);
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function fecharFAD() {
+    fadFundo.classList.remove('aberto');
+    fadPainel.classList.remove('aberto');
+    fadAberto = false;
+  }
+
+  const fadFundo = document.getElementById('fad-fundo');
+  const fadPainel = document.getElementById('fad-painel');
+  fadFundo.addEventListener('click', fecharFAD);
+  document.getElementById('fad-fechar').addEventListener('click', fecharFAD);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && fadAberto) fecharFAD(); });
+  document.getElementById('btn-analisar-financeiro').addEventListener('click', abrirFAD);
 
   await carregarTimeline();
 </script>
