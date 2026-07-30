@@ -284,6 +284,67 @@
   .cd-rodape .cd-origem { padding: 2px 7px; border-radius: 999px; background: rgba(139,92,246,.14); color: #8b5cf6; font-weight: 600; }
   .cd-acoes { flex-shrink: 0; }
   .cd-acoes button { font-size: 12px; padding: 7px 14px; }
+
+  /* ============================================================================
+     FIN-010 — FinancialKPIDrawer: componente reutilizável de drawer lateral
+     pra qualquer KPI financeiro. Ocupa ~40% da largura, nunca modal (o
+     dashboard continua visível e clicável atrás). Fecha no Esc, clique fora,
+     ou botão fechar. Transições < 250ms.
+  ============================================================================ */
+  .kpi-clicavel { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; position: relative; overflow: hidden; }
+  .kpi-clicavel:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .kpi-clicavel:active { transform: translateY(0); }
+  .kpi-clicavel .kpi-ripple { position: absolute; border-radius: 50%; background: rgba(31,122,92,.18); transform: scale(0); animation: kpi-ripple-anim .5s ease-out; pointer-events: none; }
+  @keyframes kpi-ripple-anim { to { transform: scale(3); opacity: 0; } }
+
+  .kpid-fundo { position: fixed; inset: 0; background: rgba(15,23,32,.45); z-index: 300; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  .kpid-fundo.aberto { opacity: 1; pointer-events: auto; }
+  .kpid-painel { position: fixed; top: 0; right: 0; bottom: 0; width: 40vw; min-width: 420px; max-width: 640px; background: var(--paper-raised); box-shadow: var(--shadow-md); z-index: 301; transform: translateX(100%); transition: transform .22s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; }
+  @media (max-width: 900px) { .kpid-painel { width: 92vw; min-width: 0; } }
+  .kpid-painel.aberto { transform: translateX(0); }
+
+  .kpid-cabecalho { padding: 22px 24px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .kpid-cabecalho-topo { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .kpid-nome { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 6px; }
+  .kpid-valor { font-family: var(--font-mono); font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+  .kpid-comparacao { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 12.5px; font-weight: 600; }
+  .kpid-atualizacao { font-size: 11px; color: var(--ink-faint); margin-top: 8px; }
+  .kpid-fechar { border: none; background: var(--paper); width: 30px; height: 30px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s; }
+  .kpid-fechar:hover { background: var(--line); }
+  .kpid-fechar svg { width: 16px; height: 16px; color: var(--ink-soft); }
+
+  .kpid-corpo { flex: 1; overflow-y: auto; padding: 0 24px 32px; }
+  .kpid-secao { padding-top: 20px; }
+  .kpid-secao-titulo { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin-bottom: 10px; }
+
+  .kpid-resumo { font-size: 13px; line-height: 1.55; color: var(--ink); background: var(--paper); border-radius: var(--radius-md); padding: 12px 14px; }
+
+  .kpid-composicao-linha { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .kpid-composicao-linha:last-child { border-bottom: none; }
+  .kpid-composicao-linha .kpid-comp-nome { color: var(--ink); font-weight: 500; }
+  .kpid-composicao-linha .kpid-comp-valor { font-family: var(--font-mono); font-weight: 600; }
+
+  .kpid-periodo-tabs { display: flex; gap: 2px; background: var(--paper); border-radius: 999px; padding: 3px; margin-bottom: 12px; width: fit-content; }
+  .kpid-periodo-tabs button { border: none; background: none; cursor: pointer; font-size: 11px; font-weight: 500; color: var(--ink-soft); padding: 5px 10px; border-radius: 999px; font-family: var(--font-body); }
+  .kpid-periodo-tabs button.ativo { background: var(--paper-raised); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-xs); }
+  .kpid-evolucao-grafico { height: 60px; }
+
+  .kpid-impacto-grupo { margin-bottom: 14px; }
+  .kpid-impacto-grupo:last-child { margin-bottom: 0; }
+  .kpid-impacto-grupo-titulo { font-size: 11px; font-weight: 600; color: var(--ink-faint); margin-bottom: 6px; }
+  .kpid-impacto-linha { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; }
+  .kpid-impacto-linha .nome { color: var(--ink-soft); }
+  .kpid-impacto-linha .valor { font-family: var(--font-mono); font-weight: 600; }
+
+  .kpid-acoes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .kpid-acao-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper); font-size: 12.5px; font-weight: 600; color: var(--ink); text-decoration: none; transition: background .15s; }
+  .kpid-acao-btn:hover { background: var(--paper-raised); border-color: var(--accent); }
+  .kpid-acao-btn svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+
+  /* Análise Inteligente — reservada, oculta até existir IA de verdade */
+  .kpid-analise-ia { display: none; }
+
+  .kpid-vazio { color: var(--ink-soft); font-size: 12.5px; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -426,7 +487,7 @@
     <div class="ca-lista" id="ca-lista"></div>
   </section>
 
-  <div class="hero-saldo">
+  <div class="hero-saldo" id="hero-saldo">
     <div>
       <div class="rotulo">Saldo Atual</div>
       <div class="saldo-ticker">
@@ -616,6 +677,61 @@
     <button type="button" class="dd-fechar" id="dd-fechar"><i data-lucide="x"></i></button>
   </div>
   <div class="dd-lista" id="dd-lista"></div>
+</div>
+
+<!-- ============================================================================
+     FIN-010 — FinancialKPIDrawer. Painel único e reutilizável pra qualquer
+     KPI financeiro (tipoKPI decide o conteúdo). Nunca modal — o dashboard
+     continua vivo atrás.
+============================================================================ -->
+<div class="kpid-fundo" id="kpid-fundo"></div>
+<div class="kpid-painel" id="kpid-painel">
+  <div class="kpid-cabecalho">
+    <div class="kpid-cabecalho-topo">
+      <div>
+        <div class="kpid-nome" id="kpid-nome">—</div>
+        <div class="kpid-valor" id="kpid-valor">R$ 0,00</div>
+        <div class="kpid-comparacao" id="kpid-comparacao"></div>
+        <div class="kpid-atualizacao" id="kpid-atualizacao"></div>
+      </div>
+      <button type="button" class="kpid-fechar" id="kpid-fechar"><i data-lucide="x"></i></button>
+    </div>
+  </div>
+  <div class="kpid-corpo">
+    <div class="kpid-secao">
+      <div class="kpid-secao-titulo">Resumo Executivo</div>
+      <div class="kpid-resumo" id="kpid-resumo"></div>
+    </div>
+    <div class="kpid-secao">
+      <div class="kpid-secao-titulo" id="kpid-composicao-titulo">Composição do Indicador</div>
+      <div id="kpid-composicao"></div>
+    </div>
+    <div class="kpid-secao">
+      <div class="kpid-secao-titulo">Evolução</div>
+      <div class="kpid-periodo-tabs" id="kpid-periodo-tabs">
+        <button type="button" data-dias="7">7 dias</button>
+        <button type="button" data-dias="30" class="ativo">30 dias</button>
+        <button type="button" data-dias="90">90 dias</button>
+        <button type="button" data-dias="365">12 meses</button>
+      </div>
+      <div class="kpid-evolucao-grafico" id="kpid-evolucao"></div>
+    </div>
+    <div class="kpid-secao">
+      <div class="kpid-secao-titulo" id="kpid-impactos-titulo">Maiores Impactos</div>
+      <div id="kpid-impactos"></div>
+    </div>
+    <div class="kpid-secao">
+      <div class="kpid-secao-titulo">Ações Rápidas</div>
+      <div class="kpid-acoes-grid" id="kpid-acoes"></div>
+    </div>
+    <!-- Análise Inteligente — reservada pra IA futura, oculta até existir de
+         verdade (display:none no CSS). Estrutura pronta, nada pra ligar
+         depois além de tirar o display:none e preencher #kpid-analise-corpo. -->
+    <div class="kpid-secao kpid-analise-ia" id="kpid-analise-ia">
+      <div class="kpid-secao-titulo">Análise Inteligente</div>
+      <div id="kpid-analise-corpo"></div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -864,6 +980,7 @@ if (window.lucide) lucide.createIcons();
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharDrilldown(); });
 
   let dadosCompartilhados = null;
+  let kpiValoresAtuais = { realizado: 0, aberto: 0, projetado: 0, inadimplencia: 0 }; // populado por carregarCards(), o drawer FIN-010 lê daqui — nunca recalcula, garante consistência com o que já está no card
   let periodoAtivo = 'ano'; // reflete o botão marcado "ativo" no HTML
   let timelineDadosBrutos = [];
 
@@ -922,6 +1039,7 @@ if (window.lucide) lucide.createIcons();
     });
 
     const projetado = realizadoTotal + aberto;
+    kpiValoresAtuais = { realizado: realizadoTotal, aberto, projetado, inadimplencia };
 
     document.getElementById('card-realizado').textContent = fmt(realizadoTotal);
     document.getElementById('card-realizado').classList.add(realizadoTotal >= 0 ? 'positivo' : 'negativo');
@@ -1635,6 +1753,397 @@ if (window.lucide) lucide.createIcons();
     aplicarFiltrosTimeline();
   });
   selGrupo.addEventListener('change', aplicarFiltrosTimeline);
+
+  // ============================================================================
+  // FIN-010 — FinancialKPIDrawer
+  //
+  // Arquitetura: KPI_REGISTRY separa DADO (o quê buscar/calcular por tipo de
+  // KPI) de APRESENTAÇÃO (as funções renderKPID* genéricas, que não sabem
+  // nada sobre "saldo atual" ou "inadimplência" — só desenham o que
+  // receberem). Adicionar um KPI novo no futuro = adicionar uma entrada no
+  // registry, nada mais.
+  //
+  // Limite real de dado, sendo honesto: "Comparação com período anterior" e
+  // "Evolução" (mini gráfico) só existem de verdade pra Saldo Atual/Saldo
+  // Realizado, porque são os únicos derivados de dado COM DATA (histórico
+  // de fluxo). Em Aberto/Projetado/Inadimplência são fotografias do momento
+  // atual — o sistema não guarda snapshot de "quanto era isso há 7 dias" —
+  // então o drawer mostra "não disponível" nesses dois blocos pra esses 3
+  // KPIs, em vez de inventar número. Mesmo princípio já aplicado no
+  // sparkline do card Realizado, sessão passada.
+  // ============================================================================
+
+  let kpidCacheAbertos = null; // cache simples da busca lazy — só refaz se abrir depois de recarregar o dashboard
+
+  // Busca sob demanda (só quando um drawer que precisa disso é aberto pela
+  // primeira vez) — serve Em Aberto, Projetado e Inadimplência, filtrando o
+  // mesmo resultado por status conforme o KPI. Isso é literalmente "cada KPI
+  // busca seus detalhes só quando acionado", pedido explícito da tarefa.
+  async function buscarDetalhesAbertos() {
+    if (kpidCacheAbertos) return kpidCacheAbertos;
+    const { data, error } = await supabase.from('lancamentos')
+      .select('id, data_vencimento, valor, status, favorecido_id, plano_contas(tipo), favorecidos(nome)')
+      .in('status', ['em_aberto', 'parcial', 'inadimplente'])
+      .neq('plano_contas.tipo', 'transferencia');
+    if (error) { console.error('Erro ao buscar detalhes em aberto:', error); return []; }
+    kpidCacheAbertos = (data || []).filter(l => l.plano_contas?.tipo && l.plano_contas.tipo !== 'transferencia');
+    return kpidCacheAbertos;
+  }
+
+  function kpidAgingDias(dataVencimento) {
+    if (!dataVencimento) return null;
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const venc = new Date(dataVencimento + 'T00:00:00');
+    return Math.round((venc - hoje) / 86400000);
+  }
+
+  // ---------- Impactos de fluxo (Saldo Atual / Saldo Realizado) ----------
+  async function kpidImpactosFluxo(inicio, fim) {
+    const { realizado } = dadosCompartilhados;
+    const doPeriodo = realizado.filter(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return false;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      return d >= inicio && d <= fim;
+    });
+    const idsFavorecidos = [...new Set(doPeriodo.map(r => r.favorecido_id).filter(Boolean))];
+    let nomesPorId = {};
+    if (idsFavorecidos.length) {
+      const { data: favs } = await supabase.from('favorecidos').select('id, nome').in('id', idsFavorecidos);
+      (favs || []).forEach(f => { nomesPorId[f.id] = f.nome; });
+    }
+    const topEntradas = doPeriodo.filter(r => r.tipo === 'entrada').sort((a,b) => b.valor_desembolsado - a.valor_desembolsado).slice(0,5)
+      .map(r => ({ nome: nomesPorId[r.favorecido_id] || r.nome_conta || 'Entrada', valor: Number(r.valor_desembolsado) }));
+    const topSaidas = doPeriodo.filter(r => r.tipo === 'saida').sort((a,b) => b.valor_desembolsado - a.valor_desembolsado).slice(0,5)
+      .map(r => ({ nome: nomesPorId[r.favorecido_id] || r.nome_conta || 'Saída', valor: Number(r.valor_desembolsado) }));
+
+    const porFavorecido = {};
+    doPeriodo.forEach(r => {
+      const nome = nomesPorId[r.favorecido_id];
+      if (!nome) return;
+      porFavorecido[nome] = (porFavorecido[nome] || 0) + Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+    });
+    const maioresClientes = Object.entries(porFavorecido).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]).slice(0,5).map(([nome, valor]) => ({ nome, valor }));
+    const maioresFornecedores = Object.entries(porFavorecido).filter(([,v]) => v < 0).sort((a,b) => a[1]-b[1]).slice(0,5).map(([nome, valor]) => ({ nome, valor: Math.abs(valor) }));
+
+    return { grupos: [
+      { titulo: 'Top Entradas', linhas: topEntradas },
+      { titulo: 'Top Saídas', linhas: topSaidas },
+      { titulo: 'Maiores Clientes', linhas: maioresClientes },
+      { titulo: 'Maiores Fornecedores', linhas: maioresFornecedores },
+    ]};
+  }
+
+  // ---------- Impactos de "em aberto" (Em Aberto / Projetado / Inadimplência) ----------
+  async function kpidImpactosAbertos(statusFiltro) {
+    const detalhes = await buscarDetalhesAbertos();
+    const filtrados = statusFiltro ? detalhes.filter(l => l.status === statusFiltro) : detalhes;
+
+    const porFavorecido = {};
+    filtrados.forEach(l => {
+      const nome = l.favorecidos?.nome;
+      if (!nome) return;
+      const sinal = l.plano_contas?.tipo === 'entrada' ? 1 : -1;
+      porFavorecido[nome] = (porFavorecido[nome] || 0) + Number(l.valor) * sinal;
+    });
+    const maioresClientes = Object.entries(porFavorecido).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]).slice(0,5).map(([nome, valor]) => ({ nome, valor }));
+    const maioresFornecedores = Object.entries(porFavorecido).filter(([,v]) => v < 0).sort((a,b) => a[1]-b[1]).slice(0,5).map(([nome, valor]) => ({ nome, valor: Math.abs(valor) }));
+
+    return { grupos: [
+      { titulo: 'Maiores Clientes (em aberto)', linhas: maioresClientes },
+      { titulo: 'Maiores Fornecedores (em aberto)', linhas: maioresFornecedores },
+    ]};
+  }
+
+  // ---------- Registry — decide O QUÊ cada KPI mostra; nunca COMO desenhar ----------
+  const KPI_REGISTRY = {
+    'saldo-atual': {
+      nome: 'Saldo Atual', temHistorico: true,
+      obterValor: () => kpiValoresAtuais.realizado,
+      obterComposicaoTitulo: () => 'Saldo por Conta',
+      obterComposicao: () => {
+        const { contas, realizado } = dadosCompartilhados;
+        const saldos = {};
+        contas.forEach(c => { saldos[c.id] = Number(c.saldo_inicial || 0); });
+        realizado.forEach(r => {
+          const v = Number(r.valor_desembolsado);
+          if (r.tipo === 'transferencia') {
+            if (saldos[r.conta_bancaria_id] !== undefined) saldos[r.conta_bancaria_id] -= v;
+            if (saldos[r.conta_destino_id] !== undefined) saldos[r.conta_destino_id] += v;
+          } else if (saldos[r.conta_bancaria_id] !== undefined) {
+            saldos[r.conta_bancaria_id] += v * (r.tipo === 'entrada' ? 1 : -1);
+          }
+        });
+        return contas.map(c => ({ nome: c.nome, valor: saldos[c.id] }));
+      },
+      obterImpactosTitulo: () => 'Maiores Impactos (30 dias)',
+      obterImpactos: async () => { const { inicio, fim } = obterIntervaloPeriodo('30dias'); return kpidImpactosFluxo(inicio, fim); },
+      acoes: [
+        { label: 'Novo lançamento', icone: 'plus', href: 'lancamento-novo.html' },
+        { label: 'Extrato completo', icone: 'list', href: 'lancamentos.html' },
+        { label: 'Exportar', icone: 'download', href: 'lancamentos.html' },
+        { label: 'Ver relatório completo', icone: 'bar-chart-3', href: 'lancamentos.html' },
+      ],
+    },
+    'saldo-realizado': {
+      nome: 'Saldo Realizado', temHistorico: true,
+      obterValor: () => kpiValoresAtuais.realizado,
+      obterComposicaoTitulo: () => 'Resultado (30 dias)',
+      obterComposicao: () => {
+        const { realizado } = dadosCompartilhados;
+        const { inicio, fim } = obterIntervaloPeriodo('30dias');
+        let receitas = 0, despesas = 0;
+        realizado.forEach(r => {
+          if (r.tipo === 'transferencia' || !r.data_baixa) return;
+          const d = new Date(r.data_baixa + 'T00:00:00');
+          if (d < inicio || d > fim) return;
+          if (r.tipo === 'entrada') receitas += Number(r.valor_desembolsado); else despesas += Number(r.valor_desembolsado);
+        });
+        return [
+          { nome: 'Receitas recebidas', valor: receitas },
+          { nome: 'Despesas pagas', valor: -despesas },
+          { nome: 'Resultado líquido', valor: receitas - despesas },
+        ];
+      },
+      obterImpactosTitulo: () => 'Maiores Impactos (30 dias)',
+      obterImpactos: async () => { const { inicio, fim } = obterIntervaloPeriodo('30dias'); return kpidImpactosFluxo(inicio, fim); },
+      acoes: [
+        { label: 'Novo lançamento', icone: 'plus', href: 'lancamento-novo.html' },
+        { label: 'Extrato completo', icone: 'list', href: 'lancamentos.html' },
+        { label: 'Exportar', icone: 'download', href: 'lancamentos.html' },
+        { label: 'Ver relatório completo', icone: 'bar-chart-3', href: 'lancamentos.html' },
+      ],
+    },
+    'em-aberto': {
+      nome: 'Em Aberto', temHistorico: false,
+      obterValor: () => kpiValoresAtuais.aberto,
+      obterComposicaoTitulo: () => 'Contas a Receber x a Pagar',
+      obterComposicao: async () => {
+        const detalhes = await buscarDetalhesAbertos();
+        let receber = 0, pagar = 0;
+        detalhes.forEach(l => { if (l.plano_contas?.tipo === 'entrada') receber += Number(l.valor); else pagar += Number(l.valor); });
+        return [
+          { nome: 'Contas a Receber', valor: receber },
+          { nome: 'Contas a Pagar', valor: -pagar },
+        ];
+      },
+      obterImpactosTitulo: () => 'Clientes e Fornecedores em Aberto',
+      obterImpactos: () => kpidImpactosAbertos(null),
+      acoes: [
+        { label: 'Contas a Receber', icone: 'arrow-down-circle', href: 'contas-receber.html' },
+        { label: 'Contas a Pagar', icone: 'arrow-up-circle', href: 'contas-pagar.html' },
+        { label: 'Extrato completo', icone: 'list', href: 'lancamentos.html?status=em_aberto' },
+        { label: 'Ver relatório completo', icone: 'bar-chart-3', href: 'relatorio-contas.html' },
+      ],
+    },
+    'saldo-projetado': {
+      nome: 'Saldo Projetado', temHistorico: false,
+      obterValor: () => kpiValoresAtuais.projetado,
+      obterComposicaoTitulo: () => 'Composição da Projeção',
+      obterComposicao: () => [
+        { nome: 'Saldo Realizado (hoje)', valor: kpiValoresAtuais.realizado },
+        { nome: 'A receber líquido (em aberto)', valor: kpiValoresAtuais.aberto },
+      ],
+      obterImpactosTitulo: () => 'Maior Impacto no Fluxo Futuro',
+      obterImpactos: () => kpidImpactosAbertos(null),
+      acoes: [
+        { label: 'Contas a Receber', icone: 'arrow-down-circle', href: 'contas-receber.html' },
+        { label: 'Contas a Pagar', icone: 'arrow-up-circle', href: 'contas-pagar.html' },
+        { label: 'Necessidade de Caixa', icone: 'trending-up', href: 'necessidade-caixa.html' },
+        { label: 'Ver relatório completo', icone: 'bar-chart-3', href: 'forecast.html' },
+      ],
+    },
+    'inadimplencia': {
+      nome: 'Inadimplência', temHistorico: false,
+      obterValor: () => kpiValoresAtuais.inadimplencia,
+      obterComposicaoTitulo: () => 'Faixas de Atraso',
+      obterComposicao: async () => {
+        const detalhes = await buscarDetalhesAbertos();
+        const inadimplentes = detalhes.filter(l => l.status === 'inadimplente');
+        const faixas = { '1-30 dias': 0, '31-60 dias': 0, '61-90 dias': 0, 'Acima de 90 dias': 0 };
+        inadimplentes.forEach(l => {
+          const dias = Math.abs(kpidAgingDias(l.data_vencimento) || 0);
+          const chave = dias <= 30 ? '1-30 dias' : dias <= 60 ? '31-60 dias' : dias <= 90 ? '61-90 dias' : 'Acima de 90 dias';
+          faixas[chave] += Number(l.valor);
+        });
+        return Object.entries(faixas).map(([nome, valor]) => ({ nome, valor: -valor }));
+      },
+      obterImpactosTitulo: () => 'Maiores Devedores',
+      obterImpactos: () => kpidImpactosAbertos('inadimplente'),
+      acoes: [
+        { label: 'Extrato de inadimplentes', icone: 'list', href: 'lancamentos.html?status=inadimplente' },
+        { label: 'Contas a Receber', icone: 'arrow-down-circle', href: 'contas-receber.html' },
+        { label: 'Relatório de Favorecidos', icone: 'users', href: 'relatorio-favorecidos.html' },
+        { label: 'Ver relatório completo', icone: 'bar-chart-3', href: 'relatorio-contas.html' },
+      ],
+    },
+  };
+
+  // ---------- Renderização genérica — não sabe nada sobre nenhum KPI específico ----------
+  function kpidResumoExecutivo(tipoKPI, valorAtual, variacaoPct) {
+    const nome = KPI_REGISTRY[tipoKPI].nome;
+    if (variacaoPct === null) {
+      return `Este indicador ainda não tem histórico suficiente pra gerar um resumo automático comparativo — é uma fotografia do momento atual, não uma série ao longo do tempo.`;
+    }
+    const subiu = variacaoPct >= 0;
+    const motivoGenerico = subiu ? 'ao crescimento das entradas no período' : 'ao aumento das saídas no período';
+    return `${nome} ${subiu ? 'aumentou' : 'reduziu'} ${Math.abs(variacaoPct).toFixed(1)}% em relação aos 30 dias anteriores, principalmente devido ${motivoGenerico}.`;
+  }
+
+  function renderKPIDComposicao(itens) {
+    const cont = document.getElementById('kpid-composicao');
+    if (!itens.length) { cont.innerHTML = `<div class="kpid-vazio">Sem composição disponível.</div>`; return; }
+    cont.innerHTML = itens.map(it => `
+      <div class="kpid-composicao-linha">
+        <span class="kpid-comp-nome">${it.nome}</span>
+        <span class="kpid-comp-valor" style="color:${it.valor >= 0 ? 'var(--accent)' : 'var(--red)'};">${fmt(it.valor)}</span>
+      </div>`).join('');
+  }
+
+  function renderKPIDImpactos(resultado) {
+    const cont = document.getElementById('kpid-impactos');
+    if (!resultado || !resultado.grupos.some(g => g.linhas.length)) { cont.innerHTML = `<div class="kpid-vazio">Sem movimentação suficiente no período.</div>`; return; }
+    cont.innerHTML = resultado.grupos.filter(g => g.linhas.length).map(g => `
+      <div class="kpid-impacto-grupo">
+        <div class="kpid-impacto-grupo-titulo">${g.titulo}</div>
+        ${g.linhas.map(l => `<div class="kpid-impacto-linha"><span class="nome">${l.nome}</span><span class="valor">${fmt(l.valor)}</span></div>`).join('')}
+      </div>`).join('');
+  }
+
+  function renderKPIDAcoes(acoes) {
+    document.getElementById('kpid-acoes').innerHTML = acoes.map(a => `
+      <a class="kpid-acao-btn" href="${a.href}"><i data-lucide="${a.icone}"></i> ${a.label}</a>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Mini gráfico de evolução — só existe pra KPIs com temHistorico:true.
+  // Reaproveita a mesma trajetória de saldo do sparkline do card Realizado,
+  // só que parametrizado pelo número de dias escolhido nas abas.
+  function renderKPIDEvolucao(tipoKPI, dias) {
+    const cont = document.getElementById('kpid-evolucao');
+    if (!KPI_REGISTRY[tipoKPI].temHistorico) {
+      cont.innerHTML = `<div class="kpid-vazio">Evolução histórica não disponível pra este indicador ainda — o sistema não guarda snapshots periódicos de "em aberto"/"projetado"/"inadimplência" ao longo do tempo, só o valor atual.</div>`;
+      return;
+    }
+    const pontos = calcularTrajetoriaSaldo(dias);
+    const min = Math.min(...pontos), max = Math.max(...pontos);
+    const largura = 300, altura = 56, amplitude = (max - min) || 1;
+    const coords = pontos.map((v, i) => {
+      const x = (i / (pontos.length - 1)) * largura;
+      const y = altura - ((v - min) / amplitude) * (altura - 6) - 3;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const subiu = pontos[pontos.length - 1] >= pontos[0];
+    cont.innerHTML = `<svg viewBox="0 0 ${largura} ${altura}" preserveAspectRatio="none" style="width:100%; height:${altura}px; display:block;">
+      <polyline points="${coords}" fill="none" stroke="${subiu ? 'var(--accent)' : 'var(--red)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>`;
+  }
+
+  // ---------- Orquestração ----------
+  let kpidTipoAberto = null;
+
+  async function abrirKPIDrawer(tipoKPI) {
+    const def = KPI_REGISTRY[tipoKPI];
+    if (!def || !dadosCompartilhados) return;
+    kpidTipoAberto = tipoKPI;
+
+    document.getElementById('kpid-nome').textContent = def.nome;
+    const valor = def.obterValor();
+    document.getElementById('kpid-valor').textContent = fmt(valor);
+    document.getElementById('kpid-valor').style.color = valor >= 0 ? 'var(--ink)' : 'var(--red)';
+
+    const variacao = def.temHistorico ? kpidVariacao30dias(valor) : null;
+    const compEl = document.getElementById('kpid-comparacao');
+    if (variacao === null) {
+      compEl.innerHTML = `<span style="color:var(--ink-faint);">Comparação indisponível — sem histórico de snapshot pra este indicador</span>`;
+    } else {
+      compEl.innerHTML = `<span style="color:${variacao >= 0 ? 'var(--accent)' : 'var(--red)'};">${variacao >= 0 ? '▲' : '▼'} ${Math.abs(variacao).toFixed(1)}% vs. 30 dias atrás</span>`;
+    }
+    document.getElementById('kpid-atualizacao').textContent = `Dados carregados às ${kpidHoraCarregamento}`;
+    document.getElementById('kpid-resumo').textContent = kpidResumoExecutivo(tipoKPI, valor, variacao);
+    document.getElementById('kpid-composicao-titulo').textContent = def.obterComposicaoTitulo();
+    document.getElementById('kpid-impactos-titulo').textContent = def.obterImpactosTitulo();
+    document.getElementById('kpid-composicao').innerHTML = `<div class="kpid-vazio">Carregando…</div>`;
+    document.getElementById('kpid-impactos').innerHTML = `<div class="kpid-vazio">Carregando…</div>`;
+    renderKPIDAcoes(def.acoes);
+    document.querySelectorAll('#kpid-periodo-tabs button').forEach(b => b.classList.toggle('ativo', b.dataset.dias === '30'));
+    renderKPIDEvolucao(tipoKPI, 30);
+
+    kpidFundo.classList.add('aberto');
+    kpidPainel.classList.add('aberto');
+    if (window.lucide) lucide.createIcons();
+
+    // Composição e impactos podem exigir busca lazy (Em Aberto/Projetado/
+    // Inadimplência) — resolvidos em paralelo, sem travar a abertura do painel.
+    const [composicao, impactos] = await Promise.all([
+      Promise.resolve(def.obterComposicao()),
+      Promise.resolve(def.obterImpactos()),
+    ]);
+    if (kpidTipoAberto !== tipoKPI) return; // usuário já trocou de KPI/fechou antes da busca voltar
+    renderKPIDComposicao(composicao);
+    renderKPIDImpactos(impactos);
+  }
+
+  function fecharKPIDrawer() {
+    kpidFundo.classList.remove('aberto');
+    kpidPainel.classList.remove('aberto');
+    kpidTipoAberto = null;
+  }
+
+  function kpidVariacao30dias(valorAtual) {
+    const { realizado } = dadosCompartilhados;
+    const { inicio, fim } = obterIntervaloPeriodo('30dias');
+    let netFlow = 0;
+    realizado.forEach(r => {
+      if (r.tipo === 'transferencia' || !r.data_baixa) return;
+      const d = new Date(r.data_baixa + 'T00:00:00');
+      if (d >= inicio && d <= fim) netFlow += Number(r.valor_desembolsado) * (r.tipo === 'entrada' ? 1 : -1);
+    });
+    const valorAnterior = valorAtual - netFlow;
+    if (Math.abs(valorAnterior) < 0.01) return null;
+    return (netFlow / Math.abs(valorAnterior)) * 100;
+  }
+
+  const kpidHoraCarregamento = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const kpidFundo = document.getElementById('kpid-fundo');
+  const kpidPainel = document.getElementById('kpid-painel');
+  kpidFundo.addEventListener('click', fecharKPIDrawer);
+  document.getElementById('kpid-fechar').addEventListener('click', fecharKPIDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && kpidTipoAberto) fecharKPIDrawer(); });
+  document.getElementById('kpid-periodo-tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-dias]');
+    if (!btn || !kpidTipoAberto) return;
+    document.querySelectorAll('#kpid-periodo-tabs button').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    renderKPIDEvolucao(kpidTipoAberto, Number(btn.dataset.dias));
+  });
+
+  // Liga os 5 cards de KPI ao drawer — cada um com efeito de ripple discreto.
+  // Mapa tipoKPI -> id do card mantém a arquitetura aberta a novos KPIs: só
+  // adicionar uma linha aqui e uma entrada no KPI_REGISTRY.
+  const KPI_CARD_MAPA = {
+    'saldo-atual': 'hero-saldo',
+    'saldo-realizado': 'card-realizado',
+    'em-aberto': 'card-aberto',
+    'saldo-projetado': 'card-projetado',
+    'inadimplencia': 'card-inadimplencia',
+  };
+  Object.entries(KPI_CARD_MAPA).forEach(([tipoKPI, idAlvo]) => {
+    const el = document.getElementById(idAlvo);
+    if (!el) return;
+    const cardClicavel = el.closest('.kpi-card') || el.closest('.hero-saldo') || el;
+    cardClicavel.classList.add('kpi-clicavel');
+    cardClicavel.addEventListener('click', (e) => {
+      const ripple = document.createElement('span');
+      ripple.className = 'kpi-ripple';
+      const rect = cardClicavel.getBoundingClientRect();
+      ripple.style.left = (e.clientX - rect.left - 10) + 'px';
+      ripple.style.top = (e.clientY - rect.top - 10) + 'px';
+      ripple.style.width = ripple.style.height = '20px';
+      cardClicavel.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 500);
+      abrirKPIDrawer(tipoKPI);
+    });
+  });
 
   await carregarTimeline();
 </script>
