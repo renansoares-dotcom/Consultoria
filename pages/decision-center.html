@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Center — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://esm.sh">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="stylesheet" href="../css/dashboard-framework.css">
+<script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* SYS-004 — só o que é específico desta página (filtro por origem);
+     tudo o mais vem do dashboard-framework.css + dtv-components.js. */
+  .dc-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .dc-resumo-origens { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 1000px) { .dc-resumo-origens { grid-template-columns: repeat(2, 1fr); } }
+  .dc-origem-card { padding: 12px 14px; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--paper-raised); cursor: pointer; transition: border-color .15s; }
+  .dc-origem-card.ativo { border-color: var(--accent); }
+  .dc-origem-card .dc-origem-nome { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+  .dc-origem-card .dc-origem-qtd { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="decision-center.html" class="sidebar-link active"><i data-lucide="sparkles"></i> Decision Center</a>
+        <a href="cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div id="cabecalho"></div>
+
+  <div class="dc-resumo-origens" id="dc-resumo-origens"></div>
+
+  <section class="card">
+    <div class="card-titulo">
+      <div class="label">Todas as Recomendações</div>
+      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA de cada módulo</span>
+    </div>
+    <div class="dc-filtros">
+      <select class="input" id="dc-f-origem"><option value="">Todas as origens</option></select>
+      <select class="input" id="dc-f-urgencia">
+        <option value="">Todas as urgências</option>
+        <option value="alta">Urgente</option>
+        <option value="media">Em breve</option>
+        <option value="baixa">Quando puder</option>
+      </select>
+    </div>
+    <div id="dc-lista"></div>
+  </section>
+</main>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
+import { initNav } from '../js/nav.js';
+import { ExecutiveHeader, DecisionCenter, ORIGEM_CORES } from '../js/dtv-components.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../index.html'; }
+});
+
+ExecutiveHeader('cabecalho', {
+  titulo: 'Decision Center',
+  breadcrumb: 'Centro único de recomendações — todos os módulos',
+});
+
+// ============================================================================
+// SYS-004 — Decision Center. TODA recomendação abaixo é dado DE EXEMPLO,
+// por instrução explícita ("não implementar regras, criar apenas
+// arquitetura"). Nenhuma consulta ao Supabase pra dado de negócio — só
+// sessão/usuário (infraestrutura). Quando cada módulo tiver regra/IA real
+// gerando recomendação, este arquivo passa a AGREGAR o que vier de cada
+// dashboard (ex: via uma tabela central de recomendações, ou uma consulta
+// por módulo) — a arquitetura de exibição (DecisionCenter, componente
+// compartilhado do SYS-002) já está pronta pra isso, não muda quando a
+// regra real chegar.
+// ============================================================================
+const RECOMENDACOES_EXEMPLO = [
+  { titulo: 'Diversificar carteira de clientes', descricao: 'Maior cliente representa mais de 20% da receita dos últimos 30 dias.', origem: 'Financeiro', impactoTexto: 'R$ 12.400', urgencia: 'alta', confianca: 87, acaoSugerida: 'Ver relatório de clientes', exemplo: true },
+  { titulo: 'Retomar contato com proposta parada', descricao: 'Proposta com Cliente ABC sem movimentação há 12 dias.', origem: 'Comercial', impactoTexto: 'R$ 24.500', urgencia: 'alta', confianca: 74, acaoSugerida: 'Abrir pipeline comercial', exemplo: true },
+  { titulo: 'Renegociar prazo com fornecedor recorrente', descricao: 'Fornecedor com 3 aumentos de preço nos últimos 6 meses.', origem: 'Compras', impactoTexto: 'R$ 4.800/mês', urgencia: 'media', confianca: 68, acaoSugerida: 'Ver histórico de compras', exemplo: true },
+  { titulo: 'Redistribuir carga entre linhas de produção', descricao: 'Linha 2 operando acima de 90% de utilização há 5 dias seguidos.', origem: 'Produção', impactoTexto: 'Risco de gargalo', urgencia: 'media', confianca: 71, acaoSugerida: 'Ver ordens de produção', exemplo: true },
+  { titulo: 'Repor estoque de matéria-prima crítica', descricao: 'Saldo projetado fica negativo em 8 dias no ritmo de consumo atual.', origem: 'Estoque', impactoTexto: 'Risco de parada', urgencia: 'alta', confianca: 82, acaoSugerida: 'Gerar requisição de compra', exemplo: true },
+  { titulo: 'Agendar treinamento de segurança', descricao: 'Turma de operadores com certificação vencendo em 30 dias.', origem: 'RH', impactoTexto: 'Conformidade', urgencia: 'baixa', confianca: 90, acaoSugerida: 'Ver cadastro de funcionários', exemplo: true },
+  { titulo: 'Investigar aumento de reprovação em inspeção', descricao: 'Taxa de reprovação subiu 6% no último lote recebido.', origem: 'Qualidade', impactoTexto: 'Risco de retrabalho', urgencia: 'media', confianca: 65, acaoSugerida: 'Ver inspeções recentes', exemplo: true },
+  { titulo: 'Ticket médio com tendência de alta sustentada', descricao: 'Padrão identificado em 4 dos últimos 5 períodos analisados.', origem: 'IA', impactoTexto: 'Oportunidade', urgencia: 'baixa', confianca: 58, acaoSugerida: 'Ver evolução de vendas', exemplo: true },
+];
+
+function renderResumoOrigens(filtroAtivo) {
+  const origens = [...new Set(RECOMENDACOES_EXEMPLO.map(r => r.origem))];
+  document.getElementById('dc-resumo-origens').innerHTML = origens.map(o => {
+    const qtd = RECOMENDACOES_EXEMPLO.filter(r => r.origem === o).length;
+    const cor = ORIGEM_CORES[o] || 'var(--ink-soft)';
+    return `<div class="dc-origem-card${filtroAtivo === o ? ' ativo' : ''}" data-origem="${o}">
+      <div class="dc-origem-nome" style="color:${cor};">${o}</div>
+      <div class="dc-origem-qtd">${qtd}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.dc-origem-card').forEach(el => el.addEventListener('click', () => {
+    const origem = el.dataset.origem;
+    const fSelect = document.getElementById('dc-f-origem');
+    fSelect.value = fSelect.value === origem ? '' : origem;
+    aplicarFiltros();
+  }));
+}
+
+function popularFiltroOrigens() {
+  const origens = [...new Set(RECOMENDACOES_EXEMPLO.map(r => r.origem))];
+  document.getElementById('dc-f-origem').innerHTML = '<option value="">Todas as origens</option>' + origens.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+function aplicarFiltros() {
+  const fOrigem = document.getElementById('dc-f-origem').value;
+  const fUrgencia = document.getElementById('dc-f-urgencia').value;
+  const filtrado = RECOMENDACOES_EXEMPLO.filter(r => {
+    if (fOrigem && r.origem !== fOrigem) return false;
+    if (fUrgencia && r.urgencia !== fUrgencia) return false;
+    return true;
+  });
+  DecisionCenter('dc-lista', filtrado);
+  renderResumoOrigens(fOrigem);
+}
+
+popularFiltroOrigens();
+aplicarFiltros();
+document.getElementById('dc-f-origem').addEventListener('change', aplicarFiltros);
+document.getElementById('dc-f-urgencia').addEventListener('change', aplicarFiltros);
+
+if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

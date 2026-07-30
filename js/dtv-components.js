@@ -233,21 +233,45 @@ export function createDetailDrawer(ids) {
 
 // ============================================================================
 // 08. DECISION CENTER
-// DecisionCenter(containerId, recomendacoes: [{ titulo, beneficio, impactoTexto,
-//   exemplo?, onExecutar? }])
+// DecisionCenter(containerId, recomendacoes: [{ titulo, descricao, origem,
+//   impactoTexto, urgencia: 'alta'|'media'|'baixa', confianca /* 0-100 */,
+//   acaoSugerida, exemplo?, onExecutar? }])
+//
+// origem é o nome do módulo de onde a recomendação veio (Financeiro,
+// Comercial, Compras, Produção, Estoque, RH, Qualidade, IA — ver SYS-004,
+// Decision Center: centro único agregando recomendação de todos os
+// módulos). Cada origem ganha uma cor fixa (ORIGEM_CORES) pra escanear
+// rápido de onde vem cada item numa lista com fontes misturadas.
 // ============================================================================
+export const ORIGEM_CORES = {
+  'Financeiro': '#1f7a5c', 'Comercial': '#2f9e9e', 'Compras': '#b76e11', 'Produção': '#5b7fdb',
+  'Estoque': '#8a63d2', 'RH': '#c0392b', 'Qualidade': '#0f766e', 'IA': '#8b5cf6',
+};
 export function DecisionCenter(containerId, recomendacoes) {
   const cont = document.getElementById(containerId);
   if (!recomendacoes || !recomendacoes.length) { EmptyState(containerId, 'Nenhuma recomendação no momento.'); return; }
-  cont.innerHTML = recomendacoes.map((r, i) => `
-    <div class="kpid-recomendacao" data-rec-idx="${i}">
-      <div>
-        <div class="rec-titulo">${r.titulo}${r.exemplo ? ' <span class="ca-tag-exemplo">exemplo</span>' : ''}</div>
-        <div class="rec-beneficio">${r.beneficio}</div>
-        <div class="rec-impacto">Impacto estimado: ${r.impactoTexto}</div>
+  cont.innerHTML = recomendacoes.map((r, i) => {
+    const corOrigem = ORIGEM_CORES[r.origem] || 'var(--ink-soft)';
+    return `
+    <div class="kpid-recomendacao" data-rec-idx="${i}" style="flex-direction:column; align-items:stretch; gap:8px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+            <span style="font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:2px 8px; border-radius:999px; background:${corOrigem}22; color:${corOrigem};">${r.origem}</span>
+            <span class="ca-badge-urgencia urgencia-${r.urgencia}">${{alta:'Urgente', media:'Em breve', baixa:'Quando puder'}[r.urgencia] || r.urgencia}</span>
+          </div>
+          <div class="rec-titulo">${r.titulo}${r.exemplo ? ' <span class="ca-tag-exemplo">exemplo</span>' : ''}</div>
+        </div>
+        <button type="button" class="btn ghost"${r.onExecutar ? '' : ' disabled title="Sem ação ligada — estrutura pronta pra IA futura"'}>Executar</button>
       </div>
-      <button type="button" class="btn ghost"${r.onExecutar ? '' : ' disabled title="Sem ação ligada — estrutura pronta pra IA futura"'}>Executar</button>
-    </div>`).join('');
+      <div class="rec-beneficio">${r.descricao}</div>
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--ink-faint);">
+        <span class="rec-impacto">Impacto: ${r.impactoTexto}</span>
+        ${r.confianca != null ? `<span>Confiança: <b style="color:var(--ink-soft);">${r.confianca}%</b></span>` : ''}
+        ${r.acaoSugerida ? `<span>Ação sugerida: <b style="color:var(--ink-soft);">${r.acaoSugerida}</b></span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
   recomendacoes.forEach((r, i) => {
     if (!r.onExecutar) return;
     cont.querySelector(`[data-rec-idx="${i}"] button`).addEventListener('click', r.onExecutar);

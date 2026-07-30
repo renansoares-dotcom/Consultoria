@@ -234,6 +234,10 @@
 .kpid-recomendacao .rec-titulo { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
 .kpid-recomendacao .rec-beneficio { font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
 .kpid-recomendacao .rec-impacto { font-size: 11.5px; font-weight: 700; color: var(--accent); }
+.ca-badge-urgencia { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; }
+.ca-badge-urgencia.urgencia-alta { background: var(--red-soft); color: var(--red); }
+.ca-badge-urgencia.urgencia-media { background: var(--amber-soft); color: var(--amber); }
+.ca-badge-urgencia.urgencia-baixa { background: var(--paper); color: var(--ink-soft); }
 .kpid-recomendacao button { flex-shrink: 0; font-size: 11.5px; padding: 6px 12px; }
 
 /* ============================================================================
