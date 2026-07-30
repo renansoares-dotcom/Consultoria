@@ -39,10 +39,11 @@ export function ExecutiveHeader(containerId, opts) {
         <h1>${opts.titulo}</h1>
       </div>
       <div class="dtv-cabecalho-executivo">
-        ${opts.onBusca ? `
+        ${(opts.onBusca || opts.buscaGlobal) ? `
         <div class="dtv-busca-global">
           <i data-lucide="search"></i>
           <input class="input" type="search" id="${containerId}-busca" placeholder="${opts.buscaPlaceholder || 'Buscar...'}">
+          <div class="dtv-busca-dropdown" id="${containerId}-busca-dropdown"></div>
         </div>` : ''}
         ${opts.onFavoritar ? `<button type="button" class="dtv-favoritos-btn${opts.favoritoAtivo ? ' ativo' : ''}" id="${containerId}-favorito" title="Favoritar"><i data-lucide="star"></i></button>` : ''}
         <div class="dtv-acoes-rapidas">
@@ -414,4 +415,70 @@ export function DataGrid(containerId, colunas, linhas) {
   const corpo = linhas.map((l, i) => `<tr${l.onClick ? ` data-linha-idx="${i}" style="cursor:pointer;"` : ''}>${l.celulas.map((c, j) => `<td${colunas[j]?.alinhamento ? ` class="${colunas[j].alinhamento}"` : ''}>${c}</td>`).join('')}</tr>`).join('');
   cont.innerHTML = `<table>${cabecalho}<tbody>${corpo}</tbody></table>`;
   linhas.forEach((l, i) => { if (l.onClick) cont.querySelector(`[data-linha-idx="${i}"]`).addEventListener('click', l.onClick); });
+}
+
+// ============================================================================
+// GLOBAL SEARCH (SYS-006)
+// Componente puro — não sabe de onde vêm os resultados. Recebe uma função
+// `buscarFn(termo) -> Promise<[{ categoria, itens: [{texto, sub, href}] }]>`
+// e só desenha o que ela devolver. Isso é o ponto-chave pra "preparar pra
+// IA": hoje buscarFn faz consultas SQL diretas (ver js/dtv-search-provider.js),
+// no futuro pode virar uma função que interpreta linguagem natural e chama
+// um modelo — o componente nunca muda, só o que é passado como buscarFn.
+//
+// GlobalSearch(inputId, dropdownId, buscarFn, opts?: { debounceMs, minChars })
+// Atalhos: Ctrl/Cmd+K foca o campo; ↑/↓ navega; Enter abre o item
+// selecionado; Esc fecha.
+// ============================================================================
+export function GlobalSearch(inputId, dropdownId, buscarFn, opts = {}) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  const debounceMs = opts.debounceMs ?? 250;
+  const minChars = opts.minChars ?? 2;
+  let timer = null, selecionado = -1, itensAtuais = [];
+
+  function fechar() { dropdown.style.display = 'none'; dropdown.innerHTML = ''; selecionado = -1; itensAtuais = []; }
+
+  function renderResultados(grupos) {
+    itensAtuais = grupos.flatMap(g => g.itens.map(it => ({ ...it, categoria: g.categoria })));
+    if (!itensAtuais.length) { dropdown.innerHTML = `<div class="dtv-busca-vazio">Nenhum resultado.</div>`; dropdown.style.display = 'block'; return; }
+    let idx = 0;
+    dropdown.innerHTML = grupos.filter(g => g.itens.length).map(g => `
+      <div class="dtv-busca-grupo">
+        <div class="dtv-busca-grupo-titulo">${g.categoria}</div>
+        ${g.itens.map(it => `<a href="${it.href || '#'}" class="dtv-busca-item" data-idx="${idx++}"><span class="dtv-busca-item-texto">${it.texto}</span>${it.sub ? `<span class="dtv-busca-item-sub">${it.sub}</span>` : ''}</a>`).join('')}
+      </div>`).join('');
+    dropdown.style.display = 'block';
+  }
+
+  function marcarSelecionado() {
+    dropdown.querySelectorAll('.dtv-busca-item').forEach((el, i) => el.classList.toggle('ativo', i === selecionado));
+    const ativo = dropdown.querySelector('.dtv-busca-item.ativo');
+    if (ativo) ativo.scrollIntoView({ block: 'nearest' });
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const termo = input.value.trim();
+    if (termo.length < minChars) { fechar(); return; }
+    timer = setTimeout(async () => {
+      const grupos = await buscarFn(termo);
+      renderResultados(grupos);
+    }, debounceMs);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { fechar(); input.blur(); return; }
+    if (!itensAtuais.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); selecionado = Math.min(selecionado + 1, itensAtuais.length - 1); marcarSelecionado(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); selecionado = Math.max(selecionado - 1, 0); marcarSelecionado(); }
+    else if (e.key === 'Enter' && selecionado >= 0) { e.preventDefault(); const item = itensAtuais[selecionado]; if (item?.href) window.location.href = item.href; }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); input.focus(); input.select(); }
+  });
+  document.addEventListener('click', (e) => { if (!input.contains(e.target) && !dropdown.contains(e.target)) fechar(); });
+
+  return { fechar };
 }

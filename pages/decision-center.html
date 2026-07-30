@@ -93,7 +93,8 @@
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../js/supabase-client.js';
 import { initNav } from '../js/nav.js';
-import { ExecutiveHeader, DecisionCenter, ORIGEM_CORES } from '../js/dtv-components.js';
+import { ExecutiveHeader, DecisionCenter, ORIGEM_CORES, GlobalSearch } from '../js/dtv-components.js';
+import { buscarGlobalReal } from '../js/dtv-search-provider.js';
 initNav();
 
 const sessao = await exigirSessao();
@@ -109,7 +110,15 @@ document.getElementById('user-chip').addEventListener('click', async () => {
 ExecutiveHeader('cabecalho', {
   titulo: 'Decision Center',
   breadcrumb: 'Centro único de recomendações — todos os módulos',
+  buscaGlobal: true,
+  buscaPlaceholder: 'Buscar clientes, pedidos, notas... (Ctrl+K)',
 });
+
+// SYS-006 — Pesquisa Global real: componente (GlobalSearch) importado de
+// dtv-components.js, dado vindo de dtv-search-provider.js (arquivo
+// separado — no futuro troca por interpretação em linguagem natural sem
+// mexer no componente nem nesta linha de wiring).
+GlobalSearch('cabecalho-busca', 'cabecalho-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
 
 // ============================================================================
 // SYS-004 — Decision Center. TODA recomendação abaixo é dado DE EXEMPLO,

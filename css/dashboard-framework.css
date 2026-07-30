@@ -43,6 +43,20 @@
 .dtv-favoritos-btn:hover { background: var(--line); }
 .dtv-favoritos-btn svg { width: 16px; height: 16px; color: var(--ink-soft); }
 .dtv-favoritos-btn.ativo svg { color: var(--amber); fill: var(--amber); }
+
+/* ============================================================================
+   PESQUISA GLOBAL (SYS-006) — dropdown de resultados agrupados por
+   categoria, ancorado no .dtv-busca-global (que já é position:relative).
+============================================================================ */
+.dtv-busca-dropdown { display: none; position: absolute; top: calc(100% + 6px); left: 0; width: 340px; max-height: 380px; overflow-y: auto; background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-md); z-index: 50; padding: 6px 0; }
+.dtv-busca-grupo { padding: 4px 0; }
+.dtv-busca-grupo + .dtv-busca-grupo { border-top: 1px solid var(--line); }
+.dtv-busca-grupo-titulo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); padding: 6px 14px 4px; }
+.dtv-busca-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; text-decoration: none; font-size: 13px; color: var(--ink); }
+.dtv-busca-item:hover, .dtv-busca-item.ativo { background: var(--paper); }
+.dtv-busca-item-texto { font-weight: 500; }
+.dtv-busca-item-sub { font-size: 11px; color: var(--ink-faint); white-space: nowrap; }
+.dtv-busca-vazio { padding: 14px; text-align: center; font-size: 12.5px; color: var(--ink-soft); }
 .dtv-acoes-rapidas { display: flex; gap: 8px; }
 
 /* ============================================================================
