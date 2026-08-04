@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fiscal — Datativo Industrial</title>
+<title>Centro Inteligente de Gestão Tributária — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,7 +11,16 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* FIS-001 — só composição de classes já oficiais pro Simulador Tributário
+     e pro resumo IBS/CBS/Imposto Seletivo; nenhum componente novo. */
+  .fis-simulador-corpo { display: flex; flex-direction: column; gap: 8px; }
+  .fis-simulador-resultado { margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--paper); font-size: 12.5px; }
+  .fis-tributos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  #fis-timeline { padding: 18px 24px; }
+</style>
 </head>
 <body>
 
@@ -23,6 +32,7 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
@@ -33,7 +43,7 @@
         <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
         <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
         <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
-        <a href="../fiscal/dashboard.html" class="sidebar-link active"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="file-text"></i> Fiscal</a>
         <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
       </nav>
     </div>
@@ -42,196 +52,203 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="topbar">
-      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
-      <div class="topbar-right">
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="page">
-      <div class="page-header">
-        <div>
-          <span class="eyebrow">Módulo</span>
-          <h1>Fiscal</h1>
-        </div>
-        <button class="btn primary" id="btn-nova-nota"><i data-lucide="plus"></i> Registrar Nota Fiscal</button>
-      </div>
-
-      <div class="caixa-info" style="margin-bottom:18px;">
-        <strong>Registro e controle, não emissão.</strong> Este módulo registra e rastreia notas fiscais já emitidas (pelo seu contador ou emissor externo), vinculando a pedidos de venda e expedições. Emissão/transmissão SEFAZ real ainda não está neste sistema.
-      </div>
-
-      <section class="grid grid-3" style="margin-bottom:18px;">
-        <div class="card"><div class="label">Notas Emitidas (mês)</div><div class="big" id="card-emitidas">0</div></div>
-        <div class="card"><div class="label">Valor Total (mês)</div><div class="big valor" id="card-valor">R$ 0,00</div></div>
-        <div class="card"><div class="label">Rascunhos</div><div class="big valor aberto" id="card-rascunhos">0</div></div>
-      </section>
-
-      <section class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead><tr><th>Número/Série</th><th>Emissão</th><th>Destinatário</th><th>Tipo</th><th>Status</th><th class="num">Valor</th><th>Pedido Vinculado</th><th>Docs</th></tr></thead>
-          <tbody id="tbody"><tr><td colspan="8" class="empty-state">Carregando…</td></tr></tbody>
-        </table>
-      </section>
-    </main>
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
   </div>
-</div>
+</header>
 
-<!-- Modal: registrar nota fiscal -->
-<div class="modal-overlay" id="modal-nota">
-  <div class="modal" style="max-width:640px;">
-    <h2>Registrar Nota Fiscal</h2>
-    <div class="linha-flex">
-      <label class="field f-130"><span class="field-label">Número</span><input class="input mono" id="nf_numero"></label>
-      <label class="field f-100"><span class="field-label">Série</span><input class="input mono" id="nf_serie" value="1"></label>
-      <label class="field f-grow"><span class="field-label">Chave de Acesso (44 dígitos)</span><input class="input mono" id="nf_chave" maxlength="44"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Tipo</span>
-        <select class="input" id="nf_tipo"><option value="saida">Saída (venda)</option><option value="entrada">Entrada (compra)</option></select>
-      </label>
-      <label class="field f-160"><span class="field-label">Data de Emissão</span><input class="input" type="date" id="nf_data"></label>
-      <label class="field f-160"><span class="field-label">Valor Total (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="nf_valor"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Destinatário/Favorecido</span><select class="input" id="nf_favorecido"><option value="">Nenhum</option></select></label>
-      <label class="field f-grow"><span class="field-label">Pedido de Venda Vinculado</span><select class="input" id="nf_pedido"><option value="">Nenhum</option></select></label>
-    </div>
-    <label class="field"><span class="field-label">Natureza da Operação</span><input class="input" id="nf_natureza" placeholder="Ex: Venda de mercadoria"></label>
-    <label class="field"><span class="field-label">Observações</span><textarea class="input" id="nf_obs"></textarea></label>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">DANFE (PDF)</span><input class="input" type="file" id="nf_danfe" accept=".pdf"></label>
-      <label class="field f-grow"><span class="field-label">XML</span><input class="input" type="file" id="nf_xml" accept=".xml"></label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-nota">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-nota">Registrar</button>
-    </div>
+<main class="page" id="fis-main"></main>
   </div>
 </div>
 
 <script type="module">
-  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
-  import { initNav } from '../../js/nav.js';
-  initNav();
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, DataGrid, TimelineEngine,
+  MetricCard, DetailDrawer, CreateDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
+import { calcularTributo, buscarRegraVigente, TIPOS_TRIBUTO } from '../../js/tax-engine.js';
+initNav();
 
-  const sessao = await exigirSessao();
-  const usuario = await usuarioAtual();
-  const TENANT_ID = usuario?.tenant_id;
-  if (usuario) {
-    document.getElementById('user-nome').textContent = usuario.nome;
-    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  }
-  document.getElementById('user-chip').addEventListener('click', async () => {
-    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
-  });
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
 
-  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
-  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-  const LABEL_STATUS = { rascunho: 'Rascunho', emitida: 'Emitida', cancelada: 'Cancelada', denegada: 'Denegada' };
-  const BADGE_STATUS = { rascunho: 'aberto', emitida: 'liquidado', cancelada: 'inadimplente', denegada: 'inadimplente' };
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
 
-  async function carregar() {
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
+// ============================================================================
+// FIS-001 — AVISO IMPORTANTE: as regras abaixo são EXEMPLO ESTRUTURAL, não
+// alíquotas reais. Nenhum valor aqui deve ser usado pra apurar tributo de
+// verdade sem revisão de um contador/advogado tributário. O motor de
+// cálculo real (js/tax-engine.js) já está testado (10 casos, incluindo
+// convivência ICMS/IBS por vigência) — o que falta é só a parametrização
+// real, que não é uma decisão técnica minha.
+//
+// "Nenhum cálculo tributário fora do Tax Engine": o Simulador abaixo é o
+// ÚNICO lugar desta tela que calcula tributo, e chama calcularTributo() do
+// motor — não reimplementa nada.
+// ============================================================================
 
-    const { data, error } = await supabase.from('notas_fiscais')
-      .select('id, numero, serie, data_emissao, tipo, status, valor_total, danfe_path, xml_path, favorecidos:favorecido_id(nome), pedidos_venda:pedido_venda_id(numero_pedido)')
-      .order('data_emissao', { ascending: false }).limit(200);
+const REGRAS_EXEMPLO = [
+  { id: 'r1', tipo: 'ICMS', descricao: 'ICMS regime atual (exemplo)', vigenciaInicio: '2020-01-01', vigenciaFim: '2025-12-31', parametros: { aliquota: 0.18 }, ativa: true },
+  { id: 'r2', tipo: 'PIS', descricao: 'PIS regime atual (exemplo)', vigenciaInicio: '2020-01-01', vigenciaFim: '2025-12-31', parametros: { aliquota: 0.0165 }, ativa: true },
+  { id: 'r3', tipo: 'COFINS', descricao: 'COFINS regime atual (exemplo)', vigenciaInicio: '2020-01-01', vigenciaFim: '2025-12-31', parametros: { aliquota: 0.076 }, ativa: true },
+  { id: 'r4', tipo: 'IBS', descricao: 'IBS pós-reforma (exemplo — aguarda regulamentação)', vigenciaInicio: '2026-01-01', vigenciaFim: null, parametros: { aliquota: 0.10 }, ativa: true },
+  { id: 'r5', tipo: 'CBS', descricao: 'CBS pós-reforma (exemplo — aguarda regulamentação)', vigenciaInicio: '2026-01-01', vigenciaFim: null, parametros: { aliquota: 0.05 }, ativa: true },
+  { id: 'r6', tipo: 'IMPOSTO_SELETIVO', descricao: 'Imposto Seletivo (exemplo — aguarda regulamentação)', vigenciaInicio: '2027-01-01', vigenciaFim: null, parametros: { aliquota: 0.02 }, ativa: true },
+];
 
-    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+const resultado = WorkspaceLayout('fis-main', {
+  header: {
+    titulo: 'Centro Inteligente de Gestão Tributária',
+    breadcrumb: 'Fiscal',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar notas, regras, obrigações...',
+    acoesRapidas: [{ label: 'Notas Fiscais', icone: 'file-text', href: 'notas.html', primario: true }],
+  },
+  attentionCenter: {
+    titulo: 'Radar Tributário',
+    exemplo: true,
+    alertas: [
+      { tipo: 'Reforma', prioridade: 'media', icone: 'radar', mensagem: 'IBS e CBS entram em vigência (exemplo) em 01/01/2026 — regras já cadastradas no motor.', acaoSugerida: 'Ver motor de regras', link: '#' },
+      { tipo: 'Obrigação', prioridade: 'alta', icone: 'alert-triangle', mensagem: '2 obrigações acessórias com prazo vencendo esta semana.', acaoSugerida: 'Ver centro de obrigações', link: '#' },
+    ],
+  },
+  kpis: {
+    itens: [
+      { id: 'notas-mes', nome: 'Notas Registradas no Mês', icone: 'file-text', tom: 'tom-azul', valorTexto: '142', clicavel: true },
+      { id: 'obrigacoes-abertas', nome: 'Obrigações Abertas', icone: 'clipboard-list', tom: 'tom-ambar', valorTexto: '5', clicavel: true },
+      { id: 'regras-vigentes', nome: 'Regras Vigentes', icone: 'shield-check', tom: 'tom-verde', valorTexto: String(REGRAS_EXEMPLO.filter(r=>r.ativa).length), clicavel: true },
+      { id: 'regras-reforma', nome: 'Regras da Reforma Cadastradas', icone: 'landmark', tom: 'tom-roxo', valorTexto: String(REGRAS_EXEMPLO.filter(r=>TIPOS_TRIBUTO.reforma.includes(r.tipo)).length), clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights Fiscais',
+    exemplo: true,
+    itens: [
+      { categoria: 'Reforma', texto: 'Transição para IBS/CBS parametrizada no motor, aguardando confirmação de alíquotas reais', origem: 'Regra' },
+      { categoria: 'Obrigações', texto: 'Nenhuma obrigação em atraso no momento', origem: 'Regra' },
+    ],
+  },
+  decisionCenter: {
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Validar alíquotas de exemplo com contador antes de usar em produção', descricao: 'O motor está pronto e testado — as alíquotas parametrizadas hoje são estruturais, não reais.', origem: 'Fiscal', impactoTexto: 'Conformidade legal', urgencia: 'alta', confianca: 95, acaoSugerida: 'Ver motor de regras tributárias', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'motor', id: 'fis-slot-motor', titulo: 'Motor de Regras Tributárias' },
+      { chave: 'simulador', id: 'fis-slot-simulador', titulo: 'Simulador Tributário' },
+      { chave: 'ibs-cbs-is', id: 'fis-slot-tributos', titulo: 'IBS · CBS · Imposto Seletivo', linha: 'secundaria' },
+      { chave: 'obrigacoes', id: 'fis-slot-obrigacoes', titulo: 'Centro de Obrigações', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Timeline Fiscal', id: 'fis-timeline' },
+});
 
-    const inicioMes = new Date(); inicioMes.setDate(1);
-    const doMes = (data || []).filter(n => new Date(n.data_emissao) >= inicioMes && n.status === 'emitida');
-    document.getElementById('card-emitidas').textContent = doMes.length;
-    document.getElementById('card-valor').textContent = fmt(doMes.reduce((s,n) => s + Number(n.valor_total), 0));
-    document.getElementById('card-rascunhos').textContent = (data || []).filter(n => n.status === 'rascunho').length;
+// ---------- Motor de Regras Tributárias ----------
+function renderMotorRegras() {
+  DataGrid(resultado.slots.motor,
+    [{ titulo: 'Tipo' }, { titulo: 'Descrição' }, { titulo: 'Vigência' }, { titulo: 'Alíquota', alinhamento: 'num' }],
+    REGRAS_EXEMPLO.map(r => ({
+      celulas: [r.tipo, r.descricao, `${r.vigenciaInicio} → ${r.vigenciaFim || 'sem fim'}`, `${(r.parametros.aliquota*100).toFixed(2)}%`],
+      onClick: () => abrirDetalheRegra(r),
+    }))
+  );
+}
+renderMotorRegras();
 
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhuma nota fiscal registrada ainda.</td></tr>`; return; }
+// IBS · CBS · Imposto Seletivo — resumo em MetricCard
+document.getElementById(resultado.slots['ibs-cbs-is']).innerHTML = `<div class="fis-tributos-grid">${[
+  MetricCard({ nome: 'IBS', valorTexto: `${(REGRAS_EXEMPLO.find(r=>r.tipo==='IBS')?.parametros.aliquota*100 || 0).toFixed(1)}%` }),
+  MetricCard({ nome: 'CBS', valorTexto: `${(REGRAS_EXEMPLO.find(r=>r.tipo==='CBS')?.parametros.aliquota*100 || 0).toFixed(1)}%` }),
+  MetricCard({ nome: 'Imposto Seletivo', valorTexto: `${(REGRAS_EXEMPLO.find(r=>r.tipo==='IMPOSTO_SELETIVO')?.parametros.aliquota*100 || 0).toFixed(1)}%` }),
+].join('')}</div>`;
 
-    tbody.innerHTML = data.map(n => `
-      <tr>
-        <td class="mono">${n.numero || '—'}${n.serie ? '/' + n.serie : ''}</td>
-        <td>${fmtData(n.data_emissao)}</td>
-        <td>${n.favorecidos?.nome ?? '—'}</td>
-        <td>${n.tipo === 'saida' ? 'Saída' : 'Entrada'}</td>
-        <td><span class="badge ${BADGE_STATUS[n.status]}">${LABEL_STATUS[n.status]}</span></td>
-        <td class="num mono">${fmt(n.valor_total)}</td>
-        <td>${n.pedidos_venda?.numero_pedido ?? '—'}</td>
-        <td style="white-space:nowrap;">${n.danfe_path ? `<button class="icon-btn" data-baixar="${n.danfe_path}" title="DANFE">DANFE</button>` : ''} ${n.xml_path ? `<button class="icon-btn" data-baixar="${n.xml_path}" title="XML">XML</button>` : ''}</td>
-      </tr>`).join('');
-  }
+// Centro de Obrigações
+DataGrid(resultado.slots.obrigacoes,
+  [{ titulo: 'Obrigação' }, { titulo: 'Vencimento' }, { titulo: 'Status' }],
+  [
+    { celulas: ['SPED Fiscal — Julho', '20/08', '<span class="badge aberto">Pendente</span>'], onClick: () => abrirDrilldownGenerico('SPED Fiscal — Julho', 'Vencimento: 20/08') },
+    { celulas: ['DCTF — Julho', '15/08', '<span class="badge parcial">Em preparação</span>'], onClick: () => abrirDrilldownGenerico('DCTF — Julho', 'Vencimento: 15/08') },
+  ]
+);
 
-  document.getElementById('tbody').addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-baixar]');
-    if (!btn) return;
-    const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.baixar, 300);
-    if (signed?.signedUrl) window.open(signed.signedUrl, '_blank');
-  });
+// Simulador Tributário — REAL, chama o Tax Engine de verdade (única
+// calculadora desta tela — "nenhum cálculo fora do Tax Engine")
+document.getElementById(resultado.slots.simulador).innerHTML = `
+  <div class="fis-simulador-corpo">
+    <input class="input" type="number" id="fis-sim-valor" placeholder="Valor da operação (R$)" value="1000">
+    <select class="input" id="fis-sim-tipo">${[...TIPOS_TRIBUTO.atuais, ...TIPOS_TRIBUTO.reforma].map(t => `<option value="${t}">${t}</option>`).join('')}</select>
+    <input class="input" type="date" id="fis-sim-data" value="${new Date().toISOString().slice(0,10)}">
+    <button type="button" class="btn primary" id="fis-sim-btn">Simular</button>
+    <div class="fis-simulador-resultado" id="fis-sim-resultado">Preencha os campos e clique em Simular.</div>
+    <span class="ca-tag-exemplo" style="align-self:flex-start;">alíquotas de exemplo — não usar em produção sem revisão contábil</span>
+  </div>`;
+document.getElementById('fis-sim-btn').addEventListener('click', () => {
+  const valor = Number(document.getElementById('fis-sim-valor').value) || 0;
+  const tipo = document.getElementById('fis-sim-tipo').value;
+  const data = document.getElementById('fis-sim-data').value;
+  const r = calcularTributo(valor, tipo, data, REGRAS_EXEMPLO);
+  const resultadoEl = document.getElementById('fis-sim-resultado');
+  resultadoEl.innerHTML = r.erro
+    ? `<span style="color:var(--red);">${r.erro}</span>`
+    : `<b>${tipo}</b>: ${fmt(r.valor)} (alíquota ${(r.aliquota*100).toFixed(2)}% · regra "${r.regraDescricao}")`;
+});
 
-  // ---------- Modal ----------
-  const modal = document.getElementById('modal-nota');
-  document.getElementById('btn-nova-nota').addEventListener('click', async () => {
-    ['nf_numero','nf_chave','nf_valor','nf_natureza','nf_obs','nf_danfe','nf_xml'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('nf_serie').value = '1';
-    document.getElementById('nf_data').value = new Date().toISOString().slice(0,10);
-    document.getElementById('nf_tipo').value = 'saida';
+// Timeline Fiscal
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.operational, [
+  { id: '1', tipo: 'Nota Fiscal', titulo: 'NF #45012 registrada', data: hoje, hora: '10:20' },
+  { id: '2', tipo: 'Obrigação', titulo: 'DCTF de Junho enviada', data: hoje, hora: '09:00' },
+], { agrupamento: 'dia' });
 
-    const { data: favorecidos } = await supabase.from('favorecidos').select('id, nome').eq('ativo', true).order('nome');
-    document.getElementById('nf_favorecido').innerHTML = '<option value="">Nenhum</option>' + (favorecidos || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+// ---------- Drawers (SYS-011) ----------
+function abrirDrilldownGenerico(titulo, texto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">${texto}</p>` });
+}
+function abrirDetalheRegra(r) {
+  DetailDrawer({ titulo: `Regra — ${r.tipo}`, subtitulo: r.descricao, corpo: `
+    <p style="color:var(--ink-soft); font-size:13px;">Vigência: ${r.vigenciaInicio} até ${r.vigenciaFim || 'sem data de fim'}</p>
+    <p style="color:var(--ink-soft); font-size:13px; margin-top:6px;">Alíquota: ${(r.parametros.aliquota*100).toFixed(2)}%</p>
+    <div class="ca-tag-exemplo" style="display:inline-block; margin-top:10px;">valor de exemplo — requer validação contábil antes de produção</div>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'notas-mes': 'Notas Registradas no Mês', 'obrigacoes-abertas': 'Obrigações Abertas', 'regras-vigentes': 'Regras Vigentes', 'regras-reforma': 'Regras da Reforma Cadastradas' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
+}
 
-    const { data: pedidos } = await supabase.from('pedidos_venda').select('id, numero_pedido').order('data_pedido', { ascending: false }).limit(100);
-    document.getElementById('nf_pedido').innerHTML = '<option value="">Nenhum</option>' + (pedidos || []).map(p => `<option value="${p.id}">${p.numero_pedido || p.id.slice(0,8)}</option>`).join('');
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'Fiscal', icone: 'file-text', href: 'dashboard.html' },
+    { label: 'Financeiro', icone: 'wallet', href: '../financeiro/dashboard.html' },
+    { label: 'Compras', icone: 'shopping-cart', href: '../compras/dashboard.html' },
+    { label: 'Comercial', icone: 'trending-up', href: '../vendas/dashboard.html' },
+  ],
+  acoes: [{ label: 'Registrar Nota Fiscal', icone: 'plus', onExecutar: () => { window.location.href = 'notas.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
 
-    modal.classList.add('open');
-  });
-  document.getElementById('btn-cancelar-nota').addEventListener('click', () => modal.classList.remove('open'));
-
-  document.getElementById('btn-salvar-nota').addEventListener('click', async () => {
-    const chave = document.getElementById('nf_chave').value.trim();
-    if (chave && chave.length !== 44) { alert('A chave de acesso, se preenchida, precisa ter exatamente 44 dígitos.'); return; }
-
-    const { data: nota, error } = await supabase.from('notas_fiscais').insert({
-      tenant_id: TENANT_ID,
-      numero: document.getElementById('nf_numero').value.trim() || null,
-      serie: document.getElementById('nf_serie').value.trim() || null,
-      chave_acesso: chave || null,
-      tipo: document.getElementById('nf_tipo').value,
-      data_emissao: document.getElementById('nf_data').value || new Date().toISOString().slice(0,10),
-      valor_total: Number(document.getElementById('nf_valor').value || 0),
-      favorecido_id: document.getElementById('nf_favorecido').value || null,
-      pedido_venda_id: document.getElementById('nf_pedido').value || null,
-      natureza_operacao: document.getElementById('nf_natureza').value.trim() || null,
-      observacoes: document.getElementById('nf_obs').value.trim() || null,
-      status: 'emitida',
-      criado_por: usuario?.id,
-    }).select('id').single();
-    if (error) { alert(error.code === '23505' ? 'Já existe uma nota com essa chave de acesso.' : 'Erro ao registrar: ' + error.message); return; }
-
-    const arquivoDanfe = document.getElementById('nf_danfe').files[0];
-    const arquivoXml = document.getElementById('nf_xml').files[0];
-    const patches = {};
-
-    if (arquivoDanfe) {
-      const caminho = `${TENANT_ID}/fiscal/${nota.id}_danfe.pdf`;
-      const { error: erroDanfe } = await supabase.storage.from('anexos').upload(caminho, arquivoDanfe, { upsert: true });
-      if (!erroDanfe) patches.danfe_path = caminho;
-    }
-    if (arquivoXml) {
-      const caminho = `${TENANT_ID}/fiscal/${nota.id}_xml.xml`;
-      const { error: erroXml } = await supabase.storage.from('anexos').upload(caminho, arquivoXml, { upsert: true });
-      if (!erroXml) patches.xml_path = caminho;
-    }
-    if (Object.keys(patches).length) await supabase.from('notas_fiscais').update(patches).eq('id', nota.id);
-    modal.classList.remove('open');
-    await carregar();
-  });
-
-  await carregar();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>

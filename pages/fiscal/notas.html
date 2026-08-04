@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiscal — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://esm.sh">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@1.27.0" defer></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link active"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+    <header class="topbar">
+      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+      <div class="topbar-right">
+        <div class="user-chip" id="user-chip">
+          <div class="avatar" id="user-avatar">--</div>
+          <span id="user-nome">Carregando…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Módulo</span>
+          <h1>Fiscal</h1>
+        </div>
+        <button class="btn primary" id="btn-nova-nota"><i data-lucide="plus"></i> Registrar Nota Fiscal</button>
+      </div>
+
+      <div class="caixa-info" style="margin-bottom:18px;">
+        <strong>Registro e controle, não emissão.</strong> Este módulo registra e rastreia notas fiscais já emitidas (pelo seu contador ou emissor externo), vinculando a pedidos de venda e expedições. Emissão/transmissão SEFAZ real ainda não está neste sistema.
+      </div>
+
+      <section class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Notas Emitidas (mês)</div><div class="big" id="card-emitidas">0</div></div>
+        <div class="card"><div class="label">Valor Total (mês)</div><div class="big valor" id="card-valor">R$ 0,00</div></div>
+        <div class="card"><div class="label">Rascunhos</div><div class="big valor aberto" id="card-rascunhos">0</div></div>
+      </section>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Número/Série</th><th>Emissão</th><th>Destinatário</th><th>Tipo</th><th>Status</th><th class="num">Valor</th><th>Pedido Vinculado</th><th>Docs</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="8" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Modal: registrar nota fiscal -->
+<div class="modal-overlay" id="modal-nota">
+  <div class="modal" style="max-width:640px;">
+    <h2>Registrar Nota Fiscal</h2>
+    <div class="linha-flex">
+      <label class="field f-130"><span class="field-label">Número</span><input class="input mono" id="nf_numero"></label>
+      <label class="field f-100"><span class="field-label">Série</span><input class="input mono" id="nf_serie" value="1"></label>
+      <label class="field f-grow"><span class="field-label">Chave de Acesso (44 dígitos)</span><input class="input mono" id="nf_chave" maxlength="44"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Tipo</span>
+        <select class="input" id="nf_tipo"><option value="saida">Saída (venda)</option><option value="entrada">Entrada (compra)</option></select>
+      </label>
+      <label class="field f-160"><span class="field-label">Data de Emissão</span><input class="input" type="date" id="nf_data"></label>
+      <label class="field f-160"><span class="field-label">Valor Total (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="nf_valor"></label>
+    </div>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">Destinatário/Favorecido</span><select class="input" id="nf_favorecido"><option value="">Nenhum</option></select></label>
+      <label class="field f-grow"><span class="field-label">Pedido de Venda Vinculado</span><select class="input" id="nf_pedido"><option value="">Nenhum</option></select></label>
+    </div>
+    <label class="field"><span class="field-label">Natureza da Operação</span><input class="input" id="nf_natureza" placeholder="Ex: Venda de mercadoria"></label>
+    <label class="field"><span class="field-label">Observações</span><textarea class="input" id="nf_obs"></textarea></label>
+    <div class="linha-flex">
+      <label class="field f-grow"><span class="field-label">DANFE (PDF)</span><input class="input" type="file" id="nf_danfe" accept=".pdf"></label>
+      <label class="field f-grow"><span class="field-label">XML</span><input class="input" type="file" id="nf_xml" accept=".xml"></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="btn-cancelar-nota">Cancelar</button>
+      <button class="btn primary" type="button" id="btn-salvar-nota">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  const TENANT_ID = usuario?.tenant_id;
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const LABEL_STATUS = { rascunho: 'Rascunho', emitida: 'Emitida', cancelada: 'Cancelada', denegada: 'Denegada' };
+  const BADGE_STATUS = { rascunho: 'aberto', emitida: 'liquidado', cancelada: 'inadimplente', denegada: 'inadimplente' };
+
+  async function carregar() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
+
+    const { data, error } = await supabase.from('notas_fiscais')
+      .select('id, numero, serie, data_emissao, tipo, status, valor_total, danfe_path, xml_path, favorecidos:favorecido_id(nome), pedidos_venda:pedido_venda_id(numero_pedido)')
+      .order('data_emissao', { ascending: false }).limit(200);
+
+    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+
+    const inicioMes = new Date(); inicioMes.setDate(1);
+    const doMes = (data || []).filter(n => new Date(n.data_emissao) >= inicioMes && n.status === 'emitida');
+    document.getElementById('card-emitidas').textContent = doMes.length;
+    document.getElementById('card-valor').textContent = fmt(doMes.reduce((s,n) => s + Number(n.valor_total), 0));
+    document.getElementById('card-rascunhos').textContent = (data || []).filter(n => n.status === 'rascunho').length;
+
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhuma nota fiscal registrada ainda.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(n => `
+      <tr>
+        <td class="mono">${n.numero || '—'}${n.serie ? '/' + n.serie : ''}</td>
+        <td>${fmtData(n.data_emissao)}</td>
+        <td>${n.favorecidos?.nome ?? '—'}</td>
+        <td>${n.tipo === 'saida' ? 'Saída' : 'Entrada'}</td>
+        <td><span class="badge ${BADGE_STATUS[n.status]}">${LABEL_STATUS[n.status]}</span></td>
+        <td class="num mono">${fmt(n.valor_total)}</td>
+        <td>${n.pedidos_venda?.numero_pedido ?? '—'}</td>
+        <td style="white-space:nowrap;">${n.danfe_path ? `<button class="icon-btn" data-baixar="${n.danfe_path}" title="DANFE">DANFE</button>` : ''} ${n.xml_path ? `<button class="icon-btn" data-baixar="${n.xml_path}" title="XML">XML</button>` : ''}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('tbody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-baixar]');
+    if (!btn) return;
+    const { data: signed } = await supabase.storage.from('anexos').createSignedUrl(btn.dataset.baixar, 300);
+    if (signed?.signedUrl) window.open(signed.signedUrl, '_blank');
+  });
+
+  // ---------- Modal ----------
+  const modal = document.getElementById('modal-nota');
+  document.getElementById('btn-nova-nota').addEventListener('click', async () => {
+    ['nf_numero','nf_chave','nf_valor','nf_natureza','nf_obs','nf_danfe','nf_xml'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('nf_serie').value = '1';
+    document.getElementById('nf_data').value = new Date().toISOString().slice(0,10);
+    document.getElementById('nf_tipo').value = 'saida';
+
+    const { data: favorecidos } = await supabase.from('favorecidos').select('id, nome').eq('ativo', true).order('nome');
+    document.getElementById('nf_favorecido').innerHTML = '<option value="">Nenhum</option>' + (favorecidos || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+
+    const { data: pedidos } = await supabase.from('pedidos_venda').select('id, numero_pedido').order('data_pedido', { ascending: false }).limit(100);
+    document.getElementById('nf_pedido').innerHTML = '<option value="">Nenhum</option>' + (pedidos || []).map(p => `<option value="${p.id}">${p.numero_pedido || p.id.slice(0,8)}</option>`).join('');
+
+    modal.classList.add('open');
+  });
+  document.getElementById('btn-cancelar-nota').addEventListener('click', () => modal.classList.remove('open'));
+
+  document.getElementById('btn-salvar-nota').addEventListener('click', async () => {
+    const chave = document.getElementById('nf_chave').value.trim();
+    if (chave && chave.length !== 44) { alert('A chave de acesso, se preenchida, precisa ter exatamente 44 dígitos.'); return; }
+
+    const { data: nota, error } = await supabase.from('notas_fiscais').insert({
+      tenant_id: TENANT_ID,
+      numero: document.getElementById('nf_numero').value.trim() || null,
+      serie: document.getElementById('nf_serie').value.trim() || null,
+      chave_acesso: chave || null,
+      tipo: document.getElementById('nf_tipo').value,
+      data_emissao: document.getElementById('nf_data').value || new Date().toISOString().slice(0,10),
+      valor_total: Number(document.getElementById('nf_valor').value || 0),
+      favorecido_id: document.getElementById('nf_favorecido').value || null,
+      pedido_venda_id: document.getElementById('nf_pedido').value || null,
+      natureza_operacao: document.getElementById('nf_natureza').value.trim() || null,
+      observacoes: document.getElementById('nf_obs').value.trim() || null,
+      status: 'emitida',
+      criado_por: usuario?.id,
+    }).select('id').single();
+    if (error) { alert(error.code === '23505' ? 'Já existe uma nota com essa chave de acesso.' : 'Erro ao registrar: ' + error.message); return; }
+
+    const arquivoDanfe = document.getElementById('nf_danfe').files[0];
+    const arquivoXml = document.getElementById('nf_xml').files[0];
+    const patches = {};
+
+    if (arquivoDanfe) {
+      const caminho = `${TENANT_ID}/fiscal/${nota.id}_danfe.pdf`;
+      const { error: erroDanfe } = await supabase.storage.from('anexos').upload(caminho, arquivoDanfe, { upsert: true });
+      if (!erroDanfe) patches.danfe_path = caminho;
+    }
+    if (arquivoXml) {
+      const caminho = `${TENANT_ID}/fiscal/${nota.id}_xml.xml`;
+      const { error: erroXml } = await supabase.storage.from('anexos').upload(caminho, arquivoXml, { upsert: true });
+      if (!erroXml) patches.xml_path = caminho;
+    }
+    if (Object.keys(patches).length) await supabase.from('notas_fiscais').update(patches).eq('id', nota.id);
+    modal.classList.remove('open');
+    await carregar();
+  });
+
+  await carregar();
+</script>
+</body>
+</html>
