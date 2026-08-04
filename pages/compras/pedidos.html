@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compras — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://esm.sh">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@1.27.0" defer></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link active"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+    <header class="topbar">
+      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+      <div class="topbar-right">
+        <div class="user-chip" id="user-chip">
+          <div class="avatar" id="user-avatar">--</div>
+          <span id="user-nome">Carregando…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <span class="eyebrow">Módulo</span>
+          <h1>Compras</h1>
+        </div>
+        <a href="pedido-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo Pedido de Compra</a>
+      </div>
+
+      <section class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card"><div class="label">Pedidos Abertos</div><div class="big" id="card-abertos">0</div></div>
+        <div class="card"><div class="label">Aguardando Recebimento</div><div class="big" id="card-aguardando">0</div></div>
+        <div class="card"><div class="label">Requisições Aprovadas sem Pedido</div><div class="big valor aberto" id="card-req-avulsas">0</div></div>
+      </section>
+
+      <div class="subnav" id="abas">
+        <button class="active" data-filtro="abertos">Em Aberto</button>
+        <button data-filtro="recebidos">Recebidos</button>
+        <button data-filtro="todos">Todos</button>
+      </div>
+
+      <section class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead>
+            <tr><th>Pedido</th><th>Fornecedor</th><th>Data</th><th>Entrega Prevista</th><th>Status</th><th class="num">Valor Total</th><th style="text-align:right;">Ações</th></tr>
+          </thead>
+          <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+  import { initNav } from '../../js/nav.js';
+  initNav();
+
+  const sessao = await exigirSessao();
+  const usuario = await usuarioAtual();
+  if (usuario) {
+    document.getElementById('user-nome').textContent = usuario.nome;
+    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+  }
+  document.getElementById('user-chip').addEventListener('click', async () => {
+    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+  });
+
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const LABEL_STATUS = { aberto: 'Aberto', enviado: 'Enviado', recebido_parcial: 'Recebido Parcial', recebido_total: 'Recebido Total', cancelado: 'Cancelado' };
+  const BADGE_STATUS = { aberto: 'aberto', enviado: 'aberto', recebido_parcial: 'parcial', recebido_total: 'pago', cancelado: 'inadimplente' };
+
+  let filtroAtual = 'abertos';
+  document.getElementById('abas').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-filtro]');
+    if (!btn) return;
+    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroAtual = btn.dataset.filtro;
+    carregar();
+  });
+
+  async function carregarResumo() {
+    const { count: abertos } = await supabase.from('pedidos_compra').select('id', { count: 'exact', head: true }).eq('status', 'aberto');
+    const { count: aguardando } = await supabase.from('pedidos_compra').select('id', { count: 'exact', head: true }).in('status', ['enviado', 'recebido_parcial']);
+    const { count: reqAvulsas } = await supabase.from('requisicoes_compra').select('id', { count: 'exact', head: true }).eq('status', 'aprovada');
+    document.getElementById('card-abertos').textContent = abertos || 0;
+    document.getElementById('card-aguardando').textContent = aguardando || 0;
+    document.getElementById('card-req-avulsas').textContent = reqAvulsas || 0;
+  }
+
+  async function carregar() {
+    await carregarResumo();
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+    let query = supabase.from('pedidos_compra').select('id, numero_pedido, data_pedido, data_entrega_prevista, status, favorecidos:fornecedor_id(nome), pedido_compra_itens(quantidade, valor_unitario)').order('data_pedido', { ascending: false });
+    if (filtroAtual === 'abertos') query = query.in('status', ['aberto', 'enviado', 'recebido_parcial']);
+    else if (filtroAtual === 'recebidos') query = query.eq('status', 'recebido_total');
+
+    const { data, error } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
+    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum pedido nesta aba.</td></tr>`; return; }
+
+    tbody.innerHTML = data.map(p => {
+      const total = (p.pedido_compra_itens || []).reduce((s, i) => s + Number(i.quantidade) * Number(i.valor_unitario), 0);
+      return `<tr>
+        <td class="mono">${p.numero_pedido || p.id.slice(0,8)}</td>
+        <td>${p.favorecidos?.nome ?? '—'}</td>
+        <td>${fmtData(p.data_pedido)}</td>
+        <td>${fmtData(p.data_entrega_prevista)}</td>
+        <td><span class="badge ${BADGE_STATUS[p.status]}">${LABEL_STATUS[p.status]}</span></td>
+        <td class="num mono">${fmt(total)}</td>
+        <td style="text-align:right;"><a class="icon-btn" href="pedido-novo.html?id=${p.id}">Abrir</a></td>
+      </tr>`;
+    }).join('');
+  }
+
+  await carregar();
+</script>
+</body>
+</html>

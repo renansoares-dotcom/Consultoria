@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Compras — Datativo Industrial</title>
+<title>Dashboard Compras — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,7 +11,15 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* CMP-001 — só um ajuste local de espaçamento (o slot de Timeline usa o
+     container de Área Operacional, que por padrão não tem padding porque
+     foi desenhado pra tabelas com padding próprio; TimelineEngine assume
+     um card já com respiro). Não é componente novo, é 3 linhas de CSS. */
+  #cmp-timeline { padding: 18px 24px; }
+</style>
 </head>
 <body>
 
@@ -23,8 +31,9 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
-        <a href="../compras/dashboard.html" class="sidebar-link active"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
         <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
         <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
@@ -42,116 +51,182 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="topbar">
-      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
-      <div class="topbar-right">
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
-      </div>
-    </header>
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
 
-    <main class="page">
-      <div class="page-header">
-        <div>
-          <span class="eyebrow">Módulo</span>
-          <h1>Compras</h1>
-        </div>
-        <a href="pedido-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo Pedido de Compra</a>
-      </div>
-
-      <section class="grid grid-3" style="margin-bottom:18px;">
-        <div class="card"><div class="label">Pedidos Abertos</div><div class="big" id="card-abertos">0</div></div>
-        <div class="card"><div class="label">Aguardando Recebimento</div><div class="big" id="card-aguardando">0</div></div>
-        <div class="card"><div class="label">Requisições Aprovadas sem Pedido</div><div class="big valor aberto" id="card-req-avulsas">0</div></div>
-      </section>
-
-      <div class="subnav" id="abas">
-        <button class="active" data-filtro="abertos">Em Aberto</button>
-        <button data-filtro="recebidos">Recebidos</button>
-        <button data-filtro="todos">Todos</button>
-      </div>
-
-      <section class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead>
-            <tr><th>Pedido</th><th>Fornecedor</th><th>Data</th><th>Entrega Prevista</th><th>Status</th><th class="num">Valor Total</th><th style="text-align:right;">Ações</th></tr>
-          </thead>
-          <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
-        </table>
-      </section>
-    </main>
+<main class="page" id="cmp-main"></main>
   </div>
 </div>
 
 <script type="module">
-  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
-  import { initNav } from '../../js/nav.js';
-  initNav();
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, Charts, TimelineEngine,
+  DetailDrawer, calcularScoreEngine,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
+initNav();
 
-  const sessao = await exigirSessao();
-  const usuario = await usuarioAtual();
-  if (usuario) {
-    document.getElementById('user-nome').textContent = usuario.nome;
-    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  }
-  document.getElementById('user-chip').addEventListener('click', async () => {
-    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
-  });
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
 
-  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
-  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-  const LABEL_STATUS = { aberto: 'Aberto', enviado: 'Enviado', recebido_parcial: 'Recebido Parcial', recebido_total: 'Recebido Total', cancelado: 'Cancelado' };
-  const BADGE_STATUS = { aberto: 'aberto', enviado: 'aberto', recebido_parcial: 'parcial', recebido_total: 'pago', cancelado: 'inadimplente' };
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const CORES = ['#1f7a5c', '#2f9e9e', '#b76e11', '#5b7fdb', '#8a63d2', '#c0392b'];
 
-  let filtroAtual = 'abertos';
-  document.getElementById('abas').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-filtro]');
-    if (!btn) return;
-    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    filtroAtual = btn.dataset.filtro;
-    carregar();
-  });
+// ============================================================================
+// CMP-001 — TODO dado abaixo é DE EXEMPLO. A tarefa não pediu explicitamente
+// "não implementar regras" desta vez, mas o foco declarado é reutilizar o
+// Design Framework (WorkspaceLayout/Score/DecisionCenter/TimelineEngine/
+// Charts) — mesmo padrão do COM-001 (Comercial), que pediu isso
+// explicitamente. Sinalizado a decisão no resumo desta entrega.
+//
+// NOME DIVERGENTE registrado: o ADR-006 (SYS-003) mapeou Compras→"Supplier
+// Score", mas esta tarefa pede "Purchase Score" — usei o nome desta tarefa
+// (é a instrução mais recente), mas fica a divergência marcada.
+// ============================================================================
 
-  async function carregarResumo() {
-    const { count: abertos } = await supabase.from('pedidos_compra').select('id', { count: 'exact', head: true }).eq('status', 'aberto');
-    const { count: aguardando } = await supabase.from('pedidos_compra').select('id', { count: 'exact', head: true }).in('status', ['enviado', 'recebido_parcial']);
-    const { count: reqAvulsas } = await supabase.from('requisicoes_compra').select('id', { count: 'exact', head: true }).eq('status', 'aprovada');
-    document.getElementById('card-abertos').textContent = abertos || 0;
-    document.getElementById('card-aguardando').textContent = aguardando || 0;
-    document.getElementById('card-req-avulsas').textContent = reqAvulsas || 0;
-  }
+const resultado = WorkspaceLayout('cmp-main', {
+  header: {
+    titulo: 'Dashboard Executivo de Compras',
+    breadcrumb: 'Compras',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar fornecedores, pedidos, produtos...',
+    acoesRapidas: [{ label: 'Pedidos de Compra', icone: 'list', href: 'pedidos.html' }, { label: 'Novo Pedido', icone: 'plus', href: 'pedido-novo.html', primario: true }],
+  },
+  attentionCenter: {
+    titulo: 'Central de Atenção',
+    exemplo: true,
+    alertas: [
+      { tipo: 'Fornecedor', prioridade: 'alta', icone: 'alert-triangle', mensagem: 'Fornecedor Delta com 3 aumentos de preço nos últimos 6 meses.', acaoSugerida: 'Ver histórico do fornecedor', link: '#' },
+      { tipo: 'Prazo', prioridade: 'media', icone: 'clock', mensagem: '4 pedidos de compra aguardando aprovação há mais de 3 dias.', acaoSugerida: 'Ver pedidos', link: 'pedidos.html' },
+    ],
+  },
+  healthScore: {
+    nome: 'Purchase Score',
+    tituloSecao: 'Saúde de Compras',
+    exemplo: true,
+    fatores: [
+      { nome: 'Pontualidade de entrega', valor: 82, peso: 0.3 },
+      { nome: 'Concentração de fornecedor', valor: 58, peso: 0.25 },
+      { nome: 'Variação de preço', valor: 70, peso: 0.25 },
+      { nome: 'Qualidade recebida', valor: 90, peso: 0.2 },
+    ],
+    historico: [{ data: 'Mai', nota: 68 }, { data: 'Jun', nota: 71 }, { data: 'Jul', nota: 76 }],
+  },
+  kpis: {
+    itens: [
+      { id: 'total-periodo', nome: 'Total Comprado', icone: 'wallet', tom: 'tom-verde', valorTexto: fmt(342800), clicavel: true },
+      { id: 'pedidos-abertos', nome: 'Pedidos em Aberto', icone: 'clock', tom: 'tom-ambar', valorTexto: '14', clicavel: true },
+      { id: 'ticket-medio', nome: 'Ticket Médio', icone: 'receipt', tom: 'tom-azul', valorTexto: fmt(24485), clicavel: true },
+      { id: 'lead-time', nome: 'Lead Time Médio', icone: 'timer', tom: 'tom-roxo', valorTexto: '6,4 dias', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights de Compras',
+    exemplo: true,
+    itens: [
+      { categoria: 'Fornecedores', texto: 'Fornecedor Delta concentra 32% do volume comprado', origem: 'Regra' },
+      { categoria: 'Preço', texto: 'Categoria Embalagens com queda de preço de 5% no trimestre', origem: 'Regra' },
+      { categoria: 'Prazo', texto: 'Lead time médio caiu 1,2 dia em relação ao mês anterior', origem: 'IA' },
+    ],
+  },
+  decisionCenter: {
+    titulo: 'Centro de Decisão',
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Diversificar base de fornecedores', descricao: 'Fornecedor Delta concentra 32% do volume — acima do saudável.', origem: 'Compras', impactoTexto: 'Redução de risco', urgencia: 'media', confianca: 76, acaoSugerida: 'Ver fornecedores', exemplo: true },
+      { titulo: 'Renegociar contrato com Fornecedor Delta', descricao: '3 reajustes de preço em 6 meses, acima da média do setor.', origem: 'Compras', impactoTexto: fmt(8200) + '/mês', urgencia: 'alta', confianca: 81, acaoSugerida: 'Ver histórico de preços', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'periodo', id: 'cmp-slot-periodo', titulo: 'Compras por Período' },
+      { chave: 'fornecedor', id: 'cmp-slot-fornecedor', titulo: 'Compras por Fornecedor' },
+      { chave: 'categoria', id: 'cmp-slot-categoria', titulo: 'Compras por Categoria', linha: 'secundaria' },
+      { chave: 'economia', id: 'cmp-slot-economia', titulo: 'Economia Obtida', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Timeline de Compras', id: 'cmp-timeline' },
+});
 
-  async function carregar() {
-    await carregarResumo();
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+// ---------- popula os slots devolvidos pelo WorkspaceLayout ----------
 
-    let query = supabase.from('pedidos_compra').select('id, numero_pedido, data_pedido, data_entrega_prevista, status, favorecidos:fornecedor_id(nome), pedido_compra_itens(quantidade, valor_unitario)').order('data_pedido', { ascending: false });
-    if (filtroAtual === 'abertos') query = query.in('status', ['aberto', 'enviado', 'recebido_parcial']);
-    else if (filtroAtual === 'recebidos') query = query.eq('status', 'recebido_total');
+// 6. Compras por Período
+const PERIODO_EXEMPLO = [
+  { label: 'fev', valor: 48000 }, { label: 'mar', valor: 52000 }, { label: 'abr', valor: 61000 },
+  { label: 'mai', valor: 55000 }, { label: 'jun', valor: 68000 }, { label: 'jul', valor: 58800 },
+];
+Charts.barChart(resultado.slots.periodo, PERIODO_EXEMPLO.map(p => ({ ...p, onClick: () => abrirDrilldownGenerico(`Compras — ${p.label}`, fmt(p.valor)) })));
 
-    const { data, error } = await query;
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum pedido nesta aba.</td></tr>`; return; }
+// 7. Compras por Fornecedor
+const FORNECEDORES_EXEMPLO = [
+  { nome: 'Fornecedor Delta', valor: 109700, cor: CORES[0] }, { nome: 'Fornecedor Prisma', valor: 78200, cor: CORES[1] },
+  { nome: 'Fornecedor Nortec', valor: 61400, cor: CORES[2] }, { nome: 'Fornecedor Vega', valor: 93500, cor: CORES[3] },
+];
+Charts.donut(resultado.slots.fornecedor, FORNECEDORES_EXEMPLO.map(f => ({ ...f, onClick: () => abrirDrilldownGenerico(f.nome, fmt(f.valor)) })), 'Total', fmt(FORNECEDORES_EXEMPLO.reduce((s,f)=>s+f.valor,0)).replace('R$ ',''));
 
-    tbody.innerHTML = data.map(p => {
-      const total = (p.pedido_compra_itens || []).reduce((s, i) => s + Number(i.quantidade) * Number(i.valor_unitario), 0);
-      return `<tr>
-        <td class="mono">${p.numero_pedido || p.id.slice(0,8)}</td>
-        <td>${p.favorecidos?.nome ?? '—'}</td>
-        <td>${fmtData(p.data_pedido)}</td>
-        <td>${fmtData(p.data_entrega_prevista)}</td>
-        <td><span class="badge ${BADGE_STATUS[p.status]}">${LABEL_STATUS[p.status]}</span></td>
-        <td class="num mono">${fmt(total)}</td>
-        <td style="text-align:right;"><a class="icon-btn" href="pedido-novo.html?id=${p.id}">Abrir</a></td>
-      </tr>`;
-    }).join('');
-  }
+// 8. Compras por Categoria
+const CATEGORIAS_EXEMPLO = [
+  { nome: 'Matéria-Prima', valor: 198400 }, { nome: 'Embalagens', valor: 82100 }, { nome: 'Manutenção', valor: 41200 }, { nome: 'Serviços', valor: 21100 },
+];
+Charts.barList(resultado.slots.categoria, CATEGORIAS_EXEMPLO.map(c => ({ ...c, onClick: () => abrirDrilldownGenerico(c.nome, fmt(c.valor)) })));
 
-  await carregar();
+// 9. Economia Obtida — usa o mesmo componente de card, sem inventar um novo
+document.getElementById(resultado.slots.economia).innerHTML = `
+  <div style="text-align:center; padding:8px 0;">
+    <div style="font-family:var(--font-mono); font-size:28px; font-weight:800; color:var(--accent);">${fmt(18400)}</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-top:4px;">economizados via negociação neste período</div>
+  </div>`;
+
+// 10. Timeline de Compras — TimelineEngine (SYS-012), não o Timeline simples
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.operational, [
+  { id: '1', tipo: 'Pedido', titulo: 'Pedido de compra criado — Fornecedor Delta', descricao: 'Pedido #PC-1042, matéria-prima', data: hoje, hora: '09:20', valorTexto: fmt(24500) },
+  { id: '2', tipo: 'Aprovação', titulo: 'Pedido #PC-1039 aprovado', data: hoje, hora: '11:05', autor: 'Renan' },
+  { id: '3', tipo: 'Chamado', titulo: 'Divergência de recebimento reportada', descricao: 'Quantidade recebida menor que a pedida — Fornecedor Nortec', data: hoje, hora: '14:40', comentarios: [{ autor: 'Qualidade', texto: 'Inspeção confirmou divergência de 8%', data: 'Hoje' }] },
+], { agrupamento: 'dia' });
+
+// ---------- Drawers (arquitetura preparada, SYS-011) ----------
+function abrirDrilldownGenerico(titulo, valorTexto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Valor no período: <b style="color:var(--ink);">${valorTexto}</b></p><p style="color:var(--ink-faint); font-size:12px; margin-top:8px;">Estrutura de drill-down pronta — detalhamento real aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'total-periodo': 'Total Comprado', 'pedidos-abertos': 'Pedidos em Aberto', 'ticket-medio': 'Ticket Médio', 'lead-time': 'Lead Time Médio' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
+}
+
+// ---------- Pesquisa Global + Command Palette (SYS-006/007), reaproveitados ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'Compras', icone: 'shopping-cart', href: 'dashboard.html' },
+    { label: 'Financeiro', icone: 'wallet', href: '../financeiro/dashboard.html' },
+    { label: 'Comercial', icone: 'trending-up', href: '../vendas/dashboard.html' },
+    { label: 'Estoque', icone: 'package', href: '../estoque/dashboard.html' },
+  ],
+  acoes: [{ label: 'Novo Pedido de Compra', icone: 'plus', onExecutar: () => { window.location.href = 'pedido-novo.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
+
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
