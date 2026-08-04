@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PCP — Datativo Industrial</title>
+<title>Dashboard PCP — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,7 +11,17 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* PCP-001 — só composição de classes já oficiais pra "Simulação de
+     Impacto" (seção 11), que não tem componente equivalente na biblioteca
+     ainda — arquitetura reservada, mesmo princípio de Recomendações/Análise
+     Inteligente já ocultas em outros componentes. Nenhuma classe nova de
+     COMPONENTE, só 4 regras de composição local. */
+  .pcp-simulacao-corpo { display: flex; flex-direction: column; gap: 10px; }
+  .pcp-simulacao-corpo select { width: 100%; }
+</style>
 </head>
 <body>
 
@@ -23,11 +33,12 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
         <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
-        <a href="../pcp/dashboard.html" class="sidebar-link active"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="calendar-clock"></i> PCP</a>
         <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
         <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
         <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
@@ -52,59 +63,18 @@
   </div>
 </header>
 
-<main class="page">
-  <div class="page-header">
-    <div>
-      <span class="eyebrow">PCP</span>
-      <h1>Planejamento e Controle de Produção</h1>
-    </div>
-    <a href="necessidade-compras.html" class="btn primary"><i data-lucide="package-search"></i> Necessidade de Materiais</a>
-  </div>
-
-  <p style="color:var(--ink-soft); font-size:12.5px; margin:-8px 0 18px; max-width:760px;">
-    Para cada item de pedido de venda ainda não totalmente atendido, o PCP compara a quantidade pendente com o saldo em estoque do produto acabado. Se já tem estoque suficiente, não precisa produzir — é só separar e entregar. Se não tem, gere uma Ordem de Produção direto daqui.
-  </p>
-
-  <div class="toolbar">
-    <input class="input" id="busca" placeholder="Buscar por cliente ou produto...">
-    <span class="count-pill" id="contador">0 itens pendentes</span>
-    <div class="spacer"></div>
-  </div>
-
-  <section class="card" style="padding:0; overflow:hidden;">
-    <table>
-      <thead>
-        <tr>
-          <th>Pedido</th><th>Cliente</th><th>Produto</th>
-          <th class="num">Pendente</th><th class="num">Em Estoque</th><th>Situação</th><th class="num">Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
-    </table>
-  </section>
-</main>
-  </div>
-</div>
-
-<!-- Modal: gerar Ordem de Produção -->
-<div class="modal-overlay" id="modal-op">
-  <div class="modal">
-    <h2>Gerar Ordem de Produção</h2>
-    <div class="modal-sub" id="modal-op-sub"></div>
-    <form id="form-op">
-      <label class="field"><span class="field-label">Quantidade a Produzir *</span><input class="input mono" type="number" step="0.001" min="0.001" id="op_quantidade" required></label>
-      <label class="field"><span class="field-label">Data Prevista</span><input class="input" type="date" id="op_data_prevista"></label>
-    </form>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="cancelar-op">Cancelar</button>
-      <button class="btn primary" type="submit" form="form-op">Gerar OP</button>
-    </div>
+<main class="page" id="pcp-main"></main>
   </div>
 </div>
 
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
 import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, Charts, TimelineEngine,
+  DataGrid, DetailDrawer, AnalysisDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
 initNav();
 
 const sessao = await exigirSessao();
@@ -116,96 +86,175 @@ if (usuario) {
 document.getElementById('user-chip').addEventListener('click', async () => {
   if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
 });
-const TENANT_ID = usuario?.tenant_id;
-const fmt = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
 
-let linhas = [];
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
 
-async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+// ============================================================================
+// PCP-001 — TODO dado abaixo é DE EXEMPLO (mesmo padrão de escopo do
+// CMP-001/COM-001: foco é reutilização do framework, não regra de negócio
+// nova). Duas decisões de interpretação que preciso deixar claras:
+//
+// 1. "Programação Visual da Produção" e "Ordens de Produção" viraram
+//    DataGrid (tabela) — a biblioteca oficial não tem um componente de
+//    Gantt/board visual ainda, e a instrução pede pra não criar componente
+//    específico quando já existe equivalente. DataGrid é o equivalente
+//    mais próximo hoje.
+// 2. "Mapa da Fábrica" usa o placeholder .dtv-mapa-placeholder, já
+//    reservado desde o SYS-001 pra exatamente este caso (componente
+//    geográfico real ainda não existe na biblioteca).
+// 3. "Simulação de Impacto" fica como seção arquitetural/reservada — não
+//    inventei um motor de simulação, mesmo princípio das áreas de IA já
+//    ocultas em outros componentes (Recomendações, Análise Inteligente).
+// ============================================================================
 
-  const { data: itens, error } = await supabase
-    .from('pedido_venda_itens')
-    .select('id, quantidade, quantidade_atendida, produto_id, pedido_venda_id, produtos(codigo, nome, saldo_atual), pedidos_venda!inner(numero_pedido, status, favorecidos(nome))')
-    .in('pedidos_venda.status', ['aberto', 'em_producao']);
-
-  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
-
-  linhas = (itens || [])
-    .map(it => ({ ...it, pendente: Number(it.quantidade) - Number(it.quantidade_atendida) }))
-    .filter(it => it.pendente > 0.001);
-
-  desenhar();
-}
-
-function desenhar() {
-  const busca = document.getElementById('busca').value.trim().toLowerCase();
-  const filtrados = busca ? linhas.filter(l => JSON.stringify(l).toLowerCase().includes(busca)) : linhas;
-  document.getElementById('contador').textContent = `${filtrados.length} item${filtrados.length===1?'':'s'} pendente${filtrados.length===1?'':'s'}`;
-
-  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum item pendente — tudo entregue ou sem pedidos abertos.</td></tr>`; return; }
-
-  document.getElementById('tbody').innerHTML = filtrados.map(l => {
-    const temEstoque = Number(l.produtos?.saldo_atual || 0) >= l.pendente;
-    return `
-    <tr>
-      <td>${l.pedidos_venda?.numero_pedido ?? '-'}</td>
-      <td>${l.pedidos_venda?.favorecidos?.nome ?? '-'}</td>
-      <td>${l.produtos?.codigo ?? ''} — ${l.produtos?.nome ?? '-'}</td>
-      <td class="num mono">${fmt(l.pendente)}</td>
-      <td class="num mono">${fmt(l.produtos?.saldo_atual)}</td>
-      <td>${temEstoque ? '<span class="badge pago">Atende com estoque</span>' : '<span class="badge aberto">Precisa produzir</span>'}</td>
-      <td class="num">${temEstoque ? '-' : `<button class="icon-btn" data-gerar="${l.id}">Gerar OP</button>`}</td>
-    </tr>`;
-  }).join('');
-}
-
-document.getElementById('busca').addEventListener('input', desenhar);
-
-let itemAtual = null;
-document.getElementById('tbody').addEventListener('click', e => {
-  const id = e.target.dataset?.gerar;
-  if (!id) return;
-  itemAtual = linhas.find(l => l.id === id);
-  if (!itemAtual) return;
-  document.getElementById('modal-op-sub').textContent = `${itemAtual.produtos?.codigo} — ${itemAtual.produtos?.nome} · Pendente: ${fmt(itemAtual.pendente)}`;
-  document.getElementById('op_quantidade').value = itemAtual.pendente.toFixed(3);
-  document.getElementById('op_data_prevista').value = '';
-  document.getElementById('modal-op').classList.add('open');
-});
-document.getElementById('cancelar-op').addEventListener('click', () => document.getElementById('modal-op').classList.remove('open'));
-
-document.getElementById('form-op').addEventListener('submit', async e => {
-  e.preventDefault();
-  if (!itemAtual) return;
-
-  const { data: pedido } = await supabase.from('pedidos_venda').select('grupo_empresarial_id').eq('id', itemAtual.pedido_venda_id).single();
-
-  const btn = e.submitter;
-  btn.disabled = true; btn.textContent = 'Gerando…';
-
-  const { error } = await supabase.from('ordens_producao').insert({
-    tenant_id: TENANT_ID,
-    grupo_empresarial_id: pedido?.grupo_empresarial_id || null,
-    produto_id: itemAtual.produto_id,
-    quantidade_planejada: Number(document.getElementById('op_quantidade').value),
-    pedido_venda_id: itemAtual.pedido_venda_id,
-    status: 'planejada',
-    data_prevista: document.getElementById('op_data_prevista').value || null,
-  });
-
-  btn.disabled = false; btn.textContent = 'Gerar OP';
-
-  if (error) { alert('Erro ao gerar OP: ' + error.message); return; }
-
-  await supabase.from('pedidos_venda').update({ status: 'em_producao' }).eq('id', itemAtual.pedido_venda_id);
-
-  document.getElementById('modal-op').classList.remove('open');
-  alert('Ordem de Produção gerada com sucesso! Confira em Produção.');
-  await carregar();
+const resultado = WorkspaceLayout('pcp-main', {
+  header: {
+    titulo: 'Centro Inteligente de Planejamento e Controle da Produção',
+    breadcrumb: 'PCP',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar ordens, produtos, pedidos...',
+    acoesRapidas: [{ label: 'Necessidade de Materiais', icone: 'package-search', href: 'necessidade-compras.html' }, { label: 'Gerar Ordens', icone: 'plus', href: 'gerar-ordens.html', primario: true }],
+  },
+  attentionCenter: {
+    exemplo: true,
+    alertas: [
+      { tipo: 'Capacidade', prioridade: 'alta', icone: 'alert-triangle', mensagem: 'Linha 2 operando acima de 90% de utilização há 5 dias seguidos.', acaoSugerida: 'Ver capacidade das máquinas', link: '#' },
+      { tipo: 'Material', prioridade: 'media', icone: 'package', mensagem: '3 ordens de produção aguardando matéria-prima.', acaoSugerida: 'Ver necessidade de materiais', link: 'necessidade-compras.html' },
+    ],
+  },
+  healthScore: {
+    nome: 'Production Score',
+    tituloSecao: 'Saúde da Produção',
+    exemplo: true,
+    fatores: [
+      { nome: 'Cumprimento de prazo', valor: 78, peso: 0.3 },
+      { nome: 'Utilização de capacidade', valor: 85, peso: 0.25 },
+      { nome: 'Retrabalho', valor: 92, peso: 0.25 },
+      { nome: 'Disponibilidade de material', valor: 65, peso: 0.2 },
+    ],
+    historico: [{ data: 'Mai', nota: 71 }, { data: 'Jun', nota: 75 }, { data: 'Jul', nota: 80 }],
+  },
+  kpis: {
+    itens: [
+      { id: 'ops-abertas', nome: 'Ordens Abertas', icone: 'clipboard-list', tom: 'tom-azul', valorTexto: '22', clicavel: true },
+      { id: 'ops-atraso', nome: 'Ordens em Atraso', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: '4', clicavel: true },
+      { id: 'utilizacao', nome: 'Utilização Média', icone: 'gauge', tom: 'tom-ambar', valorTexto: '83%', clicavel: true },
+      { id: 'op-concluidas', nome: 'Concluídas no Mês', icone: 'check-circle-2', tom: 'tom-verde', valorTexto: '58', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights de Produção',
+    exemplo: true,
+    itens: [
+      { categoria: 'Capacidade', texto: 'Linha 2 é o gargalo em 4 das últimas 5 semanas', origem: 'Regra' },
+      { categoria: 'Prazo', texto: 'Ordens da categoria Bobinas têm 15% mais atraso que a média', origem: 'IA' },
+      { categoria: 'Material', texto: 'Falta de matéria-prima já causou 3 atrasos este mês', origem: 'Regra' },
+    ],
+  },
+  decisionCenter: {
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Redistribuir carga da Linha 2', descricao: 'Linha 2 acima de 90% de utilização há 5 dias — risco de gargalo crescente.', origem: 'Produção', impactoTexto: 'Redução de atraso', urgencia: 'alta', confianca: 79, acaoSugerida: 'Ver capacidade das máquinas', exemplo: true },
+      { titulo: 'Antecipar compra de matéria-prima crítica', descricao: '3 ordens de produção já aguardam material — risco de propagação de atraso.', origem: 'PCP', impactoTexto: '3 ordens desbloqueadas', urgencia: 'alta', confianca: 84, acaoSugerida: 'Ver necessidade de materiais', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'programacao', id: 'pcp-slot-programacao', titulo: 'Programação Visual da Produção' },
+      { chave: 'mapa', id: 'pcp-slot-mapa', titulo: 'Mapa da Fábrica' },
+      { chave: 'capacidade', id: 'pcp-slot-capacidade', titulo: 'Capacidade das Máquinas', linha: 'secundaria' },
+      { chave: 'timeline', id: 'pcp-slot-timeline', titulo: 'Timeline', linha: 'secundaria' },
+      { chave: 'simulacao', id: 'pcp-slot-simulacao', titulo: 'Simulação de Impacto', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Ordens de Produção', id: 'pcp-ordens' },
 });
 
-await carregar();
+// ---------- popula os slots devolvidos ----------
+
+// 5. Programação Visual da Produção — DataGrid (equivalente oficial mais
+// próximo; biblioteca não tem componente de Gantt/board ainda)
+DataGrid(resultado.slots.programacao,
+  [{ titulo: 'Ordem' }, { titulo: 'Produto' }, { titulo: 'Linha' }, { titulo: 'Início' }, { titulo: 'Fim Previsto' }, { titulo: 'Status' }],
+  [
+    { celulas: ['OP-2201', 'Bobina Extra 40cm', 'Linha 1', '29/07', '31/07', '<span class="badge parcial">Em produção</span>'], onClick: () => abrirDetalheOP('OP-2201') },
+    { celulas: ['OP-2198', 'Filme Termoencolhível', 'Linha 2', '28/07', '30/07', '<span class="badge aberto">Aguardando material</span>'], onClick: () => abrirDetalheOP('OP-2198') },
+    { celulas: ['OP-2195', 'Saco Plástico Reforçado', 'Linha 1', '27/07', '29/07', '<span class="badge pago">Concluída</span>'], onClick: () => abrirDetalheOP('OP-2195') },
+  ]
+);
+
+// 6. Mapa da Fábrica — placeholder oficial reservado desde o SYS-001
+document.getElementById(resultado.slots.mapa).innerHTML = `<div class="dtv-mapa-placeholder">Mapa da Fábrica — arquitetura pronta, aguardando componente geográfico do módulo</div>`;
+
+// 7. Capacidade das Máquinas
+const MAQUINAS_EXEMPLO = [
+  { nome: 'Extrusora 1', valor: 92 }, { nome: 'Extrusora 2', valor: 78 }, { nome: 'Impressora Flexo', valor: 65 }, { nome: 'Seladora', valor: 54 },
+];
+Charts.barList(resultado.slots.capacidade, MAQUINAS_EXEMPLO.map(m => ({ nome: m.nome, valor: m.valor, onClick: () => abrirDrilldownGenerico(m.nome, `${m.valor}% de utilização`) })));
+
+// 9. Timeline
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.timeline, [
+  { id: '1', tipo: 'Produção', titulo: 'OP-2201 iniciada — Linha 1', data: hoje, hora: '07:30' },
+  { id: '2', tipo: 'Aprovação', titulo: 'OP-2195 concluída e aprovada', data: hoje, hora: '10:15', autor: 'Qualidade' },
+  { id: '3', tipo: 'Chamado', titulo: 'Parada não programada na Extrusora 2', descricao: 'Manutenção acionada, ETA 40min', data: hoje, hora: '13:05' },
+], { agrupamento: 'dia', filtros: false });
+
+// 11. Simulação de Impacto — arquitetura reservada, sem motor de simulação
+// (mesmo princípio de Recomendações/Análise Inteligente já ocultas)
+document.getElementById(resultado.slots.simulacao).innerHTML = `
+  <div class="pcp-simulacao-corpo">
+    <select class="input" id="pcp-sim-tipo">
+      <option>Atraso de matéria-prima</option>
+      <option>Quebra de máquina</option>
+      <option>Pedido urgente inserido na fila</option>
+    </select>
+    <button type="button" class="btn primary" id="pcp-sim-btn">Simular Impacto</button>
+    <span class="ca-tag-exemplo" style="align-self:flex-start;">arquitetura pronta — motor de simulação ainda não existe</span>
+  </div>`;
+document.getElementById('pcp-sim-btn').addEventListener('click', () => {
+  AnalysisDrawer({ titulo: 'Simulação de Impacto', subtitulo: document.getElementById('pcp-sim-tipo').value, corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de simulação pronta — o motor de cálculo de impacto ainda não existe. Quando existir, este painel mostrará o efeito estimado em prazo, capacidade e custo.</p>` });
+});
+
+// ---------- Ordens de Produção (Área Operacional) ----------
+DataGrid(resultado.slots.operational,
+  [{ titulo: 'Ordem' }, { titulo: 'Produto' }, { titulo: 'Cliente' }, { titulo: 'Prazo' }, { titulo: 'Status' }, { titulo: 'Progresso', alinhamento: 'num' }],
+  [
+    { celulas: ['OP-2201', 'Bobina Extra 40cm', 'Cliente ABC Ltda', '31/07', '<span class="badge parcial">Em produção</span>', '62%'], onClick: () => abrirDetalheOP('OP-2201') },
+    { celulas: ['OP-2198', 'Filme Termoencolhível', 'Cliente XYZ Comércio', '30/07', '<span class="badge aberto">Aguardando material</span>', '0%'], onClick: () => abrirDetalheOP('OP-2198') },
+    { celulas: ['OP-2190', 'Saco Plástico Reforçado', 'Indústria Delta', '02/08', '<span class="badge aberto">Programada</span>', '0%'], onClick: () => abrirDetalheOP('OP-2190') },
+  ]
+);
+
+// ---------- Drawers (SYS-011) ----------
+function abrirDrilldownGenerico(titulo, valorTexto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">${valorTexto}</p><p style="color:var(--ink-faint); font-size:12px; margin-top:8px;">Estrutura de drill-down pronta — detalhamento real aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheOP(numero) {
+  DetailDrawer({ titulo: `Ordem de Produção ${numero}`, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra esta ordem — detalhamento real (itens, apontamentos, consumo) aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'ops-abertas': 'Ordens Abertas', 'ops-atraso': 'Ordens em Atraso', 'utilizacao': 'Utilização Média', 'op-concluidas': 'Concluídas no Mês' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
+}
+
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'PCP', icone: 'calendar-clock', href: 'dashboard.html' },
+    { label: 'Produção', icone: 'factory', href: '../producao/dashboard.html' },
+    { label: 'Compras', icone: 'shopping-cart', href: '../compras/dashboard.html' },
+    { label: 'Estoque', icone: 'package', href: '../estoque/dashboard.html' },
+  ],
+  acoes: [{ label: 'Gerar Ordens de Produção', icone: 'plus', onExecutar: () => { window.location.href = 'gerar-ordens.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
+
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>

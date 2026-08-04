@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCP — Datativo Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://esm.sh">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../css/design-system.css">
+<script src="https://unpkg.com/lucide@1.27.0" defer></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar-modulos">
+    <div class="sidebar-brand">
+      <div class="mark">D</div>
+      <div class="name">Datativo<small>Industrial</small></div>
+    </div>
+    <div class="sidebar-scroll">
+      <nav class="sidebar-nav">
+        <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
+        <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
+        <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
+        <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
+        <a href="../pcp/dashboard.html" class="sidebar-link active"><i data-lucide="calendar-clock"></i> PCP</a>
+        <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
+        <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
+        <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
+        <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
+        <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="theme-toggle-sidebar" style="width:100%; justify-content:center;"><i data-lucide="moon"></i> Alternar tema</button>
+    </div>
+  </aside>
+  <div class="app-main">
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">PCP</span>
+      <h1>Planejamento e Controle de Produção</h1>
+    </div>
+    <a href="necessidade-compras.html" class="btn primary"><i data-lucide="package-search"></i> Necessidade de Materiais</a>
+  </div>
+
+  <p style="color:var(--ink-soft); font-size:12.5px; margin:-8px 0 18px; max-width:760px;">
+    Para cada item de pedido de venda ainda não totalmente atendido, o PCP compara a quantidade pendente com o saldo em estoque do produto acabado. Se já tem estoque suficiente, não precisa produzir — é só separar e entregar. Se não tem, gere uma Ordem de Produção direto daqui.
+  </p>
+
+  <div class="toolbar">
+    <input class="input" id="busca" placeholder="Buscar por cliente ou produto...">
+    <span class="count-pill" id="contador">0 itens pendentes</span>
+    <div class="spacer"></div>
+  </div>
+
+  <section class="card" style="padding:0; overflow:hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th>Pedido</th><th>Cliente</th><th>Produto</th>
+          <th class="num">Pendente</th><th class="num">Em Estoque</th><th>Situação</th><th class="num">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
+    </table>
+  </section>
+</main>
+  </div>
+</div>
+
+<!-- Modal: gerar Ordem de Produção -->
+<div class="modal-overlay" id="modal-op">
+  <div class="modal">
+    <h2>Gerar Ordem de Produção</h2>
+    <div class="modal-sub" id="modal-op-sub"></div>
+    <form id="form-op">
+      <label class="field"><span class="field-label">Quantidade a Produzir *</span><input class="input mono" type="number" step="0.001" min="0.001" id="op_quantidade" required></label>
+      <label class="field"><span class="field-label">Data Prevista</span><input class="input" type="date" id="op_data_prevista"></label>
+    </form>
+    <div class="modal-actions">
+      <button class="btn ghost" type="button" id="cancelar-op">Cancelar</button>
+      <button class="btn primary" type="submit" form="form-op">Gerar OP</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+const TENANT_ID = usuario?.tenant_id;
+const fmt = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+let linhas = [];
+
+async function carregar() {
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
+
+  const { data: itens, error } = await supabase
+    .from('pedido_venda_itens')
+    .select('id, quantidade, quantidade_atendida, produto_id, pedido_venda_id, produtos(codigo, nome, saldo_atual), pedidos_venda!inner(numero_pedido, status, favorecidos(nome))')
+    .in('pedidos_venda.status', ['aberto', 'em_producao']);
+
+  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
+
+  linhas = (itens || [])
+    .map(it => ({ ...it, pendente: Number(it.quantidade) - Number(it.quantidade_atendida) }))
+    .filter(it => it.pendente > 0.001);
+
+  desenhar();
+}
+
+function desenhar() {
+  const busca = document.getElementById('busca').value.trim().toLowerCase();
+  const filtrados = busca ? linhas.filter(l => JSON.stringify(l).toLowerCase().includes(busca)) : linhas;
+  document.getElementById('contador').textContent = `${filtrados.length} item${filtrados.length===1?'':'s'} pendente${filtrados.length===1?'':'s'}`;
+
+  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum item pendente — tudo entregue ou sem pedidos abertos.</td></tr>`; return; }
+
+  document.getElementById('tbody').innerHTML = filtrados.map(l => {
+    const temEstoque = Number(l.produtos?.saldo_atual || 0) >= l.pendente;
+    return `
+    <tr>
+      <td>${l.pedidos_venda?.numero_pedido ?? '-'}</td>
+      <td>${l.pedidos_venda?.favorecidos?.nome ?? '-'}</td>
+      <td>${l.produtos?.codigo ?? ''} — ${l.produtos?.nome ?? '-'}</td>
+      <td class="num mono">${fmt(l.pendente)}</td>
+      <td class="num mono">${fmt(l.produtos?.saldo_atual)}</td>
+      <td>${temEstoque ? '<span class="badge pago">Atende com estoque</span>' : '<span class="badge aberto">Precisa produzir</span>'}</td>
+      <td class="num">${temEstoque ? '-' : `<button class="icon-btn" data-gerar="${l.id}">Gerar OP</button>`}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('busca').addEventListener('input', desenhar);
+
+let itemAtual = null;
+document.getElementById('tbody').addEventListener('click', e => {
+  const id = e.target.dataset?.gerar;
+  if (!id) return;
+  itemAtual = linhas.find(l => l.id === id);
+  if (!itemAtual) return;
+  document.getElementById('modal-op-sub').textContent = `${itemAtual.produtos?.codigo} — ${itemAtual.produtos?.nome} · Pendente: ${fmt(itemAtual.pendente)}`;
+  document.getElementById('op_quantidade').value = itemAtual.pendente.toFixed(3);
+  document.getElementById('op_data_prevista').value = '';
+  document.getElementById('modal-op').classList.add('open');
+});
+document.getElementById('cancelar-op').addEventListener('click', () => document.getElementById('modal-op').classList.remove('open'));
+
+document.getElementById('form-op').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!itemAtual) return;
+
+  const { data: pedido } = await supabase.from('pedidos_venda').select('grupo_empresarial_id').eq('id', itemAtual.pedido_venda_id).single();
+
+  const btn = e.submitter;
+  btn.disabled = true; btn.textContent = 'Gerando…';
+
+  const { error } = await supabase.from('ordens_producao').insert({
+    tenant_id: TENANT_ID,
+    grupo_empresarial_id: pedido?.grupo_empresarial_id || null,
+    produto_id: itemAtual.produto_id,
+    quantidade_planejada: Number(document.getElementById('op_quantidade').value),
+    pedido_venda_id: itemAtual.pedido_venda_id,
+    status: 'planejada',
+    data_prevista: document.getElementById('op_data_prevista').value || null,
+  });
+
+  btn.disabled = false; btn.textContent = 'Gerar OP';
+
+  if (error) { alert('Erro ao gerar OP: ' + error.message); return; }
+
+  await supabase.from('pedidos_venda').update({ status: 'em_producao' }).eq('id', itemAtual.pedido_venda_id);
+
+  document.getElementById('modal-op').classList.remove('open');
+  alert('Ordem de Produção gerada com sucesso! Confira em Produção.');
+  await carregar();
+});
+
+await carregar();
+</script>
+</body>
+</html>
