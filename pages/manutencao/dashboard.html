@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manutenção — Datativo Industrial</title>
+<title>Centro Inteligente de Manutenção — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -24,6 +24,7 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
@@ -33,7 +34,7 @@
         <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
         <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
         <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
-        <a href="../manutencao/dashboard.html" class="sidebar-link active"><i data-lucide="wrench"></i> Manutenção</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="wrench"></i> Manutenção</a>
         <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
         <a href="../rh/dashboard.html" class="sidebar-link"><i data-lucide="users-round"></i> RH</a>
       </nav>
@@ -43,866 +44,208 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="topbar">
-      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
-      <div class="topbar-right">
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="page">
-      <div class="page-header">
-        <div>
-          <span class="eyebrow">Módulo</span>
-          <h1>Manutenção</h1>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <a href="relatorio-custos.html" class="btn ghost"><i data-lucide="bar-chart-3"></i> Relatório de Custos</a>
-          <button class="btn ghost" id="btn-locais"><i data-lucide="map"></i> Locais Funcionais</button>
-          <button class="btn ghost" id="btn-novo-equip"><i data-lucide="plus"></i> Novo Equipamento</button>
-          <button class="btn ghost" id="btn-nova-solicitacao"><i data-lucide="plus"></i> Nova Solicitação</button>
-          <button class="btn ghost" id="btn-novo-plano"><i data-lucide="plus"></i> Novo Plano</button>
-          <button class="btn ghost" id="btn-gerar-preventivas"><i data-lucide="refresh-cw"></i> Gerar OS Preventivas</button>
-          <button class="btn primary" id="btn-nova-ordem"><i data-lucide="plus"></i> Nova Ordem</button>
-        </div>
-      </div>
-
-      <section class="grid grid-3" style="margin-bottom:18px;">
-        <div class="card"><div class="label">Ordens Abertas</div><div class="big valor aberto" id="card-abertas">0</div></div>
-        <div class="card"><div class="label">Equipamentos em Manutenção</div><div class="big valor negativo" id="card-em-manut">0</div></div>
-        <div class="card"><div class="label">Preventivas Vencidas</div><div class="big valor negativo" id="card-vencidas">0</div></div>
-      </section>
-
-      <div class="subnav" id="abas">
-        <button class="active" data-aba="ordens">Ordens de Manutenção</button>
-        <button data-aba="solicitacoes">Solicitações</button>
-        <button data-aba="planos">Planos Preventivos</button>
-        <button data-aba="equipamentos">Equipamentos</button>
-        <button data-aba="confiabilidade">Confiabilidade</button>
-      </div>
-
-      <div id="toolbar-confiabilidade" style="display:none; gap:10px; margin-bottom:14px;">
-        <button class="btn ghost" id="btn-catalogo-falhas"><i data-lucide="list"></i> Catálogo de Falhas</button>
-        <button class="btn primary" id="btn-registrar-parada"><i data-lucide="octagon-pause"></i> Registrar Parada</button>
-      </div>
-
-      <section class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead id="thead"></thead>
-          <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
-        </table>
-      </section>
-
-      <div id="paradas-abertas-wrap" style="display:none; margin-top:18px;">
-        <div class="label" style="margin-bottom:10px;">Paradas em Aberto</div>
-        <div id="lista-paradas-abertas"></div>
-        <div class="label" style="margin:20px 0 10px;">Alertas de Sensor</div>
-        <div id="lista-alertas-medidor"></div>
-      </div>
-    </main>
-  </div>
-</div>
-
-<!-- Modal: novo equipamento -->
-<div class="modal-overlay" id="modal-equip">
-  <div class="modal">
-    <h2>Novo Equipamento</h2>
-    <div class="linha-flex">
-      <label class="field f-160"><span class="field-label">Código *</span><input class="input mono" id="eq_codigo"></label>
-      <label class="field f-grow"><span class="field-label">Nome *</span><input class="input" id="eq_nome"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Tipo</span><input class="input" id="eq_tipo" placeholder="Ex: Extrusora, Empilhadeira, Compressor..."></label>
-      <label class="field f-grow"><span class="field-label">Localização</span><input class="input" id="eq_localizacao"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Fabricante</span><input class="input" id="eq_fabricante"></label>
-      <label class="field f-grow"><span class="field-label">Modelo</span><input class="input" id="eq_modelo"></label>
-      <label class="field f-grow"><span class="field-label">Nº de Série</span><input class="input mono" id="eq_serie"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-160"><span class="field-label">Data de Aquisição</span><input class="input" type="date" id="eq_data_aquisicao"></label>
-      <label class="field f-200"><span class="field-label">Periodicidade preventiva (dias)</span><input class="input mono" type="number" min="1" id="eq_periodicidade" placeholder="Ex: 90"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Local Funcional</span><select class="input" id="eq_local_funcional"><option value="">Nenhum</option></select></label>
-      <label class="field f-160"><span class="field-label">Criticidade</span>
-        <select class="input" id="eq_criticidade">
-          <option value="">Não definida</option>
-          <option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="critica">Crítica</option>
-        </select>
-      </label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Centro de Custo</span><select class="input" id="eq_centro_custo"><option value="">Nenhum</option></select></label>
-      <label class="field f-grow"><span class="field-label">Responsável</span><select class="input" id="eq_responsavel"><option value="">Nenhum</option></select></label>
-    </div>
-    <label class="field"><span class="field-label">Observações</span><textarea class="input" id="eq_obs"></textarea></label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-equip">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-equip">Salvar</button>
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
     </div>
   </div>
-</div>
+</header>
 
-<!-- Modal: nova ordem -->
-<div class="modal-overlay" id="modal-ordem">
-  <div class="modal">
-    <h2>Nova Ordem de Manutenção</h2>
-    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="or_equipamento"></select></label>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Tipo *</span>
-        <select class="input" id="or_tipo"><option value="corretiva">Corretiva</option><option value="preventiva">Preventiva</option></select>
-      </label>
-      <label class="field f-grow"><span class="field-label">Prioridade</span>
-        <select class="input" id="or_prioridade">
-          <option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option>
-        </select>
-      </label>
-      <label class="field f-160"><span class="field-label">Data Prevista</span><input class="input" type="date" id="or_data_prevista"></label>
-    </div>
-    <label class="field"><span class="field-label">Descrição do problema / serviço *</span><textarea class="input" id="or_descricao"></textarea></label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-ordem">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-ordem">Abrir Ordem</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: concluir ordem -->
-<div class="modal-overlay" id="modal-concluir">
-  <div class="modal">
-    <h2>Concluir Ordem</h2>
-    <label class="field"><span class="field-label">Solução aplicada</span><textarea class="input" id="cc_solucao"></textarea></label>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Custo de Peças (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="cc_custo_pecas" value="0"></label>
-      <label class="field f-grow"><span class="field-label">Custo de Mão de Obra (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="cc_custo_mao_obra" value="0"></label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-concluir">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-confirmar-concluir">Concluir Ordem</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: locais funcionais -->
-<div class="modal-overlay" id="modal-locais">
-  <div class="modal" style="max-width:560px;">
-    <h2>Locais Funcionais</h2>
-    <p class="modal-sub">Hierarquia: planta &gt; área &gt; linha.</p>
-    <div id="lista-locais" style="margin-bottom:18px;"></div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Nome</span><input class="input" id="lf_nome" placeholder="Ex: Linha de Extrusão 1"></label>
-      <label class="field f-130"><span class="field-label">Tipo</span>
-        <select class="input" id="lf_tipo"><option value="planta">Planta</option><option value="area">Área</option><option value="linha" selected>Linha</option></select>
-      </label>
-      <label class="field f-grow"><span class="field-label">Dentro de</span><select class="input" id="lf_parent"><option value="">Nível raiz</option></select></label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-fechar-locais">Fechar</button>
-      <button class="btn primary" type="button" id="btn-salvar-local">Adicionar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: nova solicitação -->
-<div class="modal-overlay" id="modal-solicitacao">
-  <div class="modal">
-    <h2>Nova Solicitação de Manutenção</h2>
-    <p class="modal-sub">Etapa informal — vira Ordem de Serviço depois de triada.</p>
-    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="sl_equipamento"></select></label>
-    <label class="field"><span class="field-label">Prioridade sugerida</span>
-      <select class="input" id="sl_prioridade"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option></select>
-    </label>
-    <label class="field"><span class="field-label">Descrição *</span><textarea class="input" id="sl_descricao"></textarea></label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-solicitacao">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-solicitacao">Enviar Solicitação</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: novo plano preventivo -->
-<div class="modal-overlay" id="modal-plano">
-  <div class="modal">
-    <h2>Novo Plano Preventivo</h2>
-    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="pl_equipamento"></select></label>
-    <label class="field"><span class="field-label">Nome do plano *</span><input class="input" id="pl_nome" placeholder="Ex: Lubrificação Trimestral"></label>
-    <label class="field"><span class="field-label">Prioridade</span>
-      <select class="input" id="pl_prioridade"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="critica">Crítica</option></select>
-    </label>
-    <label class="field"><span class="field-label">Gatilho</span>
-      <select class="input" id="pl_gatilho"><option value="calendario">Por calendário</option><option value="medidor">Por medidor</option></select>
-    </label>
-    <div id="pl-campos-calendario" class="linha-flex">
-      <label class="field f-grow"><span class="field-label">A cada quantos dias</span><input class="input mono" type="number" min="1" id="pl_periodicidade" placeholder="Ex: 90"></label>
-      <label class="field f-grow"><span class="field-label">Próxima execução</span><input class="input" type="date" id="pl_proxima_data"></label>
-    </div>
-    <div id="pl-campos-medidor" class="linha-flex" style="display:none;">
-      <label class="field f-grow"><span class="field-label">Medidor</span><select class="input" id="pl_medidor"></select></label>
-      <label class="field f-grow"><span class="field-label">A cada quantas unidades</span><input class="input mono" type="number" min="0.01" step="0.01" id="pl_intervalo" placeholder="Ex: 4000"></label>
-    </div>
-    <label class="field"><span class="field-label">Checklist (uma tarefa por linha, opcional)</span><textarea class="input" id="pl_tarefas" placeholder="Trocar óleo&#10;Verificar correias"></textarea></label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-plano">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-plano">Salvar Plano</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: catálogo de falhas -->
-<div class="modal-overlay" id="modal-falhas">
-  <div class="modal" style="max-width:560px;">
-    <h2>Catálogo de Falhas</h2>
-    <div id="lista-falhas" style="margin-bottom:18px;"></div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Nome</span><input class="input" id="fa_nome" placeholder="Ex: Falha elétrica no motor"></label>
-      <label class="field f-grow"><span class="field-label">Categoria</span><input class="input" id="fa_categoria" placeholder="Ex: Elétrica, Mecânica..."></label>
-      <button class="btn primary" type="button" id="btn-salvar-falha"><i data-lucide="plus"></i></button>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-fechar-falhas">Fechar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: registrar parada -->
-<div class="modal-overlay" id="modal-parada">
-  <div class="modal">
-    <h2>Registrar Parada de Produção</h2>
-    <label class="field"><span class="field-label">Equipamento *</span><select class="input" id="pp_equipamento"></select></label>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Falha (catálogo)</span><select class="input" id="pp_falha"><option value="">Nenhuma</option></select></label>
-      <label class="field f-grow"><span class="field-label">Ordem de Manutenção vinculada</span><select class="input" id="pp_ordem"><option value="">Nenhuma</option></select></label>
-    </div>
-    <label class="field"><span class="field-label">Causa</span><input class="input" id="pp_causa" placeholder="Descrição livre da causa"></label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-parada">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-confirmar-parada">Registrar Início</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: encerrar parada -->
-<div class="modal-overlay" id="modal-encerrar-parada">
-  <div class="modal">
-    <h2>Encerrar Parada</h2>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Quantidade Perdida</span><input class="input mono" type="number" step="0.001" min="0" id="ep_quantidade"></label>
-      <label class="field f-grow"><span class="field-label">Impacto Estimado (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="ep_impacto"></label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-encerrar-parada">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-confirmar-encerrar-parada">Encerrar Agora</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: QR Code do ativo -->
-<div class="modal-overlay" id="modal-qr">
-  <div class="modal" style="max-width:340px; text-align:center;">
-    <h2 id="qr-titulo">QR Code</h2>
-    <p class="modal-sub">Cole ou imprima no equipamento. Ao escanear, abre a tela mobile de solicitação/execução.</p>
-    <canvas id="qr-canvas" style="margin:16px auto; display:block;"></canvas>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-fechar-qr">Fechar</button>
-      <button class="btn primary" type="button" id="btn-imprimir-qr">Imprimir</button>
-    </div>
+<main class="page" id="mnt-main"></main>
   </div>
 </div>
 
 <script type="module">
-  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
-  import { initNav } from '../../js/nav.js';
-  initNav();
-
-  const sessao = await exigirSessao();
-  const usuario = await usuarioAtual();
-  const TENANT_ID = usuario?.tenant_id;
-  if (usuario) {
-    document.getElementById('user-nome').textContent = usuario.nome;
-    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  }
-  document.getElementById('user-chip').addEventListener('click', async () => {
-    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
-  });
-
-  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
-  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-  const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
-  const LABEL_STATUS_EQ = { ativo: 'Ativo', em_manutencao: 'Em Manutenção', inativo: 'Inativo' };
-  const BADGE_STATUS_EQ = { ativo: 'liquidado', em_manutencao: 'inadimplente', inativo: 'aberto' };
-  const LABEL_STATUS_OM = { aberta: 'Aberta', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
-  const BADGE_STATUS_OM = { aberta: 'aberto', em_andamento: 'parcial', concluida: 'liquidado', cancelada: 'inadimplente' };
-  const LABEL_PRIORIDADE = { baixa: 'Baixa', media: 'Média', alta: 'Alta', critica: 'Crítica' };
-
-  let abaAtual = 'ordens';
-  let equipamentosCache = [];
-
-  document.getElementById('abas').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-aba]');
-    if (!btn) return;
-    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    abaAtual = btn.dataset.aba;
-    document.getElementById('toolbar-confiabilidade').style.display = abaAtual === 'confiabilidade' ? 'flex' : 'none';
-    if (abaAtual !== 'confiabilidade') document.getElementById('paradas-abertas-wrap').style.display = 'none';
-    carregar();
-  });
-
-  async function carregarResumo() {
-    const { count: abertas } = await supabase.from('ordens_manutencao').select('id', { count: 'exact', head: true }).in('status', ['aberta','em_andamento']);
-    const { count: emManut } = await supabase.from('equipamentos').select('id', { count: 'exact', head: true }).eq('status', 'em_manutencao');
-    const { count: vencidas } = await supabase.from('equipamentos').select('id', { count: 'exact', head: true }).lt('proxima_preventiva', new Date().toISOString().slice(0,10));
-    document.getElementById('card-abertas').textContent = abertas || 0;
-    document.getElementById('card-em-manut').textContent = emManut || 0;
-    document.getElementById('card-vencidas').textContent = vencidas || 0;
-  }
-
-  async function carregar() {
-    await carregarResumo();
-    const { data: eqs } = await supabase.from('equipamentos').select('id, codigo, nome').order('nome');
-    equipamentosCache = eqs || [];
-
-    if (abaAtual === 'ordens') return carregarOrdens();
-    if (abaAtual === 'solicitacoes') return carregarSolicitacoes();
-    if (abaAtual === 'planos') return carregarPlanos();
-    if (abaAtual === 'confiabilidade') return carregarConfiabilidade();
-    return carregarEquipamentos();
-  }
-
-  async function carregarOrdens() {
-    document.getElementById('thead').innerHTML = `<tr><th>Aberta em</th><th>Equipamento</th><th>Tipo</th><th>Prioridade</th><th>Status</th><th>SLA</th><th>Descrição</th><th style="text-align:right;">Ações</th></tr>`;
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando…</td></tr>`;
-
-    const { data, error } = await supabase.from('ordens_manutencao')
-      .select('id, tipo, prioridade, status, descricao_problema, data_abertura, sla_previsto, equipamentos(codigo, nome)')
-      .order('data_abertura', { ascending: false }).limit(200);
-
-    if (error) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhuma ordem de manutenção ainda.</td></tr>`; return; }
-
-    const agora = new Date();
-    tbody.innerHTML = data.map(o => {
-      let acoes = `<a class="icon-btn" href="ordem-detalhe.html?id=${o.id}">Detalhes</a> `;
-      if (o.status === 'aberta') acoes += `<button class="icon-btn" data-iniciar="${o.id}">Iniciar</button> `;
-      if (o.status === 'aberta' || o.status === 'em_andamento') {
-        acoes += `<button class="icon-btn" data-concluir="${o.id}">Concluir</button> <button class="icon-btn danger" data-cancelar="${o.id}">Cancelar</button>`;
-      }
-      let sla = '—';
-      if (o.sla_previsto && (o.status === 'aberta' || o.status === 'em_andamento')) {
-        const vencido = new Date(o.sla_previsto) < agora;
-        sla = `<span class="${vencido ? 'valor negativo' : ''}">${fmtDataHora(o.sla_previsto)}</span>`;
-      }
-      return `<tr>
-        <td>${fmtData(o.data_abertura)}</td>
-        <td>${o.equipamentos?.codigo ?? ''} — ${o.equipamentos?.nome ?? '(removido)'}</td>
-        <td>${o.tipo === 'preventiva' ? 'Preventiva' : 'Corretiva'}</td>
-        <td>${LABEL_PRIORIDADE[o.prioridade]}</td>
-        <td><span class="badge ${BADGE_STATUS_OM[o.status]}">${LABEL_STATUS_OM[o.status]}</span></td>
-        <td style="font-size:11.5px;">${sla}</td>
-        <td style="max-width:220px; font-size:12.5px; color:var(--ink-soft);">${o.descricao_problema}</td>
-        <td style="text-align:right; white-space:nowrap;">${acoes}</td>
-      </tr>`;
-    }).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  async function carregarEquipamentos() {
-    document.getElementById('thead').innerHTML = `<tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Localização</th><th>Status</th><th>Próx. Preventiva</th><th style="text-align:right;">Ações</th></tr>`;
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
-
-    const { data, error } = await supabase.from('equipamentos').select('*').order('nome');
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum equipamento cadastrado ainda.</td></tr>`; return; }
-
-    const hoje = new Date().toISOString().slice(0,10);
-    tbody.innerHTML = data.map(eq => `
-      <tr>
-        <td class="mono">${eq.codigo}</td>
-        <td>${eq.nome}</td>
-        <td>${eq.tipo ?? '—'}</td>
-        <td>${eq.localizacao ?? '—'}</td>
-        <td><span class="badge ${BADGE_STATUS_EQ[eq.status]}">${LABEL_STATUS_EQ[eq.status]}</span></td>
-        <td class="${eq.proxima_preventiva && eq.proxima_preventiva < hoje ? 'valor negativo' : ''}">${fmtData(eq.proxima_preventiva)}</td>
-        <td style="text-align:right;"><a class="icon-btn" href="equipamento-detalhe.html?id=${eq.id}">Detalhes</a> <button class="icon-btn" data-qr="${eq.id}" data-nome="${eq.nome.replace(/"/g,'&quot;')}">QR Code</button></td>
-      </tr>`).join('');
-  }
-
-  document.getElementById('tbody').addEventListener('click', async (e) => {
-    const btnIniciar = e.target.closest('[data-iniciar]');
-    if (btnIniciar) { await supabase.from('ordens_manutencao').update({ status: 'em_andamento' }).eq('id', btnIniciar.dataset.iniciar); await carregar(); return; }
-
-    const btnCancelar = e.target.closest('[data-cancelar]');
-    if (btnCancelar) { if (confirm('Cancelar esta ordem?')) { await supabase.from('ordens_manutencao').update({ status: 'cancelada' }).eq('id', btnCancelar.dataset.cancelar); await carregar(); } return; }
-
-    const btnConcluir = e.target.closest('[data-concluir]');
-    if (btnConcluir) abrirModalConcluir(btnConcluir.dataset.concluir);
-  });
-
-  // ---------- Modal: novo equipamento ----------
-  const modalEquip = document.getElementById('modal-equip');
-  document.getElementById('btn-novo-equip').addEventListener('click', async () => {
-    ['eq_codigo','eq_nome','eq_tipo','eq_localizacao','eq_fabricante','eq_modelo','eq_serie','eq_data_aquisicao','eq_periodicidade','eq_obs','eq_criticidade'].forEach(id => document.getElementById(id).value = '');
-
-    const { data: locais } = await supabase.from('locais_funcionais').select('id, nome, tipo').eq('ativo', true).order('nome');
-    document.getElementById('eq_local_funcional').innerHTML = '<option value="">Nenhum</option>' + (locais || []).map(l => `<option value="${l.id}">${l.nome}</option>`).join('');
-
-    const { data: centros } = await supabase.from('centros_custo').select('id, nome').eq('ativo', true).order('nome');
-    document.getElementById('eq_centro_custo').innerHTML = '<option value="">Nenhum</option>' + (centros || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-
-    const { data: usuarios } = await supabase.from('usuarios').select('id, nome').order('nome');
-    document.getElementById('eq_responsavel').innerHTML = '<option value="">Nenhum</option>' + (usuarios || []).map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
-
-    modalEquip.classList.add('open');
-  });
-  document.getElementById('btn-cancelar-equip').addEventListener('click', () => modalEquip.classList.remove('open'));
-
-  document.getElementById('btn-salvar-equip').addEventListener('click', async () => {
-    const codigo = document.getElementById('eq_codigo').value.trim();
-    const nome = document.getElementById('eq_nome').value.trim();
-    if (!codigo || !nome) { alert('Preencha código e nome.'); return; }
-
-    const { error } = await supabase.from('equipamentos').insert({
-      tenant_id: TENANT_ID, codigo, nome,
-      tipo: document.getElementById('eq_tipo').value.trim() || null,
-      localizacao: document.getElementById('eq_localizacao').value.trim() || null,
-      fabricante: document.getElementById('eq_fabricante').value.trim() || null,
-      modelo: document.getElementById('eq_modelo').value.trim() || null,
-      numero_serie: document.getElementById('eq_serie').value.trim() || null,
-      data_aquisicao: document.getElementById('eq_data_aquisicao').value || null,
-      periodicidade_preventiva_dias: document.getElementById('eq_periodicidade').value ? Number(document.getElementById('eq_periodicidade').value) : null,
-      observacoes: document.getElementById('eq_obs').value.trim() || null,
-      local_funcional_id: document.getElementById('eq_local_funcional').value || null,
-      criticidade: document.getElementById('eq_criticidade').value || null,
-      centro_custo_id: document.getElementById('eq_centro_custo').value || null,
-      responsavel_id: document.getElementById('eq_responsavel').value || null,
-    });
-    if (error) { alert(error.code === '23505' ? 'Já existe um equipamento com esse código.' : 'Erro ao salvar: ' + error.message); return; }
-    modalEquip.classList.remove('open');
-    await carregar();
-  });
-
-  // ---------- Modal: nova ordem ----------
-  const modalOrdem = document.getElementById('modal-ordem');
-  document.getElementById('btn-nova-ordem').addEventListener('click', () => {
-    solicitacaoEmConversao = null;
-    document.getElementById('or_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
-    document.getElementById('or_tipo').value = 'corretiva';
-    document.getElementById('or_prioridade').value = 'media';
-    document.getElementById('or_descricao').value = '';
-    document.getElementById('or_data_prevista').value = '';
-    modalOrdem.classList.add('open');
-  });
-  document.getElementById('btn-cancelar-ordem').addEventListener('click', () => modalOrdem.classList.remove('open'));
-
-  document.getElementById('btn-salvar-ordem').addEventListener('click', async () => {
-    const equipamentoId = document.getElementById('or_equipamento').value;
-    const descricao = document.getElementById('or_descricao').value.trim();
-    if (!equipamentoId) { alert('Selecione um equipamento.'); return; }
-    if (!descricao) { alert('Descreva o problema ou serviço.'); return; }
-
-    const { data: novaOrdem, error } = await supabase.from('ordens_manutencao').insert({
-      tenant_id: TENANT_ID, equipamento_id: equipamentoId,
-      tipo: document.getElementById('or_tipo').value,
-      prioridade: document.getElementById('or_prioridade').value,
-      descricao_problema: descricao,
-      data_prevista: document.getElementById('or_data_prevista').value || null,
-      solicitacao_id: solicitacaoEmConversao || null,
-      criado_por: usuario?.id,
-    }).select('id').single();
-    if (error) { alert('Erro ao abrir ordem: ' + error.message); return; }
-
-    if (solicitacaoEmConversao) {
-      await supabase.from('solicitacoes_manutencao').update({ status: 'convertida', ordem_manutencao_id: novaOrdem.id }).eq('id', solicitacaoEmConversao);
-      solicitacaoEmConversao = null;
-    }
-    modalOrdem.classList.remove('open');
-    await carregar();
-  });
-
-  // ---------- Modal: concluir ordem ----------
-  const modalConcluir = document.getElementById('modal-concluir');
-  let ordemEmConclusao = null;
-  function abrirModalConcluir(id) {
-    ordemEmConclusao = id;
-    document.getElementById('cc_solucao').value = '';
-    document.getElementById('cc_custo_pecas').value = 0;
-    document.getElementById('cc_custo_mao_obra').value = 0;
-    modalConcluir.classList.add('open');
-  }
-  document.getElementById('btn-cancelar-concluir').addEventListener('click', () => modalConcluir.classList.remove('open'));
-
-  document.getElementById('btn-confirmar-concluir').addEventListener('click', async () => {
-    const { error } = await supabase.from('ordens_manutencao').update({
-      status: 'concluida', data_conclusao: new Date().toISOString().slice(0,10),
-      solucao_aplicada: document.getElementById('cc_solucao').value.trim() || null,
-      custo_pecas: Number(document.getElementById('cc_custo_pecas').value || 0),
-      custo_mao_obra: Number(document.getElementById('cc_custo_mao_obra').value || 0),
-    }).eq('id', ordemEmConclusao);
-    if (error) { alert('Erro ao concluir: ' + error.message); return; }
-    modalConcluir.classList.remove('open');
-    await carregar();
-  });
-
-  // ---------- Locais Funcionais ----------
-  const modalLocais = document.getElementById('modal-locais');
-
-  document.getElementById('btn-locais').addEventListener('click', async () => { await carregarLocais(); modalLocais.classList.add('open'); });
-  document.getElementById('btn-fechar-locais').addEventListener('click', () => modalLocais.classList.remove('open'));
-
-  async function carregarLocais() {
-    const { data } = await supabase.from('locais_funcionais').select('id, nome, tipo, parent_id').eq('ativo', true).order('tipo').order('nome');
-    const porId = new Map((data || []).map(l => [l.id, l]));
-    const LABEL_TIPO_LOCAL = { planta: 'Planta', area: 'Área', linha: 'Linha' };
-
-    document.getElementById('lista-locais').innerHTML = (data?.length ? data.map(l => {
-      const pai = l.parent_id ? porId.get(l.parent_id)?.nome : null;
-      return `<div class="lista-selecao-linha">
-        <div class="col-desc">${l.nome} <span style="color:var(--ink-soft); font-size:11px;">(${LABEL_TIPO_LOCAL[l.tipo] ?? l.tipo}${pai ? ' · dentro de ' + pai : ''})</span></div>
-      </div>`;
-    }).join('') : '<div class="empty-state">Nenhum local funcional cadastrado ainda.</div>');
-
-    document.getElementById('lf_parent').innerHTML = '<option value="">Nível raiz</option>' + (data || []).map(l => `<option value="${l.id}">${l.nome}</option>`).join('');
-  }
-
-  document.getElementById('btn-salvar-local').addEventListener('click', async () => {
-    const nome = document.getElementById('lf_nome').value.trim();
-    if (!nome) { alert('Dê um nome ao local.'); return; }
-
-    const { error } = await supabase.from('locais_funcionais').insert({
-      tenant_id: TENANT_ID, nome,
-      tipo: document.getElementById('lf_tipo').value,
-      parent_id: document.getElementById('lf_parent').value || null,
-    });
-    if (error) { alert('Erro ao salvar: ' + error.message); return; }
-    document.getElementById('lf_nome').value = '';
-    await carregarLocais();
-  });
-
-  // ---------- Solicitações ----------
-  const LABEL_STATUS_SOL = { aberta: 'Aberta', triada: 'Triada', convertida: 'Convertida em OS', rejeitada: 'Rejeitada' };
-  const BADGE_STATUS_SOL = { aberta: 'aberto', triada: 'parcial', convertida: 'liquidado', rejeitada: 'inadimplente' };
-
-  async function carregarSolicitacoes() {
-    document.getElementById('thead').innerHTML = `<tr><th>Aberta em</th><th>Equipamento</th><th>Prioridade sugerida</th><th>Status</th><th>Descrição</th><th style="text-align:right;">Ações</th></tr>`;
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
-
-    const { data, error } = await supabase.from('solicitacoes_manutencao')
-      .select('id, descricao, prioridade_sugerida, status, criado_em, equipamentos(id, codigo, nome)')
-      .order('criado_em', { ascending: false }).limit(200);
-
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma solicitação registrada ainda.</td></tr>`; return; }
-
-    tbody.innerHTML = data.map(s => `
-      <tr>
-        <td>${fmtDataHora(s.criado_em)}</td>
-        <td>${s.equipamentos?.codigo ?? ''} — ${s.equipamentos?.nome ?? '(removido)'}</td>
-        <td>${LABEL_PRIORIDADE[s.prioridade_sugerida]}</td>
-        <td><span class="badge ${BADGE_STATUS_SOL[s.status]}">${LABEL_STATUS_SOL[s.status]}</span></td>
-        <td style="max-width:280px; font-size:12.5px; color:var(--ink-soft);">${s.descricao}</td>
-        <td style="text-align:right; white-space:nowrap;">${s.status === 'aberta' ? `
-          <button class="icon-btn" data-converter="${s.id}" data-equipamento="${s.equipamentos?.id}" data-descricao="${s.descricao.replace(/"/g,'&quot;')}" data-prioridade="${s.prioridade_sugerida}">Converter em OS</button>
-          <button class="icon-btn danger" data-rejeitar-solicitacao="${s.id}">Rejeitar</button>` : ''}</td>
-      </tr>`).join('');
-  }
-
-  document.getElementById('tbody').addEventListener('click', async (e) => {
-    const btnRejeitar = e.target.closest('[data-rejeitar-solicitacao]');
-    if (btnRejeitar) {
-      const motivo = prompt('Motivo da rejeição:');
-      if (motivo === null) return;
-      await supabase.from('solicitacoes_manutencao').update({ status: 'rejeitada', motivo_rejeicao: motivo || null }).eq('id', btnRejeitar.dataset.rejeitarSolicitacao);
-      await carregar();
-      return;
-    }
-    const btnConverter = e.target.closest('[data-converter]');
-    if (btnConverter) abrirNovaOrdemDeSolicitacao(btnConverter.dataset.converter, btnConverter.dataset.equipamento, btnConverter.dataset.descricao, btnConverter.dataset.prioridade);
-  });
-
-  document.getElementById('btn-nova-solicitacao').addEventListener('click', () => {
-    document.getElementById('sl_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
-    document.getElementById('sl_descricao').value = '';
-    document.getElementById('sl_prioridade').value = 'media';
-    document.getElementById('modal-solicitacao').classList.add('open');
-  });
-  document.getElementById('btn-cancelar-solicitacao').addEventListener('click', () => document.getElementById('modal-solicitacao').classList.remove('open'));
-
-  document.getElementById('btn-salvar-solicitacao').addEventListener('click', async () => {
-    const descricao = document.getElementById('sl_descricao').value.trim();
-    if (!descricao) { alert('Descreva o problema.'); return; }
-    const { error } = await supabase.from('solicitacoes_manutencao').insert({
-      tenant_id: TENANT_ID,
-      equipamento_id: document.getElementById('sl_equipamento').value,
-      descricao, prioridade_sugerida: document.getElementById('sl_prioridade').value,
-      solicitante_id: usuario?.id,
-    });
-    if (error) { alert('Erro ao enviar: ' + error.message); return; }
-    document.getElementById('modal-solicitacao').classList.remove('open');
-    await carregar();
-  });
-
-  // "Converter em OS" pré-preenche e abre o modal de Nova Ordem já existente
-  let solicitacaoEmConversao = null;
-  async function abrirNovaOrdemDeSolicitacao(solicitacaoId, equipamentoId, descricao, prioridade) {
-    solicitacaoEmConversao = solicitacaoId;
-    document.getElementById('or_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}" ${eq.id === equipamentoId ? 'selected' : ''}>${eq.codigo} — ${eq.nome}</option>`).join('');
-    document.getElementById('or_tipo').value = 'corretiva';
-    document.getElementById('or_prioridade').value = prioridade;
-    document.getElementById('or_descricao').value = descricao;
-    document.getElementById('or_data_prevista').value = '';
-    document.getElementById('modal-ordem').classList.add('open');
-  }
-
-  // ---------- Planos Preventivos ----------
-  async function carregarPlanos() {
-    document.getElementById('thead').innerHTML = `<tr><th>Equipamento</th><th>Plano</th><th>Gatilho</th><th>Próxima Execução</th><th>Prioridade</th></tr>`;
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Carregando…</td></tr>`;
-
-    const { data, error } = await supabase.from('planos_manutencao')
-      .select('id, nome, tipo_gatilho, periodicidade_dias, proxima_execucao_data, intervalo_leitura, proxima_execucao_leitura, prioridade, equipamentos(codigo, nome), medidores(nome, unidade, leitura_atual)')
-      .eq('ativo', true).order('nome');
-
-    if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhum plano preventivo cadastrado ainda.</td></tr>`; return; }
-
-    tbody.innerHTML = data.map(p => `
-      <tr>
-        <td>${p.equipamentos?.codigo ?? ''} — ${p.equipamentos?.nome ?? ''}</td>
-        <td>${p.nome}</td>
-        <td>${p.tipo_gatilho === 'calendario' ? `A cada ${p.periodicidade_dias} dias` : `A cada ${fmtNum(p.intervalo_leitura)} ${p.medidores?.unidade ?? ''}`}</td>
-        <td>${p.tipo_gatilho === 'calendario' ? fmtData(p.proxima_execucao_data) : `${fmtNum(p.proxima_execucao_leitura)} ${p.medidores?.unidade ?? ''} (atual: ${fmtNum(p.medidores?.leitura_atual)})`}</td>
-        <td>${LABEL_PRIORIDADE[p.prioridade]}</td>
-      </tr>`).join('');
-  }
-
-  document.getElementById('pl_gatilho').addEventListener('change', (e) => {
-    document.getElementById('pl-campos-calendario').style.display = e.target.value === 'calendario' ? 'flex' : 'none';
-    document.getElementById('pl-campos-medidor').style.display = e.target.value === 'medidor' ? 'flex' : 'none';
-  });
-
-  document.getElementById('btn-novo-plano').addEventListener('click', async () => {
-    document.getElementById('pl_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
-    const { data: medidores } = await supabase.from('medidores').select('id, nome, unidade, equipamento_id').eq('ativo', true).order('nome');
-    document.getElementById('pl_medidor').innerHTML = (medidores || []).map(m => `<option value="${m.id}" data-equipamento="${m.equipamento_id}">${m.nome} (${m.unidade})</option>`).join('');
-    ['pl_nome','pl_periodicidade','pl_intervalo','pl_tarefas'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('pl_proxima_data').value = new Date().toISOString().slice(0,10);
-    document.getElementById('pl_gatilho').value = 'calendario';
-    document.getElementById('pl-campos-calendario').style.display = 'flex';
-    document.getElementById('pl-campos-medidor').style.display = 'none';
-    document.getElementById('modal-plano').classList.add('open');
-  });
-  document.getElementById('btn-cancelar-plano').addEventListener('click', () => document.getElementById('modal-plano').classList.remove('open'));
-
-  document.getElementById('btn-salvar-plano').addEventListener('click', async () => {
-    const nome = document.getElementById('pl_nome').value.trim();
-    if (!nome) { alert('Dê um nome ao plano.'); return; }
-    const gatilho = document.getElementById('pl_gatilho').value;
-
-    const payload = {
-      tenant_id: TENANT_ID,
-      equipamento_id: document.getElementById('pl_equipamento').value,
-      nome, tipo_gatilho: gatilho,
-      prioridade: document.getElementById('pl_prioridade').value,
-    };
-    if (gatilho === 'calendario') {
-      payload.periodicidade_dias = Number(document.getElementById('pl_periodicidade').value || 0);
-      payload.proxima_execucao_data = document.getElementById('pl_proxima_data').value;
-      if (!payload.periodicidade_dias || !payload.proxima_execucao_data) { alert('Preencha periodicidade e próxima execução.'); return; }
-    } else {
-      payload.medidor_id = document.getElementById('pl_medidor').value;
-      payload.intervalo_leitura = Number(document.getElementById('pl_intervalo').value || 0);
-      if (!payload.medidor_id || !payload.intervalo_leitura) { alert('Selecione o medidor e o intervalo.'); return; }
-      const { data: medidorAtual } = await supabase.from('medidores').select('leitura_atual').eq('id', payload.medidor_id).single();
-      payload.proxima_execucao_leitura = Number(medidorAtual?.leitura_atual || 0) + payload.intervalo_leitura;
-    }
-
-    const { data: plano, error } = await supabase.from('planos_manutencao').insert(payload).select('id').single();
-    if (error) { alert('Erro ao salvar: ' + error.message); return; }
-
-    const tarefas = document.getElementById('pl_tarefas').value.split('\n').map(t => t.trim()).filter(Boolean);
-    if (tarefas.length) {
-      await supabase.from('tarefas_plano_manutencao').insert(tarefas.map((descricao, i) => ({ tenant_id: TENANT_ID, plano_id: plano.id, descricao, ordem: i })));
-    }
-
-    document.getElementById('modal-plano').classList.remove('open');
-    await carregar();
-  });
-
-  document.getElementById('btn-gerar-preventivas').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-gerar-preventivas');
-    btn.disabled = true; btn.textContent = 'Gerando…';
-    const { data, error } = await supabase.rpc('fn_gerar_os_preventivas_vencidas');
-    btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw"></i> Gerar OS Preventivas';
-    if (window.lucide) lucide.createIcons();
-    if (error) { alert('Erro ao gerar: ' + error.message); return; }
-    alert(data?.length ? `${data.length} nova(s) OS preventiva(s) gerada(s): ${data.map(d => d.plano_nome).join(', ')}` : 'Nenhum plano vencido no momento.');
-    await carregar();
-  });
-
-  // ---------- Confiabilidade ----------
-  async function carregarConfiabilidade() {
-    document.getElementById('thead').innerHTML = `<tr><th>Equipamento</th><th class="num">Paradas</th><th class="num">MTTR (h)</th><th class="num">MTBF (h)</th><th class="num">Qtd. Perdida</th><th class="num">Impacto Total</th><th>Próxima Falha (estimativa)</th></tr>`;
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
-    document.getElementById('paradas-abertas-wrap').style.display = 'block';
-
-    const { data, error } = await supabase.from('vw_confiabilidade_equipamento').select('*').order('codigo');
-    if (error) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum equipamento cadastrado ainda.</td></tr>`; return; }
-
-    const { data: previsoes } = await supabase.from('vw_previsao_falha_equipamento').select('equipamento_id, proxima_falha_estimada');
-    const previsaoPorEquip = new Map((previsoes || []).map(p => [p.equipamento_id, p.proxima_falha_estimada]));
-
-    tbody.innerHTML = data.map(c => `
-      <tr>
-        <td>${c.codigo} — ${c.nome}</td>
-        <td class="num mono">${c.total_paradas ?? 0}</td>
-        <td class="num mono">${c.mttr_horas != null ? fmtNum(c.mttr_horas) : '—'}</td>
-        <td class="num mono">${c.mtbf_horas != null ? fmtNum(c.mtbf_horas) : '—'}</td>
-        <td class="num mono">${c.quantidade_total_perdida != null ? fmtNum(c.quantidade_total_perdida) : '—'}</td>
-        <td class="num mono">${c.impacto_total_estimado != null ? 'R$ ' + fmtNum(c.impacto_total_estimado) : '—'}</td>
-        <td style="font-size:11.5px;">${previsaoPorEquip.get(c.equipamento_id) ? fmtDataHora(previsaoPorEquip.get(c.equipamento_id)) : '—'}</td>
-      </tr>`).join('');
-
-    await carregarParadasAbertas();
-    await carregarAlertasMedidor();
-  }
-
-  async function carregarAlertasMedidor() {
-    const { data } = await supabase.from('alertas_medidor')
-      .select('id, leitura_valor, limite_violado, status, criado_em, medidores(nome, unidade, equipamento_id, equipamentos(codigo, nome))')
-      .eq('status', 'pendente').order('criado_em', { ascending: false });
-
-    document.getElementById('lista-alertas-medidor').innerHTML = (data?.length ? data.map(a => `
-      <div class="lista-selecao-linha">
-        <div class="col-desc">${a.medidores?.equipamentos?.codigo ?? ''} — ${a.medidores?.nome ?? ''}: <span class="valor negativo">${fmtNum(a.leitura_valor)} ${a.medidores?.unidade ?? ''}</span> (${a.limite_violado === 'maximo' ? 'acima do máximo' : 'abaixo do mínimo'})</div>
-        <div class="col-valor" style="font-size:11px;">${fmtDataHora(a.criado_em)}</div>
-        <button class="icon-btn" data-converter-alerta="${a.id}" data-equipamento="${a.medidores?.equipamento_id}" style="margin-left:8px;">Converter em Solicitação</button>
-        <button class="icon-btn" data-ignorar-alerta="${a.id}">Ignorar</button>
-      </div>`).join('') : '<div class="empty-state">Nenhum alerta de sensor pendente.</div>');
-  }
-
-  document.getElementById('lista-alertas-medidor').addEventListener('click', async (e) => {
-    const btnIgnorar = e.target.closest('[data-ignorar-alerta]');
-    if (btnIgnorar) {
-      await supabase.from('alertas_medidor').update({ status: 'ignorado', revisado_por: usuario?.id, revisado_em: new Date().toISOString() }).eq('id', btnIgnorar.dataset.ignorarAlerta);
-      await carregarAlertasMedidor();
-      return;
-    }
-    const btnConverter = e.target.closest('[data-converter-alerta]');
-    if (btnConverter) {
-      const descricao = prompt('Descreva a solicitação a partir deste alerta:', 'Verificar leitura de sensor fora do limite');
-      if (descricao === null) return;
-      await supabase.from('solicitacoes_manutencao').insert({
-        tenant_id: TENANT_ID, equipamento_id: btnConverter.dataset.equipamento, descricao, prioridade_sugerida: 'alta', solicitante_id: usuario?.id,
-      });
-      await supabase.from('alertas_medidor').update({ status: 'convertido_em_solicitacao', revisado_por: usuario?.id, revisado_em: new Date().toISOString() }).eq('id', btnConverter.dataset.converterAlerta);
-      await carregarAlertasMedidor();
-    }
-  });
-
-  async function carregarParadasAbertas() {
-    const { data } = await supabase.from('paradas_producao').select('id, inicio, causa, equipamentos(codigo, nome)').is('fim', null).order('inicio');
-    document.getElementById('lista-paradas-abertas').innerHTML = (data?.length ? data.map(p => `
-      <div class="lista-selecao-linha">
-        <div class="col-desc">${p.equipamentos?.codigo ?? ''} — ${p.equipamentos?.nome ?? ''}${p.causa ? ': ' + p.causa : ''}</div>
-        <div class="col-valor" style="font-size:11px;">desde ${fmtDataHora(p.inicio)}</div>
-        <button class="icon-btn" data-encerrar-parada="${p.id}" style="margin-left:8px;">Encerrar</button>
-      </div>`).join('') : '<div class="empty-state">Nenhuma parada em aberto.</div>');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  // ---------- Catálogo de Falhas ----------
-  document.getElementById('btn-catalogo-falhas').addEventListener('click', async () => { await carregarFalhas(); document.getElementById('modal-falhas').classList.add('open'); });
-  document.getElementById('btn-fechar-falhas').addEventListener('click', () => document.getElementById('modal-falhas').classList.remove('open'));
-
-  async function carregarFalhas() {
-    const { data } = await supabase.from('falhas_ativos').select('id, nome, categoria').eq('ativo', true).order('nome');
-    document.getElementById('lista-falhas').innerHTML = (data?.length ? data.map(f => `
-      <div class="lista-selecao-linha"><div class="col-desc">${f.nome}</div><div class="col-valor" style="font-size:11px; color:var(--ink-soft);">${f.categoria ?? '—'}</div></div>`).join('') : '<div class="empty-state">Nenhuma falha cadastrada ainda.</div>');
-  }
-
-  document.getElementById('btn-salvar-falha').addEventListener('click', async () => {
-    const nome = document.getElementById('fa_nome').value.trim();
-    if (!nome) { alert('Dê um nome à falha.'); return; }
-    const { error } = await supabase.from('falhas_ativos').insert({ tenant_id: TENANT_ID, nome, categoria: document.getElementById('fa_categoria').value.trim() || null });
-    if (error) { alert('Erro ao salvar: ' + error.message); return; }
-    document.getElementById('fa_nome').value = ''; document.getElementById('fa_categoria').value = '';
-    await carregarFalhas();
-  });
-
-  // ---------- Registrar / Encerrar Parada ----------
-  const modalParada = document.getElementById('modal-parada');
-  document.getElementById('btn-registrar-parada').addEventListener('click', async () => {
-    document.getElementById('pp_equipamento').innerHTML = equipamentosCache.map(eq => `<option value="${eq.id}">${eq.codigo} — ${eq.nome}</option>`).join('');
-    const { data: falhas } = await supabase.from('falhas_ativos').select('id, nome').eq('ativo', true).order('nome');
-    document.getElementById('pp_falha').innerHTML = '<option value="">Nenhuma</option>' + (falhas || []).map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-    const { data: ordensAbertas } = await supabase.from('ordens_manutencao').select('id, descricao_problema').in('status', ['aberta','em_andamento']).order('data_abertura', { ascending: false }).limit(50);
-    document.getElementById('pp_ordem').innerHTML = '<option value="">Nenhuma</option>' + (ordensAbertas || []).map(o => `<option value="${o.id}">${o.descricao_problema}</option>`).join('');
-    document.getElementById('pp_causa').value = '';
-    modalParada.classList.add('open');
-  });
-  document.getElementById('btn-cancelar-parada').addEventListener('click', () => modalParada.classList.remove('open'));
-
-  document.getElementById('btn-confirmar-parada').addEventListener('click', async () => {
-    const { error } = await supabase.from('paradas_producao').insert({
-      tenant_id: TENANT_ID, equipamento_id: document.getElementById('pp_equipamento').value,
-      falha_id: document.getElementById('pp_falha').value || null,
-      ordem_manutencao_id: document.getElementById('pp_ordem').value || null,
-      causa: document.getElementById('pp_causa').value.trim() || null,
-      registrado_por: usuario?.id,
-    });
-    if (error) { alert('Erro ao registrar: ' + error.message); return; }
-    modalParada.classList.remove('open');
-    await carregar();
-  });
-
-  const modalEncerrarParada = document.getElementById('modal-encerrar-parada');
-  let paradaEmEncerramento = null;
-
-  document.getElementById('tbody').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-encerrar-parada]');
-    if (!btn) return;
-    paradaEmEncerramento = btn.dataset.encerrarParada;
-    document.getElementById('ep_quantidade').value = '';
-    document.getElementById('ep_impacto').value = '';
-    modalEncerrarParada.classList.add('open');
-  });
-  document.getElementById('btn-cancelar-encerrar-parada').addEventListener('click', () => modalEncerrarParada.classList.remove('open'));
-
-  document.getElementById('btn-confirmar-encerrar-parada').addEventListener('click', async () => {
-    const { error } = await supabase.from('paradas_producao').update({
-      fim: new Date().toISOString(),
-      quantidade_perdida: document.getElementById('ep_quantidade').value ? Number(document.getElementById('ep_quantidade').value) : null,
-      impacto_estimado: document.getElementById('ep_impacto').value ? Number(document.getElementById('ep_impacto').value) : null,
-    }).eq('id', paradaEmEncerramento);
-    if (error) { alert('Erro ao encerrar: ' + error.message); return; }
-    modalEncerrarParada.classList.remove('open');
-    await carregar();
-  });
-
-  // ---------- QR Code do ativo ----------
-  document.getElementById('tbody').addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-qr]');
-    if (!btn) return;
-    document.getElementById('qr-titulo').textContent = `QR Code — ${btn.dataset.nome}`;
-    const url = `${location.origin}${location.pathname.replace('dashboard.html','ativo-mobile.html')}?id=${btn.dataset.qr}`;
-    await QRCode.toCanvas(document.getElementById('qr-canvas'), url, { width: 220, margin: 1 });
-    document.getElementById('modal-qr').classList.add('open');
-  });
-  document.getElementById('btn-fechar-qr').addEventListener('click', () => document.getElementById('modal-qr').classList.remove('open'));
-  document.getElementById('btn-imprimir-qr').addEventListener('click', () => window.print());
-
-  await carregar();
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, Charts, TimelineEngine,
+  DataGrid, MetricCard, DetailDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
+initNav();
+
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
+
+// ============================================================================
+// MNT-001 — TODO dado abaixo é DE EXEMPLO (mesmo padrão de escopo da série).
+//
+// Asset Health Score é uma ADIÇÃO ao mapeamento do ADR-006, não uma
+// divergência — Manutenção não estava entre os 7 scores originais mapeados
+// naquele ADR (Financeiro, Comercial, Produção, Estoque, Compras,
+// Qualidade, RH). Vale registrar essa adição junto das divergências já
+// conhecidas quando o mapeamento for reconciliado.
+//
+// A ferramenta operacional completa de Manutenção (5 abas: Ordens,
+// Solicitações, Planos, Equipamentos, Confiabilidade — já testada a fundo
+// em sessão anterior, com os 4 triggers automáticos) foi preservada
+// integralmente em operacional.html, sem nenhuma alteração de conteúdo.
+//
+// Interpretações sem componente oficial equivalente exato:
+// - "Mapa dos Ativos" → .dtv-mapa-placeholder (reservado desde SYS-001)
+// - "Plano Preventivo" → DataGrid
+// - "Indicadores de Confiabilidade" → grid de MetricCard (MTBF/MTTR/
+//   Disponibilidade — mesmo padrão do "Cockpit da Fábrica" no PRD-001)
+// - "Ficha Inteligente do Equipamento" → DataGrid de equipamentos,
+//   clicável, abrindo DetailDrawer com ficha + nota de manutenção
+//   preditiva reservada (estrutura pronta, sem motor preditivo ainda)
+// ============================================================================
+
+const resultado = WorkspaceLayout('mnt-main', {
+  header: {
+    titulo: 'Centro Inteligente de Manutenção',
+    breadcrumb: 'Manutenção',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar equipamentos, ordens, planos...',
+    acoesRapidas: [{ label: 'Ferramenta Operacional', icone: 'wrench', href: 'operacional.html' }, { label: 'Nova Ordem', icone: 'plus', href: 'operacional.html', primario: true }],
+  },
+  attentionCenter: {
+    exemplo: true,
+    alertas: [
+      { tipo: 'Preventiva', prioridade: 'alta', icone: 'alert-triangle', mensagem: '3 preventivas vencidas há mais de 5 dias.', acaoSugerida: 'Ver plano preventivo', link: '#' },
+      { tipo: 'Ordem', prioridade: 'media', icone: 'clock', mensagem: 'Extrusora 2 com ordem de manutenção aberta há 40 minutos.', acaoSugerida: 'Ver ordens de serviço', link: 'operacional.html' },
+    ],
+  },
+  healthScore: {
+    nome: 'Asset Health Score',
+    tituloSecao: 'Saúde dos Ativos',
+    exemplo: true,
+    fatores: [
+      { nome: 'Cumprimento do preventivo', valor: 76, peso: 0.3 },
+      { nome: 'MTBF (tempo entre falhas)', valor: 71, peso: 0.3 },
+      { nome: 'MTTR (tempo de reparo)', valor: 82, peso: 0.2 },
+      { nome: 'Idade média dos ativos críticos', valor: 64, peso: 0.2 },
+    ],
+    historico: [{ data: 'Mai', nota: 66 }, { data: 'Jun', nota: 70 }, { data: 'Jul', nota: 73 }],
+  },
+  kpis: {
+    itens: [
+      { id: 'os-abertas', nome: 'Ordens Abertas', icone: 'clipboard-list', tom: 'tom-azul', valorTexto: '11', clicavel: true },
+      { id: 'preventivas-vencidas', nome: 'Preventivas Vencidas', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: '3', clicavel: true },
+      { id: 'mtbf', nome: 'MTBF Médio', icone: 'activity', tom: 'tom-verde', valorTexto: '186h', clicavel: true },
+      { id: 'mttr', nome: 'MTTR Médio', icone: 'timer', tom: 'tom-roxo', valorTexto: '2,4h', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights de Manutenção',
+    exemplo: true,
+    itens: [
+      { categoria: 'Confiabilidade', texto: 'Extrusora 2 concentra 35% das paradas não programadas do mês', origem: 'Regra' },
+      { categoria: 'Preventiva', texto: 'Cumprimento do plano preventivo caiu 6% no trimestre', origem: 'Regra' },
+      { categoria: 'Preditiva', texto: 'Padrão de vibração da Extrusora 2 sugere desgaste de rolamento', origem: 'IA' },
+    ],
+  },
+  decisionCenter: {
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Priorizar manutenção preventiva na Extrusora 2', descricao: 'Concentra 35% das paradas não programadas do mês — padrão recorrente.', origem: 'Manutenção', impactoTexto: 'Redução de parada não programada', urgencia: 'alta', confianca: 81, acaoSugerida: 'Ver ficha do equipamento', exemplo: true },
+      { titulo: 'Regularizar as 3 preventivas vencidas', descricao: 'Vencidas há mais de 5 dias — risco de falha crescente.', origem: 'Manutenção', impactoTexto: 'Redução de risco de falha', urgencia: 'alta', confianca: 88, acaoSugerida: 'Ver plano preventivo', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'mapa', id: 'mnt-slot-mapa', titulo: 'Mapa dos Ativos' },
+      { chave: 'confiabilidade', id: 'mnt-slot-confiabilidade', titulo: 'Indicadores de Confiabilidade' },
+      { chave: 'preventivo', id: 'mnt-slot-preventivo', titulo: 'Plano Preventivo', linha: 'secundaria' },
+      { chave: 'timeline', id: 'mnt-slot-timeline', titulo: 'Timeline', linha: 'secundaria' },
+      { chave: 'ficha', id: 'mnt-slot-ficha', titulo: 'Ficha Inteligente do Equipamento', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Ordens de Serviço', id: 'mnt-ordens' },
+});
+
+// ---------- 5. Mapa dos Ativos — placeholder oficial ----------
+document.getElementById(resultado.slots.mapa).innerHTML = `<div class="dtv-mapa-placeholder">Mapa dos Ativos — arquitetura pronta, aguardando componente geográfico do módulo</div>`;
+
+// 8. Indicadores de Confiabilidade — grid de MetricCard
+document.getElementById(resultado.slots.confiabilidade).innerHTML = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">${[
+  MetricCard({ nome: 'MTBF', valorTexto: '186h' }),
+  MetricCard({ nome: 'MTTR', valorTexto: '2,4h' }),
+  MetricCard({ nome: 'Disponibilidade', valorTexto: '94,2%' }),
+  MetricCard({ nome: 'Backlog de OS', valorTexto: '11' }),
+].join('')}</div>`;
+
+// 6. Plano Preventivo
+DataGrid(resultado.slots.preventivo,
+  [{ titulo: 'Equipamento' }, { titulo: 'Tipo' }, { titulo: 'Próxima Data' }, { titulo: 'Status' }],
+  [
+    { celulas: ['Extrusora 1', 'Lubrificação', '02/08', '<span class="badge aberto">No prazo</span>'], onClick: () => abrirDrilldownGenerico('Extrusora 1 — Lubrificação', 'Próxima data: 02/08') },
+    { celulas: ['Extrusora 2', 'Troca de rolamento', '25/07', '<span class="badge negativo">Vencida</span>'], onClick: () => abrirDrilldownGenerico('Extrusora 2 — Troca de rolamento', 'Vencida desde 25/07') },
+  ]
+);
+
+// 9. Timeline
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.timeline, [
+  { id: '1', tipo: 'Chamado', titulo: 'Parada não programada — Extrusora 2', data: hoje, hora: '13:05' },
+  { id: '2', tipo: 'Aprovação', titulo: 'Ordem de manutenção #812 concluída', data: hoje, hora: '15:30', autor: 'Equipe Manutenção' },
+], { agrupamento: 'dia', filtros: false });
+
+// 11. Ficha Inteligente do Equipamento — DataGrid clicável abrindo o
+// DetailDrawer com a ficha + nota de manutenção preditiva reservada
+DataGrid(resultado.slots.ficha,
+  [{ titulo: 'Equipamento' }, { titulo: 'Saúde' }],
+  [
+    { celulas: ['Extrusora 1', '<span class="badge pago">Boa</span>'], onClick: () => abrirFichaEquipamento('Extrusora 1', 'Boa') },
+    { celulas: ['Extrusora 2', '<span class="badge negativo">Atenção</span>'], onClick: () => abrirFichaEquipamento('Extrusora 2', 'Atenção') },
+  ]
+);
+
+// ---------- Ordens de Serviço (Área Operacional) ----------
+DataGrid(resultado.slots.operational,
+  [{ titulo: 'OS' }, { titulo: 'Equipamento' }, { titulo: 'Tipo' }, { titulo: 'Abertura' }, { titulo: 'Status' }],
+  [
+    { celulas: ['#812', 'Extrusora 2', 'Corretiva', 'Hoje 13:05', '<span class="badge aberto">Em andamento</span>'], onClick: () => abrirDetalheOS('#812') },
+    { celulas: ['#809', 'Seladora', 'Preventiva', 'Ontem', '<span class="badge pago">Concluída</span>'], onClick: () => abrirDetalheOS('#809') },
+  ]
+);
+
+// ---------- Drawers (SYS-011) ----------
+function abrirDrilldownGenerico(titulo, texto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">${texto}</p><p style="color:var(--ink-faint); font-size:12px; margin-top:8px;">Estrutura de drill-down pronta — detalhamento real aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheOS(numero) {
+  DetailDrawer({ titulo: `Ordem de Serviço ${numero}`, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta — histórico, custo e peças aparecem aqui quando ligados à consulta correspondente.</p>` });
+}
+function abrirFichaEquipamento(nome, saude) {
+  DetailDrawer({ titulo: nome, subtitulo: 'Ficha Inteligente do Equipamento (dado de exemplo)', corpo: `
+    <p style="color:var(--ink-soft); font-size:13px; margin-bottom:10px;">Saúde atual: <b style="color:var(--ink);">${saude}</b></p>
+    <p style="color:var(--ink-soft); font-size:13px;">Estrutura pronta pra especificações, histórico completo de manutenção e indicadores individuais.</p>
+    <div class="ca-tag-exemplo" style="display:inline-block; margin-top:10px;">manutenção preditiva — arquitetura reservada, motor ainda não existe</div>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'os-abertas': 'Ordens Abertas', 'preventivas-vencidas': 'Preventivas Vencidas', 'mtbf': 'MTBF Médio', 'mttr': 'MTTR Médio' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
+}
+
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'Manutenção', icone: 'wrench', href: 'dashboard.html' },
+    { label: 'Produção', icone: 'factory', href: '../producao/dashboard.html' },
+    { label: 'Qualidade', icone: 'badge-check', href: '../qualidade/dashboard.html' },
+    { label: 'PCP', icone: 'calendar-clock', href: '../pcp/dashboard.html' },
+  ],
+  acoes: [{ label: 'Abrir Ferramenta Operacional', icone: 'wrench', onExecutar: () => { window.location.href = 'operacional.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
+
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
