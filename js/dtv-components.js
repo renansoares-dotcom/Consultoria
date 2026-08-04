@@ -291,17 +291,70 @@ export function DecisionCenter(containerId, recomendacoes) {
 // baixo dos panos chama Score(), então corrigir o componente genérico
 // corrige os dois ao mesmo tempo, nunca diverge.
 // ============================================================================
+// ============================================================================
+// SCORE ENGINE (SYS-013) — motor único pros 7 scores (Health/Sales/
+// Inventory/Production/Quality/Supplier/People). Nunca criar Score
+// específico de módulo — todos usam Score()/calcularScoreEngine() abaixo.
+//
+// calcularScoreEngine(fatores) — PURO, sem DOM: recebe fatores ponderados
+// e devolve a nota 0-100. fatores: [{ nome, valor /* 0-100 */, peso /* 0-1 */ }]
+// ============================================================================
+export function calcularScoreEngine(fatores) {
+  if (!fatores || !fatores.length) return 0;
+  const somaPesos = fatores.reduce((s, f) => s + (f.peso ?? 1), 0) || 1;
+  const nota = fatores.reduce((s, f) => s + f.valor * (f.peso ?? 1), 0) / somaPesos;
+  return Math.max(0, Math.min(100, Math.round(nota)));
+}
+
+// Score(containerId, opts): { nome, nota?, subMetricas?, fatores?, historico?,
+//   tendencia? }
+// - nota: se omitida e `fatores` existir, é calculada por calcularScoreEngine.
+// - fatores: [{nome, valor, peso}] — mostra "Fatores de Cálculo" com peso%.
+// - historico: [{data, nota}] — mostra sparkline + guarda a série completa.
+// - tendencia: {valorTexto, positiva} — se omitida e `historico` tiver 2+
+//   pontos, é calculada automaticamente (último vs penúltimo).
+// Tudo isso é opcional e aditivo — chamadas antigas (só nome/nota/
+// subMetricas) continuam funcionando exatamente como antes.
 export function Score(containerId, opts) {
-  const { nome, nota, subMetricas } = opts;
+  const { nome, subMetricas, fatores, historico, tendencia } = opts;
+  const nota = opts.nota ?? (fatores ? calcularScoreEngine(fatores) : 0);
   const tom = nota >= 80 ? 'excelente' : nota >= 60 ? 'boa' : nota >= 40 ? 'atencao' : 'critica';
   const texto = { excelente: 'Excelente', boa: 'Boa', atencao: 'Atenção', critica: 'Crítica' }[tom];
+
+  let tend = tendencia;
+  if (!tend && historico && historico.length >= 2) {
+    const ultimo = historico[historico.length - 1].nota, penultimo = historico[historico.length - 2].nota;
+    const diff = ultimo - penultimo;
+    tend = { valorTexto: `${Math.abs(diff)} pts`, positiva: diff >= 0 };
+  }
+
+  const blocoHistorico = historico && historico.length ? (() => {
+    const max = Math.max(...historico.map(h => h.nota), 1);
+    return `<div class="hs-secao-titulo">Histórico</div><div class="hs-sparkline">${historico.map(h => `<div class="hs-spark-barra" style="height:${Math.max(4, h.nota / max * 32)}px;" title="${h.data}: ${h.nota}"></div>`).join('')}</div>`;
+  })() : '';
+
+  const blocoFatores = fatores && fatores.length ? `
+    <div class="hs-secao-titulo">Fatores de Cálculo</div>
+    <div class="hs-fatores">${fatores.map(f => `
+      <div class="hs-fator-linha">
+        <span class="hs-fator-nome">${f.nome}</span>
+        <span class="hs-fator-peso">peso ${Math.round((f.peso ?? 1) * 100)}%</span>
+        <span class="hs-fator-valor">${f.valor}</span>
+      </div>`).join('')}</div>` : '';
+
   document.getElementById(containerId).innerHTML = `
     <div class="hs-topo">
       <div class="hs-nota-box"><span class="hs-nota tom-${tom}">${nota}</span><span class="hs-nota-max">/100</span></div>
-      <div class="hs-legenda"><div class="hs-rotulo-texto tom-${tom}">${texto}</div><div class="hs-rotulo-sub">${nome}</div></div>
+      <div class="hs-legenda">
+        <div class="hs-rotulo-texto tom-${tom}">${texto}</div>
+        <div class="hs-rotulo-sub">${nome}</div>
+        ${tend ? `<div class="hs-tendencia">${TrendCard(tend.valorTexto, tend.positiva)}</div>` : ''}
+      </div>
       <div class="hs-barra-trilho"><div class="hs-barra-fill" style="width:${nota}%; background:var(--${tom === 'atencao' ? 'amber' : tom === 'critica' ? 'red' : 'accent'});"></div></div>
     </div>
-    <div class="hs-grid">${subMetricas.map(m => `<div class="hs-card"><div class="hs-card-rotulo">${m.nome}</div><div class="hs-card-valor">${m.valorTexto}</div></div>`).join('')}</div>`;
+    ${subMetricas ? `<div class="hs-grid">${subMetricas.map(m => `<div class="hs-card"><div class="hs-card-rotulo">${m.nome}</div><div class="hs-card-valor">${m.valorTexto}</div></div>`).join('')}</div>` : ''}
+    ${blocoHistorico}
+    ${blocoFatores}`;
 }
 export function HealthScore(containerId, nota, subMetricas) {
   Score(containerId, { nome: 'Saúde Financeira', nota, subMetricas });
