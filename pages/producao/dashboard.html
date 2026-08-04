@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Produção — Datativo Industrial</title>
+<title>Centro de Execução da Produção — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,7 +11,14 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* PRD-001 — "Cockpit da Fábrica" (seção 11) composto só de MetricCard
+     (já oficial) num grid próprio — 3 linhas de CSS de composição, não é
+     componente novo. */
+  .prd-cockpit-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+</style>
 </head>
 <body>
 
@@ -23,12 +30,13 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
         <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
         <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
-        <a href="../producao/dashboard.html" class="sidebar-link active"><i data-lucide="factory"></i> Produção</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="factory"></i> Produção</a>
         <a href="../qualidade/dashboard.html" class="sidebar-link"><i data-lucide="badge-check"></i> Qualidade</a>
         <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
         <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
@@ -44,10 +52,6 @@
   <div class="app-main">
 <header class="topbar">
   <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
-  <nav class="nav-cascade">
-    <div class="nav-item active"><a href="dashboard.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--accent);">Ordens de Produção</a></div>
-    <div class="nav-item"><a href="moldes.html" style="all:unset; cursor:pointer; height:100%; display:flex; align-items:center; padding:0 14px; font-size:13px; font-weight:500; color:var(--ink-soft);">Moldes</a></div>
-  </nav>
   <div class="topbar-right">
     <div class="user-chip" id="user-chip">
       <div class="avatar" id="user-avatar">--</div>
@@ -56,49 +60,18 @@
   </div>
 </header>
 
-<main class="page">
-  <div class="page-header">
-    <div>
-      <span class="eyebrow">Produção</span>
-      <h1>Ordens de Produção</h1>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <a href="rastreabilidade.html" class="btn ghost"><i data-lucide="scan-line"></i> Rastreabilidade</a>
-      <a href="ordem-nova.html" class="btn primary"><i data-lucide="plus"></i> Nova Ordem</a>
-    </div>
-  </div>
-
-  <div class="toolbar">
-    <input class="input" id="busca" placeholder="Buscar por produto ou pedido...">
-    <select class="input" id="f_status" style="max-width:180px;">
-      <option value="">Status: todos</option>
-      <option value="planejada">Planejada</option>
-      <option value="em_andamento">Em Andamento</option>
-      <option value="concluida">Concluída</option>
-      <option value="cancelada">Cancelada</option>
-    </select>
-    <span class="count-pill" id="contador">0 ordens</span>
-    <div class="spacer"></div>
-  </div>
-
-  <section class="card" style="padding:0; overflow:hidden;">
-    <table>
-      <thead>
-        <tr>
-          <th>Abertura</th><th>Produto</th><th>Pedido Vinculado</th>
-          <th class="num">Planejada</th><th class="num">Produzida</th><th>Status</th><th class="num">Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
-    </table>
-  </section>
-</main>
+<main class="page" id="prd-main"></main>
   </div>
 </div>
 
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
 import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, Charts, TimelineEngine,
+  DataGrid, MetricCard, DetailDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
 initNav();
 
 const sessao = await exigirSessao();
@@ -111,44 +84,165 @@ document.getElementById('user-chip').addEventListener('click', async () => {
   if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
 });
 
-const fmt = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
-const ROTULO_STATUS = { planejada: 'Planejada', em_andamento: 'Em Andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
-const CLASSE_STATUS = { planejada: 'aberto', em_andamento: 'parcial', concluida: 'pago', cancelada: 'inadimplente' };
+// ============================================================================
+// PRD-001 — TODO dado abaixo é DE EXEMPLO (mesmo padrão de escopo do
+// CMP-001/PCP-001: foco declarado é reutilização do framework).
+//
+// NOME DIVERGENTE, registrado com o Renan: ADR-006 mapeou Produção→
+// "Production Score", mas esta tarefa pede "Production Execution Score" —
+// usei o nome desta tarefa (mais recente e específico). Já é a 2ª
+// divergência de nome de Score encontrada nesta sequência de entregas
+// (a 1ª foi Compras: Purchase vs Supplier Score).
+//
+// Interpretações sem componente oficial equivalente exato:
+// - "Painel da Produção em Tempo Real" → DataGrid (linhas + status)
+// - "Apontamentos" → TimelineEngine (eventos de apontamento são,
+//   por natureza, cronológicos)
+// - "Timeline" (seção 9, separada de Apontamentos) → outra instância do
+//   MESMO TimelineEngine, com um conjunto de eventos mais amplo (não é
+//   componente duplicado — é o mesmo componente usado 2x com dado diferente)
+// - "Cockpit da Fábrica" → grid de MetricCard (métricas de topo: OEE,
+//   disponibilidade, taxa de refugo, ritmo de produção)
+// ============================================================================
 
-let registros = [];
+const resultado = WorkspaceLayout('prd-main', {
+  header: {
+    titulo: 'Centro de Execução da Produção',
+    breadcrumb: 'Produção',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar ordens, produtos, moldes...',
+    acoesRapidas: [{ label: 'Ordens de Produção', icone: 'list', href: 'ordens.html' }, { label: 'Nova Ordem', icone: 'plus', href: 'ordem-nova.html', primario: true }],
+  },
+  attentionCenter: {
+    exemplo: true,
+    alertas: [
+      { tipo: 'Parada', prioridade: 'alta', icone: 'alert-triangle', mensagem: 'Extrusora 2 parada há 40 minutos — chamado de manutenção aberto.', acaoSugerida: 'Ver cockpit da fábrica', link: '#' },
+      { tipo: 'Refugo', prioridade: 'media', icone: 'trash-2', mensagem: 'Taxa de refugo da Linha 1 acima da meta nas últimas 2 ordens.', acaoSugerida: 'Ver apontamentos', link: '#' },
+    ],
+  },
+  healthScore: {
+    nome: 'Production Execution Score',
+    tituloSecao: 'Saúde da Execução',
+    exemplo: true,
+    fatores: [
+      { nome: 'OEE (eficiência global)', valor: 74, peso: 0.35 },
+      { nome: 'Cumprimento de prazo', valor: 81, peso: 0.25 },
+      { nome: 'Taxa de refugo', valor: 88, peso: 0.2 },
+      { nome: 'Disponibilidade de máquina', valor: 69, peso: 0.2 },
+    ],
+    historico: [{ data: 'Mai', nota: 70 }, { data: 'Jun', nota: 74 }, { data: 'Jul', nota: 78 }],
+  },
+  kpis: {
+    itens: [
+      { id: 'ops-execucao', nome: 'Ordens em Execução', icone: 'play-circle', tom: 'tom-azul', valorTexto: '9', clicavel: true },
+      { id: 'oee', nome: 'OEE Médio', icone: 'gauge', tom: 'tom-verde', valorTexto: '74%', clicavel: true },
+      { id: 'refugo', nome: 'Taxa de Refugo', icone: 'trash-2', tom: 'tom-vermelho', valorTexto: '3,2%', clicavel: true },
+      { id: 'apontamentos-hoje', nome: 'Apontamentos Hoje', icone: 'clipboard-check', tom: 'tom-roxo', valorTexto: '27', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights de Produção',
+    exemplo: true,
+    itens: [
+      { categoria: 'OEE', texto: 'Linha 1 opera com OEE 12 pontos acima da Linha 2', origem: 'Regra' },
+      { categoria: 'Refugo', texto: 'Refugo concentrado no turno da tarde nas últimas 2 semanas', origem: 'IA' },
+      { categoria: 'Material', texto: 'Consumo de matéria-prima 4% acima do previsto para o mês', origem: 'Regra' },
+    ],
+  },
+  decisionCenter: {
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Investigar refugo do turno da tarde', descricao: 'Padrão consistente nas últimas 2 semanas, concentrado num único turno.', origem: 'Produção', impactoTexto: 'Redução de refugo', urgencia: 'media', confianca: 72, acaoSugerida: 'Ver apontamentos', exemplo: true },
+      { titulo: 'Priorizar manutenção preventiva na Extrusora 2', descricao: 'Segunda parada não programada no mês — padrão de recorrência.', origem: 'Produção', impactoTexto: 'Reduz parada não programada', urgencia: 'alta', confianca: 80, acaoSugerida: 'Ver cockpit da fábrica', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'tempo-real', id: 'prd-slot-tempo-real', titulo: 'Painel da Produção em Tempo Real' },
+      { chave: 'cockpit', id: 'prd-slot-cockpit', titulo: 'Cockpit da Fábrica' },
+      { chave: 'apontamentos', id: 'prd-slot-apontamentos', titulo: 'Apontamentos', linha: 'secundaria' },
+      { chave: 'consumo', id: 'prd-slot-consumo', titulo: 'Consumo de Materiais', linha: 'secundaria' },
+      { chave: 'timeline', id: 'prd-slot-timeline', titulo: 'Timeline', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Ordens em Execução', id: 'prd-ordens' },
+});
 
-async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
-  let query = supabase.from('ordens_producao').select('id, numero_op, data_abertura, quantidade_planejada, quantidade_produzida, status, produtos(codigo, nome), pedidos_venda(numero_pedido)').order('data_abertura', { ascending: false });
-  const status = document.getElementById('f_status').value;
-  if (status) query = query.eq('status', status);
-  const { data, error } = await query;
-  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
-  registros = data || [];
-  desenhar();
+// ---------- 5. Painel da Produção em Tempo Real ----------
+DataGrid(resultado.slots['tempo-real'],
+  [{ titulo: 'Linha' }, { titulo: 'Produto Atual' }, { titulo: 'Status' }, { titulo: 'Progresso', alinhamento: 'num' }],
+  [
+    { celulas: ['Linha 1', 'Bobina Extra 40cm', '<span class="badge parcial">Produzindo</span>', '62%'], onClick: () => abrirDrilldownGenerico('Linha 1', 'Progresso: 62%') },
+    { celulas: ['Linha 2', '—', '<span class="badge aberto">Parada</span>', '—'], onClick: () => abrirDrilldownGenerico('Linha 2', 'Parada — chamado de manutenção aberto') },
+  ]
+);
+
+// 11. Cockpit da Fábrica — grid de MetricCard, já oficial
+document.getElementById(resultado.slots.cockpit).innerHTML = `<div class="prd-cockpit-grid">${[
+  MetricCard({ nome: 'OEE Global', valorTexto: '74%' }),
+  MetricCard({ nome: 'Disponibilidade', valorTexto: '86%' }),
+  MetricCard({ nome: 'Performance', valorTexto: '91%' }),
+  MetricCard({ nome: 'Qualidade', valorTexto: '96,8%' }),
+].join('')}</div>`;
+
+// 7. Apontamentos — TimelineEngine
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.apontamentos, [
+  { id: 'ap1', tipo: 'Produção', titulo: 'Apontamento — 480 un. produzidas', descricao: 'Linha 1, OP-2201', data: hoje, hora: '10:00', autor: 'Operador Carlos' },
+  { id: 'ap2', tipo: 'Produção', titulo: 'Apontamento — 12 un. refugadas', descricao: 'Linha 1, motivo: bolha na extrusão', data: hoje, hora: '10:00', autor: 'Operador Carlos' },
+], { agrupamento: 'nenhum', filtros: false });
+
+// 8. Consumo de Materiais
+const MATERIAIS_EXEMPLO = [
+  { nome: 'Resina PEBD', valor: 4820 }, { nome: 'Aditivo UV', valor: 340 }, { nome: 'Tinta Flexo', valor: 128 },
+];
+Charts.barList(resultado.slots.consumo, MATERIAIS_EXEMPLO.map(m => ({ nome: m.nome, valor: m.valor, onClick: () => abrirDrilldownGenerico(m.nome, `${m.valor} kg consumidos no período`) })));
+
+// 9. Timeline (geral, distinta de Apontamentos — mesmo componente, dado diferente)
+TimelineEngine(resultado.slots.timeline, [
+  { id: 't1', tipo: 'Chamado', titulo: 'Parada não programada — Extrusora 2', data: hoje, hora: '13:05' },
+  { id: 't2', tipo: 'Aprovação', titulo: 'OP-2195 aprovada pela Qualidade', data: hoje, hora: '10:15', autor: 'Qualidade' },
+  { id: 't3', tipo: 'Produção', titulo: 'OP-2201 iniciada', data: hoje, hora: '07:30' },
+], { agrupamento: 'dia', filtros: false });
+
+// ---------- Ordens em Execução (Área Operacional) ----------
+DataGrid(resultado.slots.operational,
+  [{ titulo: 'Ordem' }, { titulo: 'Produto' }, { titulo: 'Linha' }, { titulo: 'Início' }, { titulo: 'Status' }, { titulo: 'Progresso', alinhamento: 'num' }],
+  [
+    { celulas: ['OP-2201', 'Bobina Extra 40cm', 'Linha 1', '07:30', '<span class="badge parcial">Em execução</span>', '62%'], onClick: () => abrirDetalheOP('OP-2201') },
+    { celulas: ['OP-2199', 'Filme Stretch', 'Linha 1', '—', '<span class="badge aberto">Na fila</span>', '0%'], onClick: () => abrirDetalheOP('OP-2199') },
+  ]
+);
+
+// ---------- Drawers (SYS-011) ----------
+function abrirDrilldownGenerico(titulo, texto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">${texto}</p><p style="color:var(--ink-faint); font-size:12px; margin-top:8px;">Estrutura de drill-down pronta — detalhamento real aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheOP(numero) {
+  DetailDrawer({ titulo: `Ordem de Produção ${numero}`, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta — apontamentos, consumo e itens reais aparecem aqui quando ligados à consulta correspondente.</p>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'ops-execucao': 'Ordens em Execução', 'oee': 'OEE Médio', 'refugo': 'Taxa de Refugo', 'apontamentos-hoje': 'Apontamentos Hoje' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
 }
 
-function desenhar() {
-  const busca = document.getElementById('busca').value.trim().toLowerCase();
-  const filtrados = busca ? registros.filter(r => JSON.stringify(r).toLowerCase().includes(busca)) : registros;
-  document.getElementById('contador').textContent = `${filtrados.length} ordem${filtrados.length===1?'':'s'}`;
-  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma ordem encontrada. <a href="ordem-nova.html">Criar a primeira</a>.</td></tr>`; return; }
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'Produção', icone: 'factory', href: 'dashboard.html' },
+    { label: 'PCP', icone: 'calendar-clock', href: '../pcp/dashboard.html' },
+    { label: 'Qualidade', icone: 'badge-check', href: '../qualidade/dashboard.html' },
+    { label: 'Estoque', icone: 'package', href: '../estoque/dashboard.html' },
+  ],
+  acoes: [{ label: 'Nova Ordem de Produção', icone: 'plus', onExecutar: () => { window.location.href = 'ordem-nova.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
 
-  document.getElementById('tbody').innerHTML = filtrados.map(r => `
-    <tr>
-      <td>${new Date(r.data_abertura+'T00:00:00').toLocaleDateString('pt-BR')}</td>
-      <td>${r.produtos?.codigo ?? ''} — ${r.produtos?.nome ?? '-'}</td>
-      <td>${r.pedidos_venda?.numero_pedido ?? '-'}</td>
-      <td class="num mono">${fmt(r.quantidade_planejada)}</td>
-      <td class="num mono">${fmt(r.quantidade_produzida)}</td>
-      <td><span class="badge ${CLASSE_STATUS[r.status]}">${ROTULO_STATUS[r.status]}</span></td>
-      <td class="num"><a href="ordem-nova.html?id=${r.id}" class="icon-btn">Abrir</a></td>
-    </tr>`).join('');
-}
-
-document.getElementById('busca').addEventListener('input', desenhar);
-document.getElementById('f_status').addEventListener('change', carregar);
-await carregar();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
