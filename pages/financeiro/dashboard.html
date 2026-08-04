@@ -517,332 +517,16 @@
   </div>
 </header>
 
-<main class="page">
-  <div class="page-header">
-    <div>
-      <span class="eyebrow" id="eyebrow-mes">Visão geral</span>
-      <h1>Painel do Fluxo de Caixa</h1>
-    </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <select class="input" id="f_grupo" style="width:170px;"></select>
-      <button type="button" class="btn ghost" id="btn-analisar-financeiro"><i data-lucide="sparkles"></i> Analisar Financeiro</button>
-      <a href="lancamento-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo lançamento</a>
-    </div>
-  </div>
-
-  <!-- ============================================================================
-       CENTRAL DE ATENÇÃO — componente reutilizável, SEM regra de negócio.
-       renderCentralAtencao(alertas) é a única função; quem decide o que vira
-       alerta (regra determinística e/ou IA) é uma camada futura, ainda não
-       implementada por instrução explícita. Populado abaixo com 2 alertas
-       DE EXEMPLO só pra mostrar o componente funcionando — não são reais.
-       Posicionada em PRIMEIRO lugar na hierarquia visual (prioridade máxima),
-       antes até do Saldo Atual — decisão explícita de hierarquia.
-  ============================================================================ -->
-  <section class="central-atencao" id="central-atencao">
-    <div class="ca-header">
-      <span class="ca-titulo"><i data-lucide="bell"></i> Central de Atenção</span>
-      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
-    </div>
-    <div class="ca-lista" id="ca-lista"></div>
-  </section>
-
-  <div class="hero-saldo" id="hero-saldo">
-    <div>
-      <div class="rotulo">Saldo Atual</div>
-      <div class="saldo-ticker">
-        <span>SALDO ATUAL</span>
-        <span class="valor positivo" id="saldo-topo">R$ 0,00</span>
-      </div>
-      <div class="hero-tendencia"><span id="hero-tendencia-seta">▲</span><span id="hero-tendencia-texto">Calculando…</span></div>
-    </div>
-    <div class="hero-icone"><i data-lucide="wallet"></i></div>
-  </div>
-
-  <!-- ============================================================================
-       HEALTH SCORE FINANCEIRO — arquitetura visual, SEM cálculo. Nota,
-       cor/rótulo e os 8 valores internos vêm de fora no futuro (regra de
-       negócio); aqui só existe a estrutura pra receber isso.
-  ============================================================================ -->
-  <section class="card health-score">
-    <div class="card-titulo">
-      <div class="label">Saúde Financeira</div>
-      <span class="ca-tag-exemplo">dado de exemplo — aguardando regra de cálculo</span>
-    </div>
-    <div id="hs-conteudo"></div>
-  </section>
-
-  <section class="kpi-grid">
-    <div class="card kpi-card">
-      <div class="kpi-corpo">
-        <div class="label"><i data-lucide="check-circle-2" class="kpi-icone tom-verde"></i> Saldo Realizado (Pago)</div>
-        <div class="big valor" id="card-realizado">R$ 0,00</div>
-        <div id="sparkline-realizado" class="kpi-sparkline"></div>
-      </div>
-    </div>
-    <div class="card kpi-card">
-      <div class="kpi-corpo">
-        <div class="label"><i data-lucide="clock" class="kpi-icone tom-ambar"></i> Em Aberto (Previsto)</div>
-        <div class="big valor aberto" id="card-aberto">R$ 0,00</div>
-      </div>
-    </div>
-    <div class="card kpi-card">
-      <div class="kpi-corpo">
-        <div class="label"><i data-lucide="trending-up" class="kpi-icone tom-azul"></i> Saldo Projetado</div>
-        <div class="big valor" id="card-projetado">R$ 0,00</div>
-      </div>
-    </div>
-    <div class="card kpi-card">
-      <div class="kpi-corpo">
-        <div class="label"><i data-lucide="alert-triangle" class="kpi-icone tom-vermelho"></i> Inadimplência</div>
-        <div class="big valor negativo" id="card-inadimplencia">R$ 0,00</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================================
-       INSIGHTS FINANCEIROS — componente reutilizável, estrutura pronta pra
-       receber insight { categoria, texto, tendencia, grauConfianca, origem }
-       vindo de IA ou regra de negócio. renderInsightsFinanceiros(insights) é
-       a única função; nenhum cálculo é feito aqui. Populado com 6 insights
-       DE EXEMPLO — não são calculados a partir de dado real.
-  ============================================================================ -->
-  <section class="insights-financeiros">
-    <div class="card-titulo">
-      <div class="label">Insights Financeiros</div>
-      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
-    </div>
-    <div class="insights-grid" id="insights-grid"></div>
-  </section>
-
-  <!-- ============================================================================
-       CENTRO DE DECISÃO — arquitetura visual, SEM regra/IA implementada.
-       renderCentroDecisao(recomendacoes) só desenha; botão "Executar" não
-       tem ação ligada (estrutura pronta pra quando a IA existir). Populado
-       com 3 recomendações DE EXEMPLO.
-  ============================================================================ -->
-  <section class="card centro-decisao">
-    <div class="card-titulo">
-      <div class="label">Centro de Decisão</div>
-      <span class="ca-tag-exemplo">dados de exemplo — aguardando regras/IA</span>
-    </div>
-    <div class="cd-lista" id="cd-lista"></div>
-  </section>
-
-  <div class="linha-principal">
-    <section class="card">
-      <div class="card-titulo">
-        <div class="label">Fluxo Mensal — Entradas vs Saídas</div>
-        <div style="display:flex; align-items:center; gap:16px;">
-          <div class="grafico-legenda-topo">
-            <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
-            <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
-          </div>
-          <div class="periodo-seletor" id="seletor-periodo-fluxo">
-            <button type="button" data-periodo="hoje">Hoje</button>
-            <button type="button" data-periodo="7dias">7 dias</button>
-            <button type="button" data-periodo="30dias">30 dias</button>
-            <button type="button" data-periodo="90dias">90 dias</button>
-            <button type="button" data-periodo="ano" class="ativo">Ano</button>
-          </div>
-        </div>
-      </div>
-      <div class="grafico-barras-mensal" id="grafico-fluxo-mensal"></div>
-    </section>
-    <section class="card">
-      <div class="card-titulo"><div class="label">Saldo por Conta Bancária</div></div>
-      <div class="donut-box-wrap" id="donut-contas">
-        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
-      </div>
-    </section>
-  </div>
-
-  <div class="linha-secundaria">
-    <section class="card">
-      <div class="card-titulo"><div class="label">Aging de Contas a Receber</div></div>
-      <div class="donut-box-wrap" id="donut-aging">
-        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
-      </div>
-    </section>
-    <section class="card">
-      <div class="card-titulo"><div class="label">Top 5 Favorecidos</div></div>
-      <div class="bar-list" id="top-favorecidos">
-        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
-      </div>
-    </section>
-    <section class="card">
-      <div class="card-titulo"><div class="label">Distribuição por Plano de Contas</div></div>
-      <div class="bar-list" id="dist-plano-contas">
-        <p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p>
-      </div>
-    </section>
-  </div>
-
-  <section class="card card-tabela">
-    <div class="card-titulo">
-      <div class="label">Últimos Lançamentos</div>
-      <button type="button" class="btn ghost" id="btn-exportar-lancamentos" style="padding:6px 12px; font-size:12.5px;"><i data-lucide="download"></i> Exportar</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th><th>Plano de Contas</th><th>Favorecido</th><th>Centro de Custo</th><th>Status</th><th class="num">Valor</th>
-        </tr>
-      </thead>
-      <tbody id="tabela-lancamentos">
-        <tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Conectando ao Supabase…</td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- ============================================================================
-       TIMELINE FINANCEIRA — feed cronológico real (entradas, saídas e
-       transferências), com filtros. Busca própria (inclui transferências,
-       que vw_realizado tem mas a tabela de Últimos Lançamentos não mostra).
-  ============================================================================ -->
-  <section class="card timeline-financeira">
-    <div class="card-titulo"><div class="label">Timeline Financeira</div></div>
-    <div class="tl-filtros">
-      <select class="input" id="tl_f_banco"><option value="">Todos os bancos</option></select>
-      <select class="input" id="tl_f_favorecido"><option value="">Todos os clientes/fornecedores</option></select>
-      <select class="input" id="tl_f_tipo">
-        <option value="">Todos os tipos</option>
-        <option value="entrada">Recebimento</option>
-        <option value="saida">Pagamento</option>
-        <option value="transferencia">Transferência</option>
-      </select>
-      <select class="input" id="tl_f_status">
-        <option value="">Todos os status</option>
-        <option value="pago">Pago</option>
-        <option value="em_aberto">Em Aberto</option>
-        <option value="parcial">Parcial</option>
-        <option value="inadimplente">Inadimplente</option>
-      </select>
-      <input class="input" type="date" id="tl_f_data" style="width:150px;">
-      <input class="input" type="number" step="0.01" id="tl_f_valor_min" placeholder="Valor mín." style="width:110px;">
-      <button type="button" class="btn ghost" id="tl_btn_limpar" style="padding:6px 12px; font-size:12.5px;">Limpar filtros</button>
-    </div>
-    <div class="tl-lista" id="tl-lista"><p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p></div>
-  </section>
-</main>
-
-<!-- Painel de drill-down — um único elemento reutilizável por todos os gráficos -->
-<div class="drilldown-fundo" id="dd-fundo"></div>
-<div class="drilldown-painel" id="dd-painel">
-  <div class="dd-cabecalho">
-    <div>
-      <div class="dd-titulo" id="dd-titulo">—</div>
-      <div class="dd-resumo" id="dd-resumo"></div>
-    </div>
-    <button type="button" class="dd-fechar" id="dd-fechar"><i data-lucide="x"></i></button>
-  </div>
-  <div class="dd-lista" id="dd-lista"></div>
-</div>
-
-<!-- ============================================================================
-     FIN-010 — FinancialKPIDrawer. Painel único e reutilizável pra qualquer
-     KPI financeiro (tipoKPI decide o conteúdo). Nunca modal — o dashboard
-     continua vivo atrás.
-============================================================================ -->
-<div class="kpid-fundo" id="kpid-fundo"></div>
-<div class="kpid-painel" id="kpid-painel">
-  <div class="kpid-cabecalho">
-    <div class="kpid-cabecalho-topo">
-      <div>
-        <div class="kpid-nome" id="kpid-nome">—</div>
-        <div class="kpid-valor" id="kpid-valor">R$ 0,00</div>
-        <div class="kpid-comparacao" id="kpid-comparacao"></div>
-        <div class="kpid-atualizacao" id="kpid-atualizacao"></div>
-      </div>
-      <button type="button" class="kpid-fechar" id="kpid-fechar"><i data-lucide="x"></i></button>
-    </div>
-  </div>
-  <div class="kpid-corpo">
-    <div class="kpid-secao">
-      <div class="kpid-secao-titulo">Resumo Executivo</div>
-      <div class="kpid-resumo" id="kpid-resumo"></div>
-    </div>
-    <div class="kpid-secao">
-      <div class="kpid-secao-titulo" id="kpid-composicao-titulo">Composição do Indicador</div>
-      <div id="kpid-composicao"></div>
-    </div>
-    <div class="kpid-secao">
-      <div class="kpid-secao-titulo">Evolução</div>
-      <div class="kpid-periodo-tabs" id="kpid-periodo-tabs">
-        <button type="button" data-dias="7">7 dias</button>
-        <button type="button" data-dias="30" class="ativo">30 dias</button>
-        <button type="button" data-dias="90">90 dias</button>
-        <button type="button" data-dias="365">12 meses</button>
-      </div>
-      <div class="kpid-evolucao-grafico" id="kpid-evolucao"></div>
-    </div>
-    <div class="kpid-secao">
-      <div class="kpid-secao-titulo" id="kpid-impactos-titulo">Maiores Impactos</div>
-      <div id="kpid-impactos"></div>
-    </div>
-    <div class="kpid-secao">
-      <div class="kpid-secao-titulo">Ações Rápidas</div>
-      <div class="kpid-acoes-grid" id="kpid-acoes"></div>
-    </div>
-    <!-- Análise Inteligente — reservada pra IA futura, oculta até existir de
-         verdade (display:none no CSS). Estrutura pronta, nada pra ligar
-         depois além de tirar o display:none e preencher #kpid-analise-corpo. -->
-    <div class="kpid-secao kpid-analise-ia" id="kpid-analise-ia">
-      <div class="kpid-secao-titulo">Análise Inteligente</div>
-      <div id="kpid-analise-corpo"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================================================
-     FIN-009 — FinancialAnalysisDrawer. Painel único, gerado por
-     gerarAnaliseFinanceira() (regras fixas hoje, desacoplada da interface —
-     ver comentário no JS pra troca futura por IA sem mexer aqui).
-============================================================================ -->
-<div class="fad-fundo" id="fad-fundo"></div>
-<div class="fad-painel" id="fad-painel">
-  <div class="fad-cabecalho">
-    <div class="fad-titulo-box">
-      <div class="fad-eyebrow"><i data-lucide="sparkles"></i> Análise Financeira Inteligente</div>
-      <h2>Diagnóstico Executivo</h2>
-    </div>
-    <button type="button" class="fad-fechar" id="fad-fechar"><i data-lucide="x"></i></button>
-  </div>
-  <div class="fad-corpo" id="fad-corpo">
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Resumo Executivo</div>
-      <div class="fad-resumo" id="fad-resumo"></div>
-    </div>
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Pontos Positivos</div>
-      <ul class="fad-lista-check positivos" id="fad-positivos"></ul>
-    </div>
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Pontos de Atenção</div>
-      <ul class="fad-lista-check atencao" id="fad-atencao"></ul>
-    </div>
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Oportunidades <span class="fad-tag-exemplo">dado de exemplo — aguardando regras/IA</span></div>
-      <ul class="fad-lista-check oportunidades" id="fad-oportunidades"></ul>
-    </div>
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Riscos</div>
-      <div id="fad-riscos"></div>
-    </div>
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Recomendações</div>
-      <div id="fad-recomendacoes"></div>
-    </div>
-    <div class="fad-secao">
-      <div class="fad-secao-titulo">Histórico de Análises <span class="fad-tag-exemplo">dado de exemplo — sem persistência real ainda</span></div>
-      <div id="fad-historico"></div>
-    </div>
-  </div>
-</div>
-
+<main class="page" id="fin-main"></main>
 <script type="module">
   import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
 import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, AttentionCenter, InsightGrid, Score, DecisionCenter,
+  Charts, DataGrid, KPIGrid, TimelineEngine, GlobalSearch, CommandPalette,
+  DetailDrawer, AnalysisDrawer, fecharUniversalDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
 initNav();
 
 // ---------- Ícones Lucide ----------
@@ -866,12 +550,15 @@ if (window.lucide) lucide.createIcons();
 
   const MESES_EXT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const agora = new Date();
-  document.getElementById('eyebrow-mes').textContent = `Visão geral · ${MESES_EXT[agora.getMonth()]} ${agora.getFullYear()}`;
+  const breadcrumbFinanceiro = `Financeiro · Visão geral · ${MESES_EXT[agora.getMonth()]} ${agora.getFullYear()}`;
 
-  // ---------- Seletor de Grupo Empresarial ----------
-  const selGrupo = document.getElementById('f_grupo');
+  // ---------- Grupos Empresariais (multiempresa) ----------
+  // selGrupo só existe de verdade depois que o WorkspaceLayout renderiza o
+  // cabeçalho (é ele quem cria o <select> agora, via config.grupoEmpresarial
+  // — nunca mais um <select id="f_grupo"> solto na página). Declarada aqui
+  // como `let` e atribuída logo depois da chamada do WorkspaceLayout.
+  let selGrupo;
   const { data: gruposLista } = await supabase.from('grupos_empresariais').select('id, nome').eq('ativo', true).order('nome');
-  selGrupo.innerHTML = '<option value="">Todos os grupos</option>' + (gruposLista || []).map(g => `<option value="${g.id}">${g.nome}</option>`).join('');
 
   // ---------- Cards de saldo (Realizado, Em aberto, Projetado, Inadimplência) ----------
   const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
@@ -893,26 +580,15 @@ if (window.lucide) lucide.createIcons();
   // é responsabilidade de uma camada futura — não implementada aqui por
   // instrução explícita.
   // ============================================================================
-  function renderCentralAtencao(alertas) {
-    const cont = document.getElementById('ca-lista');
-    if (!alertas || !alertas.length) {
-      cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Nenhum alerta no momento.</p>`;
-      return;
-    }
-    cont.innerHTML = alertas.map(a => `
-      <div class="ca-item prioridade-${a.prioridade}">
-        <div class="ca-icone"><i data-lucide="${a.icone}"></i></div>
-        <div class="ca-corpo">
-          <div class="ca-topo"><span class="ca-tipo">${a.tipo}</span></div>
-          <div class="ca-mensagem">${a.mensagem}</div>
-          <div class="ca-acao"><a href="${a.link}">${a.acaoSugerida} →</a></div>
-        </div>
-      </div>`).join('');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  // Dados DE EXEMPLO — não vêm de regra de negócio nem de IA, só demonstram
-  // o componente. Estrutura pronta pra receber alertas reais no futuro.
+  // ============================================================================
+  // RETROFIT (MISSÃO 001) — as 4 funções que existiam aqui (renderCentralAtencao,
+  // renderInsightsFinanceiros, classificarHealthScore+renderHealthScore,
+  // renderCentroDecisao) eram duplicatas funcionais dos componentes oficiais
+  // AttentionCenter/InsightGrid/Score/DecisionCenter — removidas. Agora tudo
+  // passa por WorkspaceLayout, que já chama os componentes oficiais por
+  // baixo. Os dados de exemplo abaixo continuam os mesmos de antes (nenhuma
+  // regra nova implementada nestas 4 seções, mesma ressalva de sempre).
+  // ============================================================================
   const ALERTAS_EXEMPLO = [
     { tipo: 'Concentração de Cliente', prioridade: 'alta', icone: 'alert-triangle',
       mensagem: 'Um único cliente representa mais de 20% do faturamento do mês.',
@@ -921,36 +597,6 @@ if (window.lucide) lucide.createIcons();
       mensagem: 'Títulos em atraso somam valor acima da média dos últimos 3 meses.',
       acaoSugerida: 'Ver contas a receber em atraso', link: 'lancamentos.html?status=inadimplente' },
   ];
-
-  // ============================================================================
-  // INSIGHTS FINANCEIROS — componente reutilizável, mesma lógica: recebe
-  // { categoria, texto, tendencia, grauConfianca, origem } vindo de regra de
-  // negócio ou IA. Nenhum cálculo é feito aqui.
-  // ============================================================================
-  function renderInsightsFinanceiros(insights) {
-    const cont = document.getElementById('insights-grid');
-    if (!insights || !insights.length) {
-      cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem insights no momento.</p>`;
-      return;
-    }
-    cont.innerHTML = insights.map(ins => `
-      <div class="insight-card">
-        <div class="in-topo">
-          <span class="in-categoria">${ins.categoria}</span>
-          <span class="in-origem origem-${ins.origem === 'IA' ? 'ia' : 'regra'}">${ins.origem}</span>
-        </div>
-        <div class="in-texto">
-          ${ins.tendencia !== 'neutra' ? `<span class="in-seta ${ins.tendencia}">${ins.tendencia === 'alta' ? '▲' : '▼'}</span>` : ''}
-          <span>${ins.texto}</span>
-        </div>
-        <div class="in-confianca">
-          <div class="in-confianca-trilho"><div class="in-confianca-fill" style="width:${ins.grauConfianca}%;"></div></div>
-          <span class="in-confianca-texto">${ins.grauConfianca}% confiança</span>
-        </div>
-      </div>`).join('');
-  }
-
-  // Dados DE EXEMPLO — mesma ressalva do array de alertas acima.
   const INSIGHTS_EXEMPLO = [
     { categoria: 'Recebimentos', texto: 'Recebimentos cresceram 18% em relação ao período anterior', tendencia: 'alta', grauConfianca: 92, origem: 'Regra' },
     { categoria: 'Pagamentos', texto: 'Pagamentos reduziram 6% em relação ao período anterior', tendencia: 'baixa', grauConfianca: 88, origem: 'Regra' },
@@ -959,131 +605,156 @@ if (window.lucide) lucide.createIcons();
     { categoria: 'Ticket Médio', texto: 'Ticket médio de recebimento aumentou no período', tendencia: 'alta', grauConfianca: 74, origem: 'IA' },
     { categoria: 'Capital de Giro', texto: 'Capital de giro melhorou em relação ao período anterior', tendencia: 'alta', grauConfianca: 81, origem: 'IA' },
   ];
-
-  // ============================================================================
-  // HEALTH SCORE FINANCEIRO — arquitetura visual, SEM cálculo implementado.
-  // renderHealthScore(nota, subMetricas) só desenha; quem calcula a nota e os
-  // 8 valores internos é uma regra de negócio futura, não implementada aqui.
-  // ============================================================================
-  function classificarHealthScore(nota) {
-    if (nota >= 80) return { tom: 'excelente', texto: 'Excelente' };
-    if (nota >= 60) return { tom: 'boa', texto: 'Boa' };
-    if (nota >= 40) return { tom: 'atencao', texto: 'Atenção' };
-    return { tom: 'critica', texto: 'Crítica' };
-  }
-
-  function renderHealthScore(nota, subMetricas) {
-    const { tom, texto } = classificarHealthScore(nota);
-    const cont = document.getElementById('hs-conteudo');
-    cont.innerHTML = `
-      <div class="hs-topo">
-        <div class="hs-nota-box">
-          <span class="hs-nota tom-${tom}">${nota}</span>
-          <span class="hs-nota-max">/100</span>
-        </div>
-        <div class="hs-legenda">
-          <div class="hs-rotulo-texto tom-${tom}">${texto}</div>
-          <div class="hs-rotulo-sub">Saúde financeira geral</div>
-        </div>
-        <div class="hs-barra-trilho"><div class="hs-barra-fill tom-${tom}" style="width:${nota}%; background:currentColor; color:var(--${tom === 'excelente' ? 'accent' : tom === 'boa' ? 'accent' : tom === 'atencao' ? 'amber' : 'red'});"></div></div>
-      </div>
-      <div class="hs-grid">
-        ${subMetricas.map(m => `
-          <div class="hs-card">
-            <div class="hs-card-rotulo">${m.nome}</div>
-            <div class="hs-card-valor">${m.valor}</div>
-          </div>`).join('')}
-      </div>`;
-  }
-
-  // Dado DE EXEMPLO — nota e os 8 valores não vêm de cálculo real nenhum.
   const HEALTH_SCORE_EXEMPLO = { nota: 78, subMetricas: [
-    { nome: 'Liquidez', valor: '—' }, { nome: 'Fluxo', valor: '—' },
-    { nome: 'Capital de Giro', valor: '—' }, { nome: 'Inadimplência', valor: '—' },
-    { nome: 'Concentração', valor: '—' }, { nome: 'Endividamento', valor: '—' },
-    { nome: 'Recebimentos', valor: '—' }, { nome: 'Pagamentos', valor: '—' },
+    { nome: 'Liquidez', valorTexto: '—' }, { nome: 'Fluxo', valorTexto: '—' },
+    { nome: 'Capital de Giro', valorTexto: '—' }, { nome: 'Inadimplência', valorTexto: '—' },
+    { nome: 'Concentração', valorTexto: '—' }, { nome: 'Endividamento', valorTexto: '—' },
+    { nome: 'Recebimentos', valorTexto: '—' }, { nome: 'Pagamentos', valorTexto: '—' },
   ]};
-
-  // ============================================================================
-  // CENTRO DE DECISÃO — arquitetura visual, SEM regra/IA implementada.
-  // renderCentroDecisao(recomendacoes) só desenha; botão "Executar" não tem
-  // ação ligada nenhuma — estrutura pronta pra quando existir.
-  // ============================================================================
-  function renderCentroDecisao(recomendacoes) {
-    const cont = document.getElementById('cd-lista');
-    if (!recomendacoes.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Nenhuma recomendação no momento.</p>`; return; }
-    cont.innerHTML = recomendacoes.map(r => `
-      <div class="cd-item">
-        <div class="cd-corpo">
-          <div class="cd-topo">
-            <span class="cd-titulo">${r.titulo}</span>
-            <span class="cd-badge urgencia-${r.urgencia}">${r.urgencia === 'alta' ? 'Urgente' : r.urgencia === 'media' ? 'Em breve' : 'Quando puder'}</span>
-          </div>
-          <div class="cd-descricao">${r.descricao}</div>
-          <div class="cd-rodape">
-            <span class="cd-impacto">Impacto: ${r.impactoFinanceiro}</span>
-            <span>Confiança: ${r.confianca}%</span>
-            <span class="cd-origem">${r.origem}</span>
-          </div>
-        </div>
-        <div class="cd-acoes"><button type="button" class="btn ghost" disabled title="Sem ação ligada — estrutura pronta pra IA futura">Executar</button></div>
-      </div>`).join('');
-  }
-
-  // Dados DE EXEMPLO — nenhuma recomendação real, só demonstram a estrutura.
+  // campos adaptados pro formato oficial do DecisionCenter (impactoFinanceiro
+  // virou impactoTexto, ganhou acaoSugerida) — mesmo conteúdo de antes.
   const RECOMENDACOES_EXEMPLO = [
-    { titulo: 'Renegociar prazo com maior fornecedor', descricao: 'Concentração de 18% num único fornecedor aumenta risco de dependência.', impactoFinanceiro: 'R$ 12.400/mês', urgencia: 'media', confianca: 78, origem: 'IA' },
-    { titulo: 'Cobrar títulos vencidos há mais de 60 dias', descricao: 'Grupo de títulos em atraso prolongado ainda sem ação de cobrança registrada.', impactoFinanceiro: 'R$ 8.900', urgencia: 'alta', confianca: 91, origem: 'Regra' },
-    { titulo: 'Revisar limite de crédito de clientes recorrentes', descricao: 'Clientes com histórico de pagamento pontual podem receber prazo maior.', impactoFinanceiro: 'Indireto', urgencia: 'baixa', confianca: 64, origem: 'IA' },
+    { titulo: 'Renegociar prazo com maior fornecedor', descricao: 'Concentração de 18% num único fornecedor aumenta risco de dependência.', origem: 'Financeiro', impactoTexto: 'R$ 12.400/mês', urgencia: 'media', confianca: 78, acaoSugerida: 'Ver fornecedores', exemplo: true },
+    { titulo: 'Cobrar títulos vencidos há mais de 60 dias', descricao: 'Grupo de títulos em atraso prolongado ainda sem ação de cobrança registrada.', origem: 'Financeiro', impactoTexto: 'R$ 8.900', urgencia: 'alta', confianca: 91, acaoSugerida: 'Ver contas a receber', exemplo: true },
+    { titulo: 'Revisar limite de crédito de clientes recorrentes', descricao: 'Clientes com histórico de pagamento pontual podem receber prazo maior.', origem: 'Financeiro', impactoTexto: 'Indireto', urgencia: 'baixa', confianca: 64, acaoSugerida: 'Ver clientes', exemplo: true },
   ];
 
-  // Componentes de apresentação pura — não dependem de dado do banco, então
-  // renderizam de cara. Populados com dado de exemplo (ver comentário acima
-  // de cada array). Chamados AQUI, depois de TODOS os arrays e funções acima
-  // já declarados — chamar antes quebra o script inteiro em silêncio (const
-  // referenciado antes da declaração, mesma classe de bug já registrada nos
-  // Aprendizados Críticos do projeto, e que já mordeu esta mesma tela uma vez).
-  renderCentralAtencao(ALERTAS_EXEMPLO);
-  renderInsightsFinanceiros(INSIGHTS_EXEMPLO);
-  renderHealthScore(HEALTH_SCORE_EXEMPLO.nota, HEALTH_SCORE_EXEMPLO.subMetricas);
-  renderCentroDecisao(RECOMENDACOES_EXEMPLO);
-
   // ============================================================================
-  // PAINEL DE DRILL-DOWN — genérico e reutilizável por qualquer gráfico.
-  // abrirDrilldown(titulo, resumo, linhas) monta o painel; linhas é um array
-  // de { desc, sub, valor, corValor } já prontos pra desenhar — quem chama
-  // decide o que aparece, este núcleo só desenha.
+  // WORKSPACE LAYOUT (MISSÃO 001) — monta a página inteira. Central de
+  // Atenção/Insights/Health Score/Centro de Decisão usam dado de exemplo
+  // (mesma ressalva de sempre); KPIs começam com placeholder e são
+  // atualizados de verdade por carregarCards() assim que os dados chegam —
+  // mesmo princípio de "renderiza rápido, atualiza quando o real chega" já
+  // usado no resto do sistema.
   // ============================================================================
-  const ddFundo = document.getElementById('dd-fundo');
-  const ddPainel = document.getElementById('dd-painel');
+  const listaGrupos = (gruposLista || []).map(g => ({ id: g.id, nome: g.nome }));
 
+  const resultadoWL = WorkspaceLayout('fin-main', {
+    header: {
+      titulo: 'Painel do Fluxo de Caixa',
+      breadcrumb: breadcrumbFinanceiro,
+      buscaGlobal: true,
+      buscaPlaceholder: 'Buscar lançamentos, favorecidos...',
+      grupoEmpresarial: { grupos: listaGrupos, grupoAtivo: '', onTrocar: (id) => { selGrupo.value = id; selGrupo.dispatchEvent(new Event('change')); } },
+      acoesRapidas: [
+        { label: 'Analisar Financeiro', icone: 'sparkles', onClick: () => abrirFAD() },
+        { label: 'Exportar', icone: 'download', onClick: () => exportarLancamentos() },
+        { label: 'Novo lançamento', icone: 'plus', href: 'lancamento-novo.html', primario: true },
+      ],
+    },
+    hero: { rotulo: 'Saldo Atual', valorTexto: 'R$ 0,00', tendenciaTexto: 'Calculando…', icone: 'wallet' },
+    attentionCenter: { titulo: 'Central de Atenção', exemplo: true, alertas: ALERTAS_EXEMPLO },
+    healthScore: { nome: 'Health Score', tituloSecao: 'Saúde Financeira', exemplo: true, nota: HEALTH_SCORE_EXEMPLO.nota, subMetricas: HEALTH_SCORE_EXEMPLO.subMetricas },
+    kpis: {
+      itens: [
+        { id: 'saldo-realizado', nome: 'Saldo Realizado (Pago)', icone: 'check-circle-2', tom: 'tom-verde', valorTexto: 'R$ 0,00', clicavel: true },
+        { id: 'em-aberto', nome: 'Em Aberto (Previsto)', icone: 'clock', tom: 'tom-ambar', valorTexto: 'R$ 0,00', clicavel: true },
+        { id: 'saldo-projetado', nome: 'Saldo Projetado', icone: 'trending-up', tom: 'tom-azul', valorTexto: 'R$ 0,00', clicavel: true },
+        { id: 'inadimplencia', nome: 'Inadimplência', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: 'R$ 0,00', clicavel: true },
+      ],
+      onClickKpi: (id) => abrirKPIDrawer(id),
+    },
+    insights: { titulo: 'Insights Financeiros', exemplo: true, itens: INSIGHTS_EXEMPLO },
+    decisionCenter: { exemplo: true, recomendacoes: RECOMENDACOES_EXEMPLO },
+    analyticsArea: {
+      slots: [
+        { chave: 'fluxo', id: 'fluxo-mensal-card', titulo: 'Fluxo Mensal — Entradas vs Saídas' },
+        { chave: 'contas', id: 'donut-contas', titulo: 'Saldo por Conta Bancária' },
+        { chave: 'aging', id: 'donut-aging', titulo: 'Aging de Contas a Receber', linha: 'secundaria' },
+        { chave: 'favorecidos', id: 'top-favorecidos', titulo: 'Top 5 Favorecidos', linha: 'secundaria' },
+        { chave: 'plano', id: 'dist-plano-contas', titulo: 'Distribuição por Plano de Contas', linha: 'secundaria' },
+        { chave: 'timeline', id: 'tl-financeira-card', titulo: 'Timeline Financeira', linha: 'secundaria' },
+      ],
+    },
+    operationalArea: { titulo: 'Últimos Lançamentos', id: 'tabela-lancamentos-card' },
+  });
+
+  // Agora sim o seletor de grupo existe de verdade no DOM (criado pelo
+  // ExecutiveHeader dentro do WorkspaceLayout) — atribui a variável que o
+  // resto do arquivo já usa (selGrupo.value, selGrupo.addEventListener...).
+  selGrupo = document.getElementById('wl-header-grupo');
+
+  // O slot genérico do WorkspaceLayout só tem título — a legenda e o
+  // seletor de período são específicos deste gráfico, injetados uma vez
+  // aqui dentro do próprio slot (mesmo princípio de "módulo desenha o
+  // conteúdo, WorkspaceLayout só monta a grade").
+  document.getElementById(resultadoWL.slots.fluxo).innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; margin-bottom:10px;">
+      <div class="grafico-legenda-topo">
+        <span class="item"><span class="dot bg-serie-1"></span> Entradas</span>
+        <span class="item"><span class="dot bg-serie-6"></span> Saídas</span>
+      </div>
+      <div class="periodo-seletor" id="seletor-periodo-fluxo">
+        <button type="button" data-periodo="hoje">Hoje</button>
+        <button type="button" data-periodo="7dias">7 dias</button>
+        <button type="button" data-periodo="30dias">30 dias</button>
+        <button type="button" data-periodo="90dias">90 dias</button>
+        <button type="button" data-periodo="ano" class="ativo">Ano</button>
+      </div>
+    </div>
+    <div class="grafico-barras-mensal" id="grafico-fluxo-mensal"></div>`;
+  if (window.lucide) lucide.createIcons();
+
+  // Timeline Financeira mantém a UI de filtro PRÓPRIA (banco, favorecido,
+  // tipo, status, data, valor mínimo) — mais rica que o filtro padrão do
+  // TimelineEngine (só tipo+busca+agrupamento) hoje. Exceção documentada,
+  // não esquecimento: preservar os 6 filtros reais em vez de empobrecer a
+  // funcionalidade só por uniformidade. O núcleo de dado/consulta é 100%
+  // real e intocado, só a casca mudou de lugar (agora dentro do slot do
+  // WorkspaceLayout, não mais HTML solto na página).
+  document.getElementById(resultadoWL.slots.timeline).innerHTML = `
+    <div class="tl-filtros">
+      <select class="input" id="tl_f_banco"><option value="">Todos os bancos</option></select>
+      <select class="input" id="tl_f_favorecido"><option value="">Todos os clientes/fornecedores</option></select>
+      <select class="input" id="tl_f_tipo">
+        <option value="">Todos os tipos</option>
+        <option value="entrada">Recebimento</option>
+        <option value="saida">Pagamento</option>
+        <option value="transferencia">Transferência</option>
+      </select>
+      <select class="input" id="tl_f_status">
+        <option value="">Todos os status</option>
+        <option value="pago">Pago</option>
+        <option value="em_aberto">Em Aberto</option>
+        <option value="parcial">Parcial</option>
+        <option value="inadimplente">Inadimplente</option>
+      </select>
+      <input class="input" type="date" id="tl_f_data" style="width:150px;">
+      <input class="input" type="number" step="0.01" id="tl_f_valor_min" placeholder="Valor mín." style="width:110px;">
+      <button type="button" class="btn ghost" id="tl_btn_limpar" style="padding:6px 12px; font-size:12.5px;">Limpar filtros</button>
+    </div>
+    <div class="tl-lista" id="tl-lista"><p style="color:var(--ink-soft); font-size:12.5px;">Carregando…</p></div>`;
+
+  // Charts.donut/Charts.barList (oficiais) esperam que o container pai já
+  // tenha a classe de layout certa — o slot genérico do WorkspaceLayout só
+  // dá uma div vazia, sem classe. Adiciona aqui, uma vez.
+  document.getElementById(resultadoWL.slots.contas).className = 'donut-box-wrap';
+  document.getElementById(resultadoWL.slots.aging).className = 'donut-box-wrap';
+  document.getElementById(resultadoWL.slots.favorecidos).className = 'bar-list';
+  document.getElementById(resultadoWL.slots.plano).className = 'bar-list';
+  // ============================================================================
+  // PAINEL DE DRILL-DOWN — agora delega pro DetailDrawer oficial (Universal
+  // Drawer System, SYS-011) em vez do painel próprio que existia aqui
+  // (dd-fundo/dd-painel). Mesma assinatura de sempre (titulo, resumo,
+  // linhas, linkVerTudo) — todos os 5 gráficos que já chamam abrirDrilldown
+  // continuam funcionando sem precisar mudar nada neles.
+  // ============================================================================
   function abrirDrilldown(titulo, resumo, linhas, linkVerTudo) {
-    document.getElementById('dd-titulo').textContent = titulo;
-    document.getElementById('dd-resumo').textContent = resumo;
-    const listaEl = document.getElementById('dd-lista');
-    if (!linhas.length) {
-      listaEl.innerHTML = `<div class="dd-vazio">Nenhum lançamento neste recorte.</div>`;
-    } else {
-      listaEl.innerHTML = linhas.map(l => `
-        <div class="dd-linha">
-          <div><div class="dd-linha-desc">${l.desc}</div>${l.sub ? `<div class="dd-linha-sub">${l.sub}</div>` : ''}</div>
-          <span class="mono" style="color:${l.corValor}; font-weight:600; white-space:nowrap;">${l.valor}</span>
-        </div>`).join('');
-    }
-    if (linkVerTudo) {
-      listaEl.innerHTML += `<div style="padding:14px 22px;"><a href="${linkVerTudo}" style="font-size:12.5px; font-weight:600; color:var(--accent); text-decoration:none;">Ver tudo em Lançamentos →</a></div>`;
-    }
-    ddFundo.classList.add('aberto');
-    ddPainel.classList.add('aberto');
-    if (window.lucide) lucide.createIcons();
+    const corpo = !linhas.length
+      ? `<p style="color:var(--ink-soft); font-size:13px; text-align:center; padding:20px 0;">Nenhum lançamento neste recorte.</p>`
+      : linhas.map(l => `
+          <div style="display:flex; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
+            <div><div style="color:var(--ink); font-weight:500;">${l.desc}</div>${l.sub ? `<div style="color:var(--ink-faint); font-size:11px; margin-top:2px;">${l.sub}</div>` : ''}</div>
+            <span class="mono" style="color:${l.corValor}; font-weight:600; white-space:nowrap;">${l.valor}</span>
+          </div>`).join('');
+    DetailDrawer({
+      titulo, subtitulo: resumo, corpo,
+      acoes: linkVerTudo
+        ? [{ label: 'Fechar', tipo: 'ghost', onClick: fecharUniversalDrawer }, { label: 'Ver tudo em Lançamentos', tipo: 'primary', onClick: () => { window.location.href = linkVerTudo; } }]
+        : [{ label: 'Fechar', tipo: 'ghost', onClick: fecharUniversalDrawer }],
+    });
   }
-  function fecharDrilldown() {
-    ddFundo.classList.remove('aberto');
-    ddPainel.classList.remove('aberto');
-  }
-  ddFundo.addEventListener('click', fecharDrilldown);
-  document.getElementById('dd-fechar').addEventListener('click', fecharDrilldown);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharDrilldown(); });
+  function fecharDrilldown() { fecharUniversalDrawer(); }
 
   let dadosCompartilhados = null;
   let kpiValoresAtuais = { realizado: 0, aberto: 0, projetado: 0, inadimplencia: 0 }; // populado por carregarCards(), o drawer FIN-010 lê daqui — nunca recalcula, garante consistência com o que já está no card
@@ -1147,62 +818,28 @@ if (window.lucide) lucide.createIcons();
     const projetado = realizadoTotal + aberto;
     kpiValoresAtuais = { realizado: realizadoTotal, aberto, projetado, inadimplencia };
 
-    document.getElementById('card-realizado').textContent = fmt(realizadoTotal);
-    document.getElementById('card-realizado').classList.add(realizadoTotal >= 0 ? 'positivo' : 'negativo');
-    document.getElementById('card-aberto').textContent = fmt(aberto);
-    document.getElementById('card-projetado').textContent = fmt(projetado);
-    document.getElementById('card-projetado').classList.add(projetado >= 0 ? 'positivo' : 'negativo');
-    document.getElementById('card-inadimplencia').textContent = fmt(inadimplencia);
-    document.getElementById('saldo-topo').textContent = fmt(realizadoTotal);
+    // KPIGrid (oficial) redesenha o grid inteiro a cada chamada — troca as
+    // 6 escritas diretas de DOM que existiam aqui antes. Mesmos 4 KPIs,
+    // mesmos ids, clique continua abrindo o FIN-010 (onClickKpi já ligado
+    // na config do WorkspaceLayout, não precisa reataching aqui).
+    KPIGrid('wl-kpis', [
+      { id: 'saldo-realizado', nome: 'Saldo Realizado (Pago)', icone: 'check-circle-2', tom: 'tom-verde', valorTexto: fmt(realizadoTotal), clicavel: true },
+      { id: 'em-aberto', nome: 'Em Aberto (Previsto)', icone: 'clock', tom: 'tom-ambar', valorTexto: fmt(aberto), clicavel: true },
+      { id: 'saldo-projetado', nome: 'Saldo Projetado', icone: 'trending-up', tom: 'tom-azul', valorTexto: fmt(projetado), clicavel: true },
+      { id: 'inadimplencia', nome: 'Inadimplência', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: fmt(inadimplencia), clicavel: true },
+    ], (id) => abrirKPIDrawer(id));
+
+    const heroValorEl = document.getElementById('wl-hero-valor');
+    if (heroValorEl) heroValorEl.textContent = fmt(realizadoTotal);
   }
 
   // ============================================================================
-  // BI — donuts, fluxo mensal e rankings (tudo em CSS puro, sem biblioteca)
+  // ============================================================================
+  // BI — donuts, fluxo mensal e rankings. montarConicGradient/renderDonut
+  // locais que existiam aqui duplicavam Charts.donut (oficial) — removidas,
+  // as chamadas abaixo usam Charts.donut diretamente.
   // ============================================================================
   const CORES_SERIE = ['#1f7a5c', '#2f9e9e', '#b76e11', '#5b7fdb', '#8a63d2', '#c0392b', '#94a3b8'];
-
-  function montarConicGradient(segmentos) {
-    const total = segmentos.reduce((s,x) => s + x.valor, 0) || 1;
-    let acc = 0;
-    const partes = segmentos.map(seg => {
-      const inicio = (acc / total * 100).toFixed(2);
-      acc += Math.max(seg.valor, 0);
-      const fim = (acc / total * 100).toFixed(2);
-      return `${seg.cor} ${inicio}% ${fim}%`;
-    });
-    return `conic-gradient(${partes.join(', ')})`;
-  }
-
-  // Cada segmento pode opcionalmente ter um `onClick` (função) — quando tem,
-  // o item da legenda vira clicável e abre o drill-down. Quem chama decide
-  // o que o clique faz; renderDonut só desenha e liga o evento.
-  function renderDonut(containerId, segmentos, totalLabel, totalTexto) {
-    const cont = document.getElementById(containerId);
-    const validos = segmentos.filter(s => s.valor > 0);
-    if (!validos.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
-
-    cont.innerHTML = `
-      <div class="donut-box">
-        <div class="donut" style="background:${montarConicGradient(validos)};"></div>
-        <div class="donut-hole">
-          <div class="big">${totalTexto}</div>
-          <div class="small">${totalLabel}</div>
-        </div>
-      </div>
-      <div class="chart-legend">
-        ${validos.map((s, i) => `
-          <div class="item${s.onClick ? ' grafico-clicavel' : ''}" data-idx="${i}">
-            <span class="dot" style="background:${s.cor};"></span>
-            <span class="nome">${s.nome}</span>
-            <span class="valor">${fmt(s.valor)}</span>
-          </div>`).join('')}
-      </div>`;
-
-    cont.querySelectorAll('.chart-legend .item[data-idx]').forEach(el => {
-      const seg = validos[Number(el.dataset.idx)];
-      if (seg.onClick) el.addEventListener('click', seg.onClick);
-    });
-  }
 
   // ---------- Saldo por Conta Bancária ----------
   function carregarDonutContas() {
@@ -1237,7 +874,7 @@ if (window.lucide) lucide.createIcons();
         abrirDrilldown(c.nome, `${linhas.length} movimentação(ões) · Saldo atual ${fmt(saldos[c.id])}`, linhas, null);
       },
     }));
-    renderDonut('donut-contas', segmentos, 'Saldo Total', fmt(totalGeral).replace('R$ ',''));
+    Charts.donut('donut-contas', segmentos, 'Saldo Total', fmt(totalGeral).replace('R$ ',''));
   }
 
   // ---------- Aging de Contas a Receber ----------
@@ -1279,7 +916,7 @@ if (window.lucide) lucide.createIcons();
       { nome: 'Acima de 90 dias', valor: buckets.d90.valor, cor: CORES_SERIE[3], onClick: fazerOnClick('Acima de 90 dias', buckets.d90) },
       { nome: 'Vencido', valor: buckets.vencido.valor, cor: CORES_SERIE[5], onClick: fazerOnClick('Vencido', buckets.vencido) },
     ];
-    renderDonut('donut-aging', segmentos, 'Total a Receber', fmt(total).replace('R$ ',''));
+    Charts.donut('donut-aging', segmentos, 'Total a Receber', fmt(total).replace('R$ ',''));
   }
 
   // ---------- Fluxo Mensal (últimos 6 meses) ----------
@@ -1327,11 +964,11 @@ if (window.lucide) lucide.createIcons();
     });
 
     const saldoInicioPeriodo = realizadoTotal - netFlowPeriodo;
-    const seta = document.getElementById('hero-tendencia-seta');
-    const texto = document.getElementById('hero-tendencia-texto');
+    const seta = document.getElementById('wl-hero-seta');
+    const texto = document.getElementById('wl-hero-tendencia');
+    if (!texto || !seta) return; // hero ainda não renderizou na primeira chamada — recarregarDashboard() chama de novo depois
     const positivo = netFlowPeriodo >= 0;
     seta.textContent = positivo ? '▲' : '▼';
-    seta.style.color = positivo ? '#fff' : 'rgba(255,255,255,.65)';
 
     if (Math.abs(saldoInicioPeriodo) < 0.01) {
       texto.textContent = `${positivo ? '+' : ''}${fmt(netFlowPeriodo)} ${LABEL_TENDENCIA_PERIODO[periodoAtivo] === 'ontem' ? 'desde ontem' : 'nos últimos ' + LABEL_TENDENCIA_PERIODO[periodoAtivo].replace(' atrás','')}`;
@@ -1396,7 +1033,15 @@ if (window.lucide) lucide.createIcons();
     }).join(' ');
     const subiu = pontos[pontos.length - 1] >= pontos[0];
     const cor = subiu ? 'var(--accent)' : 'var(--red)';
-    document.getElementById('sparkline-realizado').innerHTML =
+    // O KPICard oficial (WorkspaceLayout) não tem um slot embutido pra
+    // sparkline dentro do card, diferente do card manual que existia antes
+    // — perda visual pequena e aceita nesta migração; a evolução completa
+    // dos últimos 30 dias continua disponível dentro do drawer do KPI
+    // "Saldo Realizado" (seção Evolução), só não aparece mais em miniatura
+    // no card. Guarda contra o elemento não existir, não quebra a página.
+    const el = document.getElementById('sparkline-realizado');
+    if (!el) return;
+    el.innerHTML =
       `<svg viewBox="0 0 ${largura} ${altura}" preserveAspectRatio="none" style="width:100%; height:${altura}px; display:block;">
         <polyline points="${coords}" fill="none" stroke="${cor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
       </svg>`;
@@ -1501,23 +1146,8 @@ if (window.lucide) lucide.createIcons();
   // ---------- Top 5 Favorecidos por Movimentação ----------
   // Único gráfico que ainda faz busca própria — precisa do nome do
   // favorecido, que não está em vw_realizado, então essa parte não dava
-  // pra eliminar sem mudar a view. Continua async só por causa disso.
-  // Compartilhado pelas duas listas de barra abaixo — item pode ter um
-  // `onClick` opcional (mesmo espírito do renderDonut).
-  function renderBarList(containerId, itens) {
-    const cont = document.getElementById(containerId);
-    if (!itens.length) { cont.innerHTML = `<p style="color:var(--ink-soft); font-size:12.5px;">Sem dados no período.</p>`; return; }
-    const max = itens[0].valor || 1;
-    cont.innerHTML = itens.map((it, i) => `
-      <div class="linha${it.onClick ? ' grafico-clicavel' : ''}" data-idx="${i}">
-        <div class="topo"><span class="nome">${it.nome}</span><span class="valor">${fmt(it.valor)}</span></div>
-        <div class="trilho"><div class="fill" style="width:${(it.valor/max*100).toFixed(1)}%; background:${CORES_SERIE[i % CORES_SERIE.length]};"></div></div>
-      </div>`).join('');
-    cont.querySelectorAll('.linha[data-idx]').forEach(el => {
-      const it = itens[Number(el.dataset.idx)];
-      if (it.onClick) el.addEventListener('click', it.onClick);
-    });
-  }
+  // renderBarList local que existia aqui duplicava Charts.barList (oficial)
+  // — removida, as chamadas abaixo usam Charts.barList diretamente.
 
   async function carregarTopFavorecidos() {
     const { realizado } = dadosCompartilhados;
@@ -1552,7 +1182,7 @@ if (window.lucide) lucide.createIcons();
       nome: f.nome, valor: f.valor,
       onClick: () => abrirDrilldown(f.nome, `${f.linhas.length} lançamento(s) · ${fmt(f.valor)} no período`, f.linhas, null),
     }));
-    renderBarList('top-favorecidos', top);
+    Charts.barList('top-favorecidos', top);
   }
 
   // ---------- Distribuição por Plano de Contas ----------
@@ -1582,7 +1212,7 @@ if (window.lucide) lucide.createIcons();
       nome: p.nome, valor: p.valor,
       onClick: () => abrirDrilldown(p.nome, `${p.linhas.length} lançamento(s) · ${fmt(p.valor)} no período`, p.linhas, null),
     }));
-    renderBarList('dist-plano-contas', top);
+    Charts.barList('dist-plano-contas', top);
   }
 
   // ---------- Orquestração — uma busca, tudo deriva dela ----------
@@ -1669,35 +1299,34 @@ if (window.lucide) lucide.createIcons();
     if (grupoId) query = query.eq('grupo_empresarial_id', grupoId);
 
     const { data: lancamentos, error } = await query;
-    const tbody = document.getElementById('tabela-lancamentos');
+    const colunas = [{ titulo: 'Data' }, { titulo: 'Plano de Contas' }, { titulo: 'Favorecido' }, { titulo: 'Centro de Custo' }, { titulo: 'Status' }, { titulo: 'Valor', alinhamento: 'num' }];
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--red); padding:24px;">Erro ao carregar: ${error.message}</td></tr>`;
-    } else if (!lancamentos?.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--ink-soft); padding:24px;">Nenhum lançamento ainda.</td></tr>`;
-    } else {
-      tbody.innerHTML = lancamentos.map(l => `
-        <tr>
-          <td>${new Date(l.data).toLocaleDateString('pt-BR')}</td>
-          <td>${l.plano_contas?.nome_conta ?? '-'}</td>
-          <td>${l.favorecidos?.nome ?? '-'}</td>
-          <td>${l.centros_custo?.nome ?? '-'}</td>
-          <td><span class="badge ${l.status.replace('_','')}">${l.status.replace('_',' ')}</span></td>
-          <td class="num valor ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${l.valor.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-        </tr>
-      `).join('');
+      DataGrid(resultadoWL.slots.operational, colunas, []);
+      document.getElementById(resultadoWL.slots.operational).innerHTML = `<p style="color:var(--red); font-size:12.5px; padding:16px;">Erro ao carregar: ${error.message}</p>`;
+      return;
     }
+    const linhas = (lancamentos || []).map(l => ({
+      celulas: [
+        new Date(l.data).toLocaleDateString('pt-BR'),
+        l.plano_contas?.nome_conta ?? '-',
+        l.favorecidos?.nome ?? '-',
+        l.centros_custo?.nome ?? '-',
+        `<span class="badge ${l.status.replace('_','')}">${l.status.replace('_',' ')}</span>`,
+        `<span class="mono ${l.valor >= 0 ? 'positivo' : 'negativo'}">R$ ${l.valor.toLocaleString('pt-BR', {minimumFractionDigits:2})}</span>`,
+      ],
+    }));
+    DataGrid(resultadoWL.slots.operational, colunas, linhas);
   }
   await carregarUltimosLancamentos();
 
   // ---------- Exportar lançamentos (XLSX) ----------
   // Busca própria e maior (até 1000, não os 10 da tela) — só dispara quando
-  // o usuário clica, não pesa a carga normal do dashboard.
-  document.getElementById('btn-exportar-lancamentos').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-exportar-lancamentos');
-    const textoOriginal = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = 'Exportando…';
-
+  // o usuário aciona a ação rápida "Exportar Lançamentos", não pesa a carga
+  // normal do dashboard. Antes vivia num botão dedicado ao lado da tabela;
+  // agora é uma ação rápida do cabeçalho (WorkspaceLayout não tem um botão
+  // "solto" dentro da Área Operacional — o lugar oficial pra ação de página
+  // é acoesRapidas).
+  async function exportarLancamentos() {
     try {
       const grupoId = selGrupo.value;
       let query = supabase
@@ -1727,12 +1356,10 @@ if (window.lucide) lucide.createIcons();
       XLSX.utils.book_append_sheet(livro, planilha, 'Lançamentos');
       const nomeArquivo = `lancamentos-datativo-${new Date().toISOString().slice(0,10)}.xlsx`;
       XLSX.writeFile(livro, nomeArquivo);
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = textoOriginal;
-      if (window.lucide) lucide.createIcons();
+    } catch (e) {
+      alert('Erro ao exportar: ' + e.message);
     }
-  });
+  }
 
   // ============================================================================
   // TIMELINE FINANCEIRA — feed cronológico real. Busca baixas (que têm
@@ -2146,13 +1773,67 @@ if (window.lucide) lucide.createIcons();
 
   // ---------- Orquestração ----------
   let kpidTipoAberto = null;
+  const kpidHoraCarregamento = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  // Estrutura interna do drawer — os MESMOS ids de sempre (kpid-resumo,
+  // kpid-composicao etc.), agora dentro do corpo do DetailDrawer oficial em
+  // vez de HTML solto na página. renderKPIDComposicao/Impactos/Acoes/
+  // Evolucao (mais abaixo) continuam escrevendo nesses ids sem NENHUMA
+  // mudança — só a casca que os recebe é outra.
+  function kpidCorpoTemplate() {
+    return `
+      <div style="margin-bottom:18px;">
+        <div class="kpid-valor" id="kpid-valor">R$ 0,00</div>
+        <div class="kpid-comparacao" id="kpid-comparacao"></div>
+        <div class="kpid-atualizacao" id="kpid-atualizacao"></div>
+      </div>
+      <div class="kpid-secao" style="padding-top:0;">
+        <div class="kpid-secao-titulo">Resumo Executivo</div>
+        <div class="kpid-resumo" id="kpid-resumo"></div>
+      </div>
+      <div class="kpid-secao">
+        <div class="kpid-secao-titulo" id="kpid-composicao-titulo">Composição do Indicador</div>
+        <div id="kpid-composicao"></div>
+      </div>
+      <div class="kpid-secao">
+        <div class="kpid-secao-titulo">Evolução</div>
+        <div class="kpid-periodo-tabs" id="kpid-periodo-tabs">
+          <button type="button" data-dias="7">7 dias</button>
+          <button type="button" data-dias="30" class="ativo">30 dias</button>
+          <button type="button" data-dias="90">90 dias</button>
+          <button type="button" data-dias="365">12 meses</button>
+        </div>
+        <div class="kpid-evolucao-grafico" id="kpid-evolucao"></div>
+      </div>
+      <div class="kpid-secao">
+        <div class="kpid-secao-titulo" id="kpid-impactos-titulo">Maiores Impactos</div>
+        <div id="kpid-impactos"></div>
+      </div>
+      <div class="kpid-secao">
+        <div class="kpid-secao-titulo">Ações Rápidas</div>
+        <div class="kpid-acoes-grid" id="kpid-acoes"></div>
+      </div>`;
+  }
 
   async function abrirKPIDrawer(tipoKPI) {
     const def = KPI_REGISTRY[tipoKPI];
     if (!def || !dadosCompartilhados) return;
     kpidTipoAberto = tipoKPI;
 
-    document.getElementById('kpid-nome').textContent = def.nome;
+    DetailDrawer({
+      titulo: def.nome,
+      corpo: kpidCorpoTemplate(),
+      acoes: [{ label: 'Fechar', tipo: 'ghost', onClick: fecharKPIDrawer }],
+    });
+
+    document.getElementById('kpid-periodo-tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-dias]');
+      if (!btn || !kpidTipoAberto) return;
+      document.querySelectorAll('#kpid-periodo-tabs button').forEach(b => b.classList.remove('ativo'));
+      btn.classList.add('ativo');
+      renderKPIDEvolucao(kpidTipoAberto, Number(btn.dataset.dias));
+    });
+
     const valor = def.obterValor();
     document.getElementById('kpid-valor').textContent = fmt(valor);
     document.getElementById('kpid-valor').style.color = valor >= 0 ? 'var(--ink)' : 'var(--red)';
@@ -2171,11 +1852,7 @@ if (window.lucide) lucide.createIcons();
     document.getElementById('kpid-composicao').innerHTML = `<div class="kpid-vazio">Carregando…</div>`;
     document.getElementById('kpid-impactos').innerHTML = `<div class="kpid-vazio">Carregando…</div>`;
     renderKPIDAcoes(def.acoes);
-    document.querySelectorAll('#kpid-periodo-tabs button').forEach(b => b.classList.toggle('ativo', b.dataset.dias === '30'));
     renderKPIDEvolucao(tipoKPI, 30);
-
-    kpidFundo.classList.add('aberto');
-    kpidPainel.classList.add('aberto');
     if (window.lucide) lucide.createIcons();
 
     // Composição e impactos podem exigir busca lazy (Em Aberto/Projetado/
@@ -2190,8 +1867,7 @@ if (window.lucide) lucide.createIcons();
   }
 
   function fecharKPIDrawer() {
-    kpidFundo.classList.remove('aberto');
-    kpidPainel.classList.remove('aberto');
+    fecharUniversalDrawer();
     kpidTipoAberto = null;
   }
 
@@ -2209,47 +1885,25 @@ if (window.lucide) lucide.createIcons();
     return (netFlow / Math.abs(valorAnterior)) * 100;
   }
 
-  const kpidHoraCarregamento = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const kpidFundo = document.getElementById('kpid-fundo');
-  const kpidPainel = document.getElementById('kpid-painel');
-  kpidFundo.addEventListener('click', fecharKPIDrawer);
-  document.getElementById('kpid-fechar').addEventListener('click', fecharKPIDrawer);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && kpidTipoAberto) fecharKPIDrawer(); });
-  document.getElementById('kpid-periodo-tabs').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-dias]');
-    if (!btn || !kpidTipoAberto) return;
-    document.querySelectorAll('#kpid-periodo-tabs button').forEach(b => b.classList.remove('ativo'));
-    btn.classList.add('ativo');
-    renderKPIDEvolucao(kpidTipoAberto, Number(btn.dataset.dias));
-  });
-
-  // Liga os 5 cards de KPI ao drawer — cada um com efeito de ripple discreto.
-  // Mapa tipoKPI -> id do card mantém a arquitetura aberta a novos KPIs: só
-  // adicionar uma linha aqui e uma entrada no KPI_REGISTRY.
-  const KPI_CARD_MAPA = {
-    'saldo-atual': 'hero-saldo',
-    'saldo-realizado': 'card-realizado',
-    'em-aberto': 'card-aberto',
-    'saldo-projetado': 'card-projetado',
-    'inadimplencia': 'card-inadimplencia',
-  };
-  Object.entries(KPI_CARD_MAPA).forEach(([tipoKPI, idAlvo]) => {
-    const el = document.getElementById(idAlvo);
-    if (!el) return;
-    const cardClicavel = el.closest('.kpi-card') || el.closest('.hero-saldo') || el;
-    cardClicavel.classList.add('kpi-clicavel');
-    cardClicavel.addEventListener('click', (e) => {
+  // KPIGrid (WorkspaceLayout, config.kpis) já liga clique+ripple pros 4
+  // KPIs do grid — só falta o Hero (Saldo Atual), que não é um KPICard.
+  (() => {
+    const heroEl = document.querySelector('.hero-saldo');
+    if (!heroEl) return;
+    heroEl.classList.add('kpi-clicavel');
+    heroEl.style.cursor = 'pointer';
+    heroEl.addEventListener('click', (e) => {
       const ripple = document.createElement('span');
       ripple.className = 'kpi-ripple';
-      const rect = cardClicavel.getBoundingClientRect();
+      const rect = heroEl.getBoundingClientRect();
       ripple.style.left = (e.clientX - rect.left - 10) + 'px';
       ripple.style.top = (e.clientY - rect.top - 10) + 'px';
       ripple.style.width = ripple.style.height = '20px';
-      cardClicavel.appendChild(ripple);
+      heroEl.appendChild(ripple);
       setTimeout(() => ripple.remove(), 500);
-      abrirKPIDrawer(tipoKPI);
+      abrirKPIDrawer('saldo-atual');
     });
-  });
+  })();
 
   // ============================================================================
   // FIN-009 — FinancialAnalysisDrawer
@@ -2408,15 +2062,51 @@ if (window.lucide) lucide.createIcons();
 
   let fadAberto = false;
 
+  // Mesmos ids de sempre (fad-resumo, fad-positivos etc.) — agora dentro do
+  // corpo do AnalysisDrawer oficial. gerarAnaliseFinanceira() e as
+  // renderFAD* (mais abaixo) continuam intocadas.
+  function fadCorpoTemplate() {
+    return `
+      <div class="fad-secao" style="padding-top:0;">
+        <div class="fad-secao-titulo">Resumo Executivo</div>
+        <div class="fad-resumo" id="fad-resumo"></div>
+      </div>
+      <div class="fad-secao">
+        <div class="fad-secao-titulo">Pontos Positivos</div>
+        <ul class="fad-lista-check positivos" id="fad-positivos"></ul>
+      </div>
+      <div class="fad-secao">
+        <div class="fad-secao-titulo">Pontos de Atenção</div>
+        <ul class="fad-lista-check atencao" id="fad-atencao"></ul>
+      </div>
+      <div class="fad-secao">
+        <div class="fad-secao-titulo">Oportunidades <span class="fad-tag-exemplo">dado de exemplo — aguardando regras/IA</span></div>
+        <ul class="fad-lista-check oportunidades" id="fad-oportunidades"></ul>
+      </div>
+      <div class="fad-secao">
+        <div class="fad-secao-titulo">Riscos</div>
+        <div id="fad-riscos"></div>
+      </div>
+      <div class="fad-secao">
+        <div class="fad-secao-titulo">Recomendações</div>
+        <div id="fad-recomendacoes"></div>
+      </div>
+      <div class="fad-secao">
+        <div class="fad-secao-titulo">Histórico de Análises <span class="fad-tag-exemplo">dado de exemplo — sem persistência real ainda</span></div>
+        <div id="fad-historico"></div>
+      </div>`;
+  }
+
   async function abrirFAD() {
-    fadFundo.classList.add('aberto');
-    fadPainel.classList.add('aberto');
     fadAberto = true;
+    AnalysisDrawer({
+      titulo: 'Análise Financeira Inteligente',
+      subtitulo: 'Diagnóstico Executivo',
+      corpo: fadCorpoTemplate(),
+      acoes: [{ label: 'Fechar', tipo: 'ghost', onClick: fecharFAD }],
+    });
     document.getElementById('fad-resumo').textContent = 'Gerando análise…';
-    ['fad-positivos','fad-atencao','fad-oportunidades'].forEach(id => { document.getElementById(id).innerHTML = ''; });
     document.getElementById('fad-riscos').innerHTML = `<div class="fad-vazio">Carregando…</div>`;
-    document.getElementById('fad-recomendacoes').innerHTML = '';
-    document.getElementById('fad-historico').innerHTML = '';
     if (window.lucide) lucide.createIcons();
 
     if (!dadosCompartilhados) { document.getElementById('fad-resumo').textContent = 'Aguardando o dashboard terminar de carregar…'; return; }
@@ -2434,17 +2124,27 @@ if (window.lucide) lucide.createIcons();
   }
 
   function fecharFAD() {
-    fadFundo.classList.remove('aberto');
-    fadPainel.classList.remove('aberto');
+    fecharUniversalDrawer();
     fadAberto = false;
   }
 
-  const fadFundo = document.getElementById('fad-fundo');
-  const fadPainel = document.getElementById('fad-painel');
-  fadFundo.addEventListener('click', fecharFAD);
-  document.getElementById('fad-fechar').addEventListener('click', fecharFAD);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && fadAberto) fecharFAD(); });
-  document.getElementById('btn-analisar-financeiro').addEventListener('click', abrirFAD);
+  // ---------- Pesquisa Global + Command Palette (SYS-006/007) ----------
+  GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+  CommandPalette({
+    telas: [
+      { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+      { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+      { label: 'Financeiro', icone: 'wallet', href: 'dashboard.html' },
+      { label: 'Comercial', icone: 'trending-up', href: '../vendas/dashboard.html' },
+      { label: 'Compras', icone: 'shopping-cart', href: '../compras/dashboard.html' },
+      { label: 'Estoque', icone: 'package', href: '../estoque/dashboard.html' },
+    ],
+    acoes: [
+      { label: 'Novo Lançamento', icone: 'plus', onExecutar: () => { window.location.href = 'lancamento-novo.html'; } },
+      { label: 'Analisar Financeiro', icone: 'sparkles', onExecutar: () => abrirFAD() },
+    ],
+    buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+  });
 
   await carregarTimeline();
 </script>

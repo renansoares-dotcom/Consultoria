@@ -134,11 +134,18 @@ export function KPIGrid(containerId, kpis, onClickKpi) {
   cont.innerHTML = kpis.map(KPICard).join('');
   icones();
   if (!onClickKpi) return;
+  // Guarda contra listener duplicado: páginas com dado real (ex: Financeiro)
+  // chamam KPIGrid várias vezes no mesmo container conforme os dados
+  // recarregam — sem essa trava, cada chamada acumulava mais um listener
+  // de clique, e um clique disparava onClickKpi múltiplas vezes.
+  cont._dtvOnClickKpi = onClickKpi;
+  if (cont._dtvListenerLigado) return;
+  cont._dtvListenerLigado = true;
   cont.addEventListener('click', (e) => {
     const card = e.target.closest('.kpi-card[data-kpi]');
     if (!card) return;
     _ripple(card, e);
-    onClickKpi(card.dataset.kpi);
+    cont._dtvOnClickKpi(card.dataset.kpi);
   });
 }
 function _ripple(card, e) {
@@ -201,6 +208,16 @@ export function Timeline(containerId, itens) {
 //   -> { abrir(nome, valorTexto, composicao, opts?) } — painel completo de
 //      KPI, com Composição sempre visível e Recomendações/Análise Inteligente
 //      reservadas (display:none no framework CSS até existir regra/IA real).
+// ============================================================================
+// ============================================================================
+// ⚠️ DEPRECADO (MISSÃO 001) — createSimpleDrawer/createDetailDrawer
+// duplicavam o que o Universal Drawer System (DetailDrawer/EditDrawer/
+// CreateDrawer/AnalysisDrawer/HistoryDrawer/DecisionDrawer, mais abaixo
+// neste arquivo) já faz de forma unificada. Nenhuma página real usa estas
+// duas funções (confirmado por auditoria) — mantidas só por
+// compatibilidade retroativa, não usar em código novo. Use DetailDrawer
+// no lugar de createSimpleDrawer, e um dos 6 tipos no lugar de
+// createDetailDrawer.
 // ============================================================================
 export function createSimpleDrawer(ids) {
   const fundo = document.getElementById(ids.fundo);
@@ -365,6 +382,10 @@ export function Score(containerId, opts) {
 export function HealthScore(containerId, nota, subMetricas) {
   Score(containerId, { nome: 'Saúde Financeira', nota, subMetricas });
 }
+// Alias — a lista oficial de componentes da Missão 001 chama esse
+// componente de "ScoreCard". Mesmo componente, mesma função, nome
+// alternativo pra bater com a nomenclatura oficial.
+export const ScoreCard = Score;
 
 // ============================================================================
 // 10. TREND CARD
@@ -696,7 +717,7 @@ export function WorkspaceLayout(mainContainerId, config) {
       <div>
         <div class="rotulo">${config.hero.rotulo}</div>
         <div class="valor-hero" id="wl-hero-valor">${config.hero.valorTexto || '—'}</div>
-        ${config.hero.tendenciaTexto ? `<div class="hero-tendencia"><span>${config.hero.tendenciaPositiva === false ? '▼' : '▲'}</span><span id="wl-hero-tendencia">${config.hero.tendenciaTexto}</span></div>` : ''}
+        ${config.hero.tendenciaTexto ? `<div class="hero-tendencia"><span id="wl-hero-seta">${config.hero.tendenciaPositiva === false ? '▼' : '▲'}</span><span id="wl-hero-tendencia">${config.hero.tendenciaTexto}</span></div>` : ''}
       </div>
       <div class="hero-icone"><i data-lucide="${config.hero.icone || 'activity'}"></i></div>
     </div>`);
