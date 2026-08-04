@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Qualidade — Datativo Industrial</title>
+<title>Centro Inteligente da Qualidade — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
 </head>
 <body>
@@ -23,13 +24,14 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
         <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
         <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
         <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
-        <a href="../qualidade/dashboard.html" class="sidebar-link active"><i data-lucide="badge-check"></i> Qualidade</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="badge-check"></i> Qualidade</a>
         <a href="../financeiro/dashboard.html" class="sidebar-link"><i data-lucide="wallet"></i> Financeiro</a>
         <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
         <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
@@ -42,210 +44,195 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="topbar">
-      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
-      <div class="topbar-right">
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="page">
-      <div class="page-header">
-        <div>
-          <span class="eyebrow">Módulo</span>
-          <h1>Qualidade</h1>
-        </div>
-        <a href="casa-tintas.html" class="btn primary"><i data-lucide="palette"></i> Casa de Tintas</a>
-      </div>
-
-      <section class="grid grid-3" style="margin-bottom:18px;">
-        <div class="card"><div class="label">Inspeções Pendentes</div><div class="big valor aberto" id="card-pendentes">0</div></div>
-        <div class="card"><div class="label">Aprovadas (últimos 30 dias)</div><div class="big valor positivo" id="card-aprovadas">0</div></div>
-        <div class="card"><div class="label">Reprovadas (últimos 30 dias)</div><div class="big valor negativo" id="card-reprovadas">0</div></div>
-      </section>
-
-      <div class="subnav" id="abas">
-        <button class="active" data-aba="pendente">Pendentes</button>
-        <button data-aba="decidida">Histórico</button>
-      </div>
-
-      <section class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead id="thead"></thead>
-          <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
-        </table>
-      </section>
-    </main>
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
+    </div>
   </div>
-</div>
+</header>
 
-<!-- Modal: decidir inspeção -->
-<div class="modal-overlay" id="modal-inspecao">
-  <div class="modal">
-    <h2>Inspecionar</h2>
-    <p class="modal-sub" id="insp-produto-nome">—</p>
-    <div class="caixa-info" style="margin-bottom:16px;">
-      <strong>Quantidade total sob inspeção: <span id="insp-quantidade-total"></span></strong><br>
-      A soma de aprovado + reprovado precisa bater com o total. O que for aprovado libera pro estoque disponível na hora; o reprovado sai do bloqueio e não volta — é perda/descarte.
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow">
-        <span class="field-label">Quantidade Aprovada</span>
-        <input class="input mono" type="number" step="0.0001" min="0" id="insp_aprovada">
-      </label>
-      <label class="field f-grow">
-        <span class="field-label">Quantidade Reprovada</span>
-        <input class="input mono" type="number" step="0.0001" min="0" id="insp_reprovada">
-      </label>
-    </div>
-    <label class="field">
-      <span class="field-label">Motivo (obrigatório se houver reprovação)</span>
-      <textarea class="input" id="insp_motivo" placeholder="Ex: fora de especificação, embalagem violada..."></textarea>
-    </label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-insp">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-confirmar-insp">Confirmar Inspeção</button>
-    </div>
+<main class="page" id="qlt-main"></main>
   </div>
 </div>
 
 <script type="module">
-  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
-  import { initNav } from '../../js/nav.js';
-  initNav();
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, Charts, TimelineEngine,
+  DataGrid, DetailDrawer, AnalysisDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
+initNav();
 
-  const sessao = await exigirSessao();
-  const usuario = await usuarioAtual();
-  if (usuario) {
-    document.getElementById('user-nome').textContent = usuario.nome;
-    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  }
-  document.getElementById('user-chip').addEventListener('click', async () => {
-    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
-  });
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
 
-  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:4});
-  const fmtDataHora = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
-  const LABEL_ORIGEM = { recebimento_compra: 'Recebimento de Compra', apontamento_producao: 'Apontamento de Produção' };
-  const LABEL_STATUS = { pendente: 'Pendente', aprovada: 'Aprovada', reprovada: 'Reprovada', aprovada_parcial: 'Aprovada Parcial' };
-  const BADGE_STATUS = { pendente: 'aberto', aprovada: 'liquidado', reprovada: 'inadimplente', aprovada_parcial: 'parcial' };
+const fmt = v => Number(v||0).toLocaleString('pt-BR');
 
-  let abaAtual = 'pendente';
-  document.getElementById('abas').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-aba]');
-    if (!btn) return;
-    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    abaAtual = btn.dataset.aba;
-    carregar();
-  });
+// ============================================================================
+// QLT-001 — TODO dado abaixo é DE EXEMPLO (mesmo padrão de escopo das
+// entregas anteriores da série: foco declarado é reutilização do framework).
+//
+// Quality Score bate exato com o mapeamento do ADR-006 — sem divergência
+// de nome desta vez (diferente de Compras/PCP/Produção).
+//
+// Interpretações sem componente oficial equivalente exato:
+// - "Mapa das Não Conformidades" → .dtv-mapa-placeholder (reservado desde
+//   o SYS-001, mesmo tratamento do "Mapa da Fábrica" no PCP-001)
+// - "Plano de Ação" → DataGrid (ação/responsável/prazo/status)
+// - "Árvore de Causa" → seção arquitetural reservada (AnalysisDrawer
+//   explicando que o componente de árvore de causa-raiz ainda não existe
+//   na biblioteca) — mesmo princípio da Simulação de Impacto no PCP-001,
+//   não inventei um componente de diagrama de árvore.
+// ============================================================================
 
-  async function carregarResumo() {
-    const { count: pendentes } = await supabase.from('inspecoes_qualidade').select('id', { count: 'exact', head: true }).eq('status', 'pendente');
-    const trintaDiasAtras = new Date(Date.now() - 30*24*60*60*1000).toISOString();
-    const { count: aprovadas } = await supabase.from('inspecoes_qualidade').select('id', { count: 'exact', head: true }).in('status', ['aprovada','aprovada_parcial']).gte('inspecionado_em', trintaDiasAtras);
-    const { count: reprovadas } = await supabase.from('inspecoes_qualidade').select('id', { count: 'exact', head: true }).eq('status', 'reprovada').gte('inspecionado_em', trintaDiasAtras);
-    document.getElementById('card-pendentes').textContent = pendentes || 0;
-    document.getElementById('card-aprovadas').textContent = aprovadas || 0;
-    document.getElementById('card-reprovadas').textContent = reprovadas || 0;
-  }
+const resultado = WorkspaceLayout('qlt-main', {
+  header: {
+    titulo: 'Centro Inteligente da Qualidade',
+    breadcrumb: 'Qualidade',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar inspeções, produtos, lotes...',
+    acoesRapidas: [{ label: 'Casa de Tintas', icone: 'palette', href: 'casa-tintas.html' }, { label: 'Inspeções', icone: 'clipboard-check', href: 'inspecoes.html', primario: true }],
+  },
+  attentionCenter: {
+    exemplo: true,
+    alertas: [
+      { tipo: 'Não Conformidade', prioridade: 'alta', icone: 'alert-triangle', mensagem: 'Taxa de reprovação do lote #4021 acima de 15% — investigação recomendada.', acaoSugerida: 'Ver inspeções', link: 'inspecoes.html' },
+      { tipo: 'Plano de Ação', prioridade: 'media', icone: 'clock', mensagem: '2 ações corretivas com prazo vencendo esta semana.', acaoSugerida: 'Ver plano de ação', link: '#' },
+    ],
+  },
+  healthScore: {
+    nome: 'Quality Score',
+    tituloSecao: 'Saúde da Qualidade',
+    exemplo: true,
+    fatores: [
+      { nome: 'Taxa de aprovação', valor: 91, peso: 0.35 },
+      { nome: 'Recorrência de NC', valor: 68, peso: 0.25 },
+      { nome: 'Prazo do plano de ação', valor: 74, peso: 0.2 },
+      { nome: 'Auditoria de processo', valor: 88, peso: 0.2 },
+    ],
+    historico: [{ data: 'Mai', nota: 72 }, { data: 'Jun', nota: 76 }, { data: 'Jul', nota: 81 }],
+  },
+  kpis: {
+    itens: [
+      { id: 'insp-pendentes', nome: 'Inspeções Pendentes', icone: 'clock', tom: 'tom-ambar', valorTexto: '9', clicavel: true },
+      { id: 'taxa-aprovacao', nome: 'Taxa de Aprovação', icone: 'check-circle-2', tom: 'tom-verde', valorTexto: '91%', clicavel: true },
+      { id: 'nc-abertas', nome: 'Não Conformidades Abertas', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: '6', clicavel: true },
+      { id: 'acoes-atraso', nome: 'Ações em Atraso', icone: 'clipboard-x', tom: 'tom-roxo', valorTexto: '2', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights de Qualidade',
+    exemplo: true,
+    itens: [
+      { categoria: 'Reprovação', texto: 'Lote #4021 concentra 40% das reprovações do mês', origem: 'Regra' },
+      { categoria: 'Fornecedor', texto: 'Matéria-prima do Fornecedor Delta tem taxa de NC 2x a média', origem: 'IA' },
+      { categoria: 'Plano de Ação', texto: 'Ações corretivas concluídas no prazo caíram 8% no trimestre', origem: 'Regra' },
+    ],
+  },
+  decisionCenter: {
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Investigar causa-raiz do lote #4021', descricao: 'Concentra 40% das reprovações do mês — padrão fora do normal.', origem: 'Qualidade', impactoTexto: 'Redução de refugo', urgencia: 'alta', confianca: 83, acaoSugerida: 'Ver árvore de causa', exemplo: true },
+      { titulo: 'Auditar matéria-prima do Fornecedor Delta', descricao: 'Taxa de não conformidade 2x acima da média dos demais fornecedores.', origem: 'Qualidade', impactoTexto: 'Redução de NC recorrente', urgencia: 'media', confianca: 75, acaoSugerida: 'Ver inspeções', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'mapa', id: 'qlt-slot-mapa', titulo: 'Mapa das Não Conformidades' },
+      { chave: 'indicadores', id: 'qlt-slot-indicadores', titulo: 'Indicadores da Qualidade' },
+      { chave: 'plano-acao', id: 'qlt-slot-plano', titulo: 'Plano de Ação', linha: 'secundaria' },
+      { chave: 'timeline', id: 'qlt-slot-timeline', titulo: 'Timeline', linha: 'secundaria' },
+      { chave: 'arvore', id: 'qlt-slot-arvore', titulo: 'Árvore de Causa', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Inspeções', id: 'qlt-inspecoes' },
+});
 
-  async function carregar() {
-    await carregarResumo();
-    const tbody = document.getElementById('tbody');
+// ---------- 5. Mapa das Não Conformidades — placeholder oficial ----------
+document.getElementById(resultado.slots.mapa).innerHTML = `<div class="dtv-mapa-placeholder">Mapa das Não Conformidades — arquitetura pronta, aguardando componente geográfico do módulo</div>`;
 
-    if (abaAtual === 'pendente') {
-      document.getElementById('thead').innerHTML = `<tr><th>Criada em</th><th>Produto</th><th>Origem</th><th class="num">Quantidade</th><th style="text-align:right;">Ações</th></tr>`;
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Carregando…</td></tr>`;
+// 8. Indicadores da Qualidade
+const INDICADORES_EXEMPLO = [
+  { nome: 'Aprovado', valor: 312, cor: '#1f7a5c' }, { nome: 'Reprovado', valor: 22, cor: '#c0392b' }, { nome: 'Retrabalho', valor: 14, cor: '#b76e11' },
+];
+Charts.donut(resultado.slots.indicadores, INDICADORES_EXEMPLO.map(i => ({ ...i, onClick: () => abrirDrilldownGenerico(i.nome, `${i.valor} unidades no período`) })), 'Total Inspecionado', fmt(INDICADORES_EXEMPLO.reduce((s,i)=>s+i.valor,0)));
 
-      const { data, error } = await supabase.from('inspecoes_qualidade')
-        .select('id, quantidade, origem, criado_em, produtos(codigo, nome, unidade_medida)')
-        .eq('status', 'pendente').order('criado_em');
+// 7. Plano de Ação
+DataGrid(resultado.slots['plano-acao'],
+  [{ titulo: 'Ação' }, { titulo: 'Responsável' }, { titulo: 'Prazo' }, { titulo: 'Status' }],
+  [
+    { celulas: ['Revisar processo de recebimento — Fornecedor Delta', 'Qualidade', '02/08', '<span class="badge aberto">Em andamento</span>'], onClick: () => abrirDrilldownGenerico('Revisar processo de recebimento', 'Responsável: Qualidade · Prazo: 02/08') },
+    { celulas: ['Treinamento de inspeção — Linha 1', 'RH', '05/08', '<span class="badge parcial">Vencendo</span>'], onClick: () => abrirDrilldownGenerico('Treinamento de inspeção', 'Responsável: RH · Prazo: 05/08') },
+  ]
+);
 
-      if (error) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhuma inspeção pendente.</td></tr>`; return; }
+// 9. Timeline
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.timeline, [
+  { id: '1', tipo: 'Auditoria', titulo: 'Inspeção do lote #4021 concluída', data: hoje, hora: '09:40', autor: 'Qualidade' },
+  { id: '2', tipo: 'Aprovação', titulo: 'Plano de ação #12 aprovado', data: hoje, hora: '11:20' },
+], { agrupamento: 'dia', filtros: false });
 
-      tbody.innerHTML = data.map(i => `
-        <tr>
-          <td>${fmtDataHora(i.criado_em)}</td>
-          <td>${i.produtos?.codigo ?? ''} — ${i.produtos?.nome ?? '(produto removido)'}</td>
-          <td>${LABEL_ORIGEM[i.origem]}</td>
-          <td class="num mono">${fmtNum(i.quantidade)} ${i.produtos?.unidade_medida ?? ''}</td>
-          <td style="text-align:right;"><button class="icon-btn" data-inspecionar="${i.id}" data-nome="${(i.produtos?.nome ?? '').replace(/"/g,'&quot;')}" data-quantidade="${i.quantidade}" data-unidade="${i.produtos?.unidade_medida ?? ''}"><i data-lucide="clipboard-check"></i> Inspecionar</button></td>
-        </tr>`).join('');
-    } else {
-      document.getElementById('thead').innerHTML = `<tr><th>Decidida em</th><th>Produto</th><th>Origem</th><th class="num">Aprovado</th><th class="num">Reprovado</th><th>Status</th></tr>`;
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+// 11. Árvore de Causa — seção arquitetural reservada, sem componente de
+// diagrama de árvore ainda (mesmo princípio da Simulação de Impacto)
+document.getElementById(resultado.slots.arvore).innerHTML = `
+  <p style="color:var(--ink-soft); font-size:13px; margin-bottom:10px;">Investigação de causa-raiz das não conformidades recorrentes.</p>
+  <button type="button" class="btn primary" id="qlt-arvore-btn">Abrir Investigação</button>
+  <div class="ca-tag-exemplo" style="display:inline-block; margin-top:8px;">arquitetura pronta — componente de árvore de causa ainda não existe</div>`;
+document.getElementById('qlt-arvore-btn').addEventListener('click', () => {
+  AnalysisDrawer({ titulo: 'Árvore de Causa', subtitulo: 'Investigação de causa-raiz', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura pronta — o componente de diagrama de árvore de causa (tipo Ishikawa/5 porquês) ainda não existe na biblioteca oficial. Quando existir, este painel mostrará a árvore completa de causas e efeitos.</p>` });
+});
 
-      const { data, error } = await supabase.from('inspecoes_qualidade')
-        .select('quantidade_aprovada, quantidade_reprovada, status, inspecionado_em, origem, produtos(codigo, nome, unidade_medida)')
-        .neq('status', 'pendente').order('inspecionado_em', { ascending: false }).limit(200);
+// ---------- Inspeções (Área Operacional) ----------
+DataGrid(resultado.slots.operational,
+  [{ titulo: 'Lote' }, { titulo: 'Produto' }, { titulo: 'Data' }, { titulo: 'Resultado' }, { titulo: 'Inspetor' }],
+  [
+    { celulas: ['#4021', 'Bobina Extra 40cm', '29/07', '<span class="badge negativo">Reprovado</span>', 'Ana'], onClick: () => abrirDetalheLote('#4021') },
+    { celulas: ['#4019', 'Filme Termoencolhível', '28/07', '<span class="badge pago">Aprovado</span>', 'Carlos'], onClick: () => abrirDetalheLote('#4019') },
+  ]
+);
 
-      if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-      if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma inspeção no histórico ainda.</td></tr>`; return; }
+// ---------- Drawers (SYS-011) ----------
+function abrirDrilldownGenerico(titulo, texto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">${texto}</p><p style="color:var(--ink-faint); font-size:12px; margin-top:8px;">Estrutura de drill-down pronta — detalhamento real aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheLote(numero) {
+  DetailDrawer({ titulo: `Lote ${numero}`, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta — critérios de inspeção reais aparecem aqui quando ligados à consulta correspondente.</p>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'insp-pendentes': 'Inspeções Pendentes', 'taxa-aprovacao': 'Taxa de Aprovação', 'nc-abertas': 'Não Conformidades Abertas', 'acoes-atraso': 'Ações em Atraso' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
+}
 
-      tbody.innerHTML = data.map(i => `
-        <tr>
-          <td>${fmtDataHora(i.inspecionado_em)}</td>
-          <td>${i.produtos?.codigo ?? ''} — ${i.produtos?.nome ?? '(produto removido)'}</td>
-          <td>${LABEL_ORIGEM[i.origem]}</td>
-          <td class="num mono valor positivo">${fmtNum(i.quantidade_aprovada)} ${i.produtos?.unidade_medida ?? ''}</td>
-          <td class="num mono valor negativo">${fmtNum(i.quantidade_reprovada)} ${i.produtos?.unidade_medida ?? ''}</td>
-          <td><span class="badge ${BADGE_STATUS[i.status]}">${LABEL_STATUS[i.status]}</span></td>
-        </tr>`).join('');
-    }
-    if (window.lucide) lucide.createIcons();
-  }
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'Qualidade', icone: 'badge-check', href: 'dashboard.html' },
+    { label: 'Produção', icone: 'factory', href: '../producao/dashboard.html' },
+    { label: 'Compras', icone: 'shopping-cart', href: '../compras/dashboard.html' },
+    { label: 'PCP', icone: 'calendar-clock', href: '../pcp/dashboard.html' },
+  ],
+  acoes: [{ label: 'Abrir Inspeções', icone: 'clipboard-check', onExecutar: () => { window.location.href = 'inspecoes.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
 
-  document.getElementById('tbody').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-inspecionar]');
-    if (btn) abrirModalInspecao(btn.dataset.inspecionar, btn.dataset.nome, btn.dataset.quantidade, btn.dataset.unidade);
-  });
-
-  // ---------- Modal de decisão ----------
-  const modal = document.getElementById('modal-inspecao');
-  let inspecaoEmDecisao = null, quantidadeTotalEmDecisao = 0;
-
-  function abrirModalInspecao(id, nome, quantidade, unidade) {
-    inspecaoEmDecisao = id;
-    quantidadeTotalEmDecisao = Number(quantidade);
-    document.getElementById('insp-produto-nome').textContent = nome;
-    document.getElementById('insp-quantidade-total').textContent = `${fmtNum(quantidade)} ${unidade}`;
-    document.getElementById('insp_aprovada').value = quantidade;
-    document.getElementById('insp_reprovada').value = 0;
-    document.getElementById('insp_motivo').value = '';
-    modal.classList.add('open');
-  }
-
-  document.getElementById('btn-cancelar-insp').addEventListener('click', () => modal.classList.remove('open'));
-
-  document.getElementById('btn-confirmar-insp').addEventListener('click', async () => {
-    const aprovada = parseFloat(document.getElementById('insp_aprovada').value || 0);
-    const reprovada = parseFloat(document.getElementById('insp_reprovada').value || 0);
-    const motivo = document.getElementById('insp_motivo').value.trim();
-
-    if (Math.abs((aprovada + reprovada) - quantidadeTotalEmDecisao) > 0.0001) {
-      alert(`A soma de aprovado + reprovado (${fmtNum(aprovada + reprovada)}) precisa ser igual ao total sob inspeção (${fmtNum(quantidadeTotalEmDecisao)}).`);
-      return;
-    }
-    if (reprovada > 0 && !motivo) { alert('Informe o motivo da reprovação.'); return; }
-
-    const status = reprovada === 0 ? 'aprovada' : (aprovada === 0 ? 'reprovada' : 'aprovada_parcial');
-
-    const { error } = await supabase.from('inspecoes_qualidade').update({
-      status, quantidade_aprovada: aprovada, quantidade_reprovada: reprovada,
-      motivo_reprovacao: motivo || null, inspecionado_por: usuario?.id, inspecionado_em: new Date().toISOString(),
-    }).eq('id', inspecaoEmDecisao);
-
-    if (error) { alert('Erro ao registrar inspeção: ' + error.message); return; }
-    modal.classList.remove('open');
-    await carregar();
-  });
-
-  await carregar();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
