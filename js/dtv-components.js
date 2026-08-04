@@ -39,6 +39,11 @@ export function ExecutiveHeader(containerId, opts) {
         <h1>${opts.titulo}</h1>
       </div>
       <div class="dtv-cabecalho-executivo">
+        ${opts.grupoEmpresarial ? `
+        <select class="input" id="${containerId}-grupo" style="width:170px;">
+          <option value="">Todos os grupos</option>
+          ${opts.grupoEmpresarial.grupos.map(g => `<option value="${g.id}"${g.id === opts.grupoEmpresarial.grupoAtivo ? ' selected' : ''}>${g.nome}</option>`).join('')}
+        </select>` : ''}
         ${(opts.onBusca || opts.buscaGlobal) ? `
         <div class="dtv-busca-global">
           <i data-lucide="search"></i>
@@ -51,6 +56,7 @@ export function ExecutiveHeader(containerId, opts) {
         </div>
       </div>
     </div>`;
+  if (opts.grupoEmpresarial?.onTrocar) document.getElementById(`${containerId}-grupo`).addEventListener('change', (e) => opts.grupoEmpresarial.onTrocar(e.target.value));
   if (opts.onBusca) document.getElementById(`${containerId}-busca`).addEventListener('input', (e) => opts.onBusca(e.target.value));
   if (opts.onFavoritar) document.getElementById(`${containerId}-favorito`).addEventListener('click', opts.onFavoritar);
   (opts.acoesRapidas || []).forEach((a, i) => {
@@ -684,6 +690,16 @@ export function WorkspaceLayout(mainContainerId, config) {
   const partes = [];
 
   if (config.header) partes.push(`<div id="wl-header"></div>`);
+
+  if (config.hero) partes.push(`
+    <div class="hero-saldo">
+      <div>
+        <div class="rotulo">${config.hero.rotulo}</div>
+        <div class="valor-hero" id="wl-hero-valor">${config.hero.valorTexto || '—'}</div>
+        ${config.hero.tendenciaTexto ? `<div class="hero-tendencia"><span>${config.hero.tendenciaPositiva === false ? '▼' : '▲'}</span><span id="wl-hero-tendencia">${config.hero.tendenciaTexto}</span></div>` : ''}
+      </div>
+      <div class="hero-icone"><i data-lucide="${config.hero.icone || 'activity'}"></i></div>
+    </div>`);
 
   if (config.attentionCenter) partes.push(`
     <section class="central-atencao">
