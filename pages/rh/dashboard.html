@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RH — Datativo Industrial</title>
+<title>Centro Inteligente de Gestão de Pessoas — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,7 +11,14 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  /* RH-001 — "Painel da Liderança" (item 11) composto só de MetricCard já
+     oficial; 3 linhas de CSS de composição local, não é componente novo. */
+  .rh-lideranca-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  #rh-timeline { padding: 18px 24px; }
+</style>
 </head>
 <body>
 
@@ -23,6 +30,7 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
         <a href="../estoque/dashboard.html" class="sidebar-link"><i data-lucide="package"></i> Estoque</a>
@@ -34,7 +42,7 @@
         <a href="../logistica/dashboard.html" class="sidebar-link"><i data-lucide="truck"></i> Logística/Expedição</a>
         <a href="../manutencao/dashboard.html" class="sidebar-link"><i data-lucide="wrench"></i> Manutenção</a>
         <a href="../fiscal/dashboard.html" class="sidebar-link"><i data-lucide="file-text"></i> Fiscal</a>
-        <a href="../rh/dashboard.html" class="sidebar-link active"><i data-lucide="users-round"></i> RH</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="users-round"></i> RH</a>
       </nav>
     </div>
     <div class="sidebar-footer">
@@ -42,236 +50,198 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="topbar">
-      <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
-      <div class="topbar-right">
-        <div class="user-chip" id="user-chip">
-          <div class="avatar" id="user-avatar">--</div>
-          <span id="user-nome">Carregando…</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="page">
-      <div class="page-header">
-        <div>
-          <span class="eyebrow">Módulo</span>
-          <h1>RH</h1>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn ghost" id="btn-novo-depto">+ Departamento</button>
-          <button class="btn ghost" id="btn-novo-cargo">+ Cargo</button>
-          <button class="btn primary" id="btn-novo"><i data-lucide="plus"></i> Novo Funcionário</button>
-        </div>
-      </div>
-
-      <section class="grid grid-3" style="margin-bottom:18px;">
-        <div class="card"><div class="label">Funcionários Ativos</div><div class="big valor positivo" id="card-ativos">0</div></div>
-        <div class="card"><div class="label">Departamentos</div><div class="big" id="card-deptos">0</div></div>
-        <div class="card"><div class="label">Cargos</div><div class="big" id="card-cargos">0</div></div>
-      </section>
-
-      <div class="subnav" id="abas">
-        <button class="active" data-aba="funcionarios">Funcionários</button>
-        <button data-aba="cargos">Cargos & Departamentos</button>
-      </div>
-
-      <section class="card" style="padding:0; overflow:hidden;">
-        <table>
-          <thead id="thead"></thead>
-          <tbody id="tbody"><tr><td colspan="6" class="empty-state">Carregando…</td></tr></tbody>
-        </table>
-      </section>
-    </main>
-  </div>
-</div>
-
-<!-- Modal: novo funcionário -->
-<div class="modal-overlay" id="modal-func">
-  <div class="modal">
-    <h2>Novo Funcionário</h2>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Nome *</span><input class="input" id="fn_nome"></label>
-      <label class="field f-160"><span class="field-label">CPF</span><input class="input mono" id="fn_cpf"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">Departamento</span><select class="input" id="fn_departamento"></select></label>
-      <label class="field f-grow"><span class="field-label">Cargo</span><select class="input" id="fn_cargo"></select></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-160"><span class="field-label">Data de Admissão</span><input class="input" type="date" id="fn_admissao"></label>
-      <label class="field f-grow"><span class="field-label">Salário (R$)</span><input class="input mono" type="number" step="0.01" min="0" id="fn_salario"></label>
-    </div>
-    <div class="linha-flex">
-      <label class="field f-grow"><span class="field-label">E-mail</span><input class="input" type="email" id="fn_email"></label>
-      <label class="field f-160"><span class="field-label">Telefone</span><input class="input" id="fn_telefone"></label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-func">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-func">Salvar</button>
+<header class="topbar">
+  <div class="brand">Datativo<span style="color:var(--accent)">Industrial</span><small>ERP</small></div>
+  <div class="topbar-right">
+    <div class="user-chip" id="user-chip">
+      <div class="avatar" id="user-avatar">--</div>
+      <span id="user-nome">Carregando…</span>
     </div>
   </div>
-</div>
+</header>
 
-<!-- Modal: novo departamento/cargo -->
-<div class="modal-overlay" id="modal-cargo">
-  <div class="modal">
-    <h2 id="cargo-titulo">Novo Departamento</h2>
-    <label class="field"><span class="field-label">Nome *</span><input class="input" id="cg_nome"></label>
-    <label class="field" id="campo-depto-do-cargo" style="display:none;"><span class="field-label">Departamento</span><select class="input" id="cg_departamento"></select></label>
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-cancelar-cargo">Cancelar</button>
-      <button class="btn primary" type="button" id="btn-salvar-cargo">Salvar</button>
-    </div>
+<main class="page" id="rh-main"></main>
   </div>
 </div>
 
 <script type="module">
-  import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
-  import { initNav } from '../../js/nav.js';
-  initNav();
+import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
+import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, DataGrid, TimelineEngine,
+  MetricCard, DetailDrawer,
+} from '../../js/dtv-components.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
+initNav();
 
-  const sessao = await exigirSessao();
-  const usuario = await usuarioAtual();
-  const TENANT_ID = usuario?.tenant_id;
-  if (usuario) {
-    document.getElementById('user-nome').textContent = usuario.nome;
-    document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
-  }
-  document.getElementById('user-chip').addEventListener('click', async () => {
-    if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
-  });
+const sessao = await exigirSessao();
+const usuario = await usuarioAtual();
+if (usuario) {
+  document.getElementById('user-nome').textContent = usuario.nome;
+  document.getElementById('user-avatar').textContent = usuario.nome.slice(0,2).toUpperCase();
+}
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
+});
 
-  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
-  const fmtData = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-  const LABEL_STATUS = { ativo: 'Ativo', desligado: 'Desligado', afastado: 'Afastado' };
-  const BADGE_STATUS = { ativo: 'liquidado', desligado: 'inadimplente', afastado: 'aberto' };
+// ============================================================================
+// RH-001 — TODO dado abaixo é DE EXEMPLO (mesmo padrão de escopo da série).
+//
+// People Score bate exato com o mapeamento do ADR-006 — sem divergência
+// (mesmo caso do Quality Score).
+//
+// Interpretações sem componente oficial equivalente exato:
+// - "Matriz de Competências" → DataGrid (funcionário × nível de
+//   competência) — biblioteca não tem componente de matriz/heatmap ainda
+// - "Mapa de Capacidades" → .dtv-mapa-placeholder (reservado desde SYS-001)
+// - "Painel da Liderança" → grid de MetricCard (mesmo padrão já usado em
+//   Cockpit da Fábrica/Torre de Controle/Indicadores de Confiabilidade)
+// ============================================================================
 
-  let abaAtual = 'funcionarios';
-  let departamentosCache = [], cargosCache = [];
+const resultado = WorkspaceLayout('rh-main', {
+  header: {
+    titulo: 'Centro Inteligente de Gestão de Pessoas',
+    breadcrumb: 'RH',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar funcionários, cargos, treinamentos...',
+    acoesRapidas: [{ label: 'Funcionários', icone: 'users', href: 'funcionarios.html', primario: true }],
+  },
+  attentionCenter: {
+    exemplo: true,
+    alertas: [
+      { tipo: 'Treinamento', prioridade: 'media', icone: 'graduation-cap', mensagem: '4 certificações de segurança vencendo nos próximos 30 dias.', acaoSugerida: 'Ver treinamentos', link: '#' },
+      { tipo: 'Avaliação', prioridade: 'baixa', icone: 'clipboard-check', mensagem: '6 avaliações de desempenho pendentes este trimestre.', acaoSugerida: 'Ver avaliações', link: '#' },
+    ],
+  },
+  healthScore: {
+    nome: 'People Score',
+    tituloSecao: 'Saúde de Pessoas',
+    exemplo: true,
+    fatores: [
+      { nome: 'Retenção', valor: 88, peso: 0.3 },
+      { nome: 'Engajamento', valor: 74, peso: 0.25 },
+      { nome: 'Cumprimento de treinamento', valor: 81, peso: 0.25 },
+      { nome: 'Cobertura de sucessão', valor: 62, peso: 0.2 },
+    ],
+    historico: [{ data: 'Mai', nota: 76 }, { data: 'Jun', nota: 79 }, { data: 'Jul', nota: 82 }],
+  },
+  kpis: {
+    itens: [
+      { id: 'headcount', nome: 'Headcount Total', icone: 'users', tom: 'tom-azul', valorTexto: '86', clicavel: true },
+      { id: 'turnover', nome: 'Turnover Mensal', icone: 'trending-down', tom: 'tom-ambar', valorTexto: '2,1%', clicavel: true },
+      { id: 'absenteismo', nome: 'Absenteísmo', icone: 'calendar-x', tom: 'tom-vermelho', valorTexto: '1,4%', clicavel: true },
+      { id: 'treinamentos-mes', nome: 'Treinamentos no Mês', icone: 'graduation-cap', tom: 'tom-verde', valorTexto: '7', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: {
+    titulo: 'Insights de RH',
+    exemplo: true,
+    itens: [
+      { categoria: 'Retenção', texto: 'Turnover da Produção 1,5x acima da média dos demais setores', origem: 'Regra' },
+      { categoria: 'Sucessão', texto: '3 posições-chave sem sucessor identificado', origem: 'Regra' },
+      { categoria: 'Engajamento', texto: 'Queda de engajamento concentrada no turno da noite', origem: 'IA' },
+    ],
+  },
+  decisionCenter: {
+    exemplo: true,
+    recomendacoes: [
+      { titulo: 'Mapear sucessores para as 3 posições-chave em aberto', descricao: 'Sem sucessor identificado — risco de continuidade em caso de saída.', origem: 'RH', impactoTexto: 'Redução de risco de sucessão', urgencia: 'alta', confianca: 77, acaoSugerida: 'Ver matriz de competências', exemplo: true },
+      { titulo: 'Investigar turnover elevado na Produção', descricao: '1,5x acima da média dos demais setores nos últimos 3 meses.', origem: 'RH', impactoTexto: 'Redução de turnover', urgencia: 'media', confianca: 72, acaoSugerida: 'Ver painel da equipe', exemplo: true },
+    ],
+  },
+  analyticsArea: {
+    slots: [
+      { chave: 'equipe', id: 'rh-slot-equipe', titulo: 'Painel da Equipe' },
+      { chave: 'mapa', id: 'rh-slot-mapa', titulo: 'Mapa de Capacidades' },
+      { chave: 'competencias', id: 'rh-slot-competencias', titulo: 'Matriz de Competências', linha: 'secundaria' },
+      { chave: 'avaliacoes', id: 'rh-slot-avaliacoes', titulo: 'Avaliações', linha: 'secundaria' },
+      { chave: 'treinamentos', id: 'rh-slot-treinamentos', titulo: 'Treinamentos', linha: 'secundaria' },
+      { chave: 'lideranca', id: 'rh-slot-lideranca', titulo: 'Painel da Liderança', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Timeline', id: 'rh-timeline' },
+});
 
-  document.getElementById('abas').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-aba]');
-    if (!btn) return;
-    document.querySelectorAll('#abas button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    abaAtual = btn.dataset.aba;
-    carregar();
-  });
+// ---------- 5. Painel da Equipe ----------
+DataGrid(resultado.slots.equipe,
+  [{ titulo: 'Funcionário' }, { titulo: 'Cargo' }, { titulo: 'Departamento' }, { titulo: 'Status' }],
+  [
+    { celulas: ['Carlos Silva', 'Operador de Extrusora', 'Produção', '<span class="badge pago">Ativo</span>'], onClick: () => abrirDrilldownGenerico('Carlos Silva', 'Operador de Extrusora · Produção') },
+    { celulas: ['Ana Souza', 'Inspetora de Qualidade', 'Qualidade', '<span class="badge pago">Ativo</span>'], onClick: () => abrirDrilldownGenerico('Ana Souza', 'Inspetora de Qualidade · Qualidade') },
+  ]
+);
 
-  async function carregarResumo() {
-    const { count: ativos } = await supabase.from('funcionarios').select('id', { count: 'exact', head: true }).eq('status', 'ativo');
-    const { count: deptos } = await supabase.from('departamentos').select('id', { count: 'exact', head: true }).eq('ativo', true);
-    const { count: cargos } = await supabase.from('cargos').select('id', { count: 'exact', head: true }).eq('ativo', true);
-    document.getElementById('card-ativos').textContent = ativos || 0;
-    document.getElementById('card-deptos').textContent = deptos || 0;
-    document.getElementById('card-cargos').textContent = cargos || 0;
-  }
+// 6. Mapa de Capacidades — placeholder oficial
+document.getElementById(resultado.slots.mapa).innerHTML = `<div class="dtv-mapa-placeholder">Mapa de Capacidades — arquitetura pronta, aguardando componente geográfico/organizacional do módulo</div>`;
 
-  async function carregar() {
-    await carregarResumo();
-    const { data: deptos } = await supabase.from('departamentos').select('id, nome').eq('ativo', true).order('nome');
-    const { data: cargos } = await supabase.from('cargos').select('id, nome, departamento_id').eq('ativo', true).order('nome');
-    departamentosCache = deptos || [];
-    cargosCache = cargos || [];
+// 6 (analítica). Matriz de Competências
+DataGrid(resultado.slots.competencias,
+  [{ titulo: 'Funcionário' }, { titulo: 'Competência' }, { titulo: 'Nível' }],
+  [
+    { celulas: ['Carlos Silva', 'Operação de Extrusora', '<span class="badge pago">Avançado</span>'], onClick: () => abrirDrilldownGenerico('Carlos Silva — Operação de Extrusora', 'Nível: Avançado') },
+    { celulas: ['Ana Souza', 'Inspeção Visual', '<span class="badge parcial">Intermediário</span>'], onClick: () => abrirDrilldownGenerico('Ana Souza — Inspeção Visual', 'Nível: Intermediário') },
+  ]
+);
 
-    if (abaAtual === 'funcionarios') return carregarFuncionarios();
-    return carregarCargosDeptos();
-  }
+// 7. Avaliações
+DataGrid(resultado.slots.avaliacoes,
+  [{ titulo: 'Funcionário' }, { titulo: 'Data' }, { titulo: 'Nota' }],
+  [
+    { celulas: ['Carlos Silva', '15/07', '8,5'], onClick: () => abrirDrilldownGenerico('Avaliação — Carlos Silva', 'Nota: 8,5 · 15/07') },
+    { celulas: ['Ana Souza', '10/07', '9,2'], onClick: () => abrirDrilldownGenerico('Avaliação — Ana Souza', 'Nota: 9,2 · 10/07') },
+  ]
+);
 
-  async function carregarFuncionarios() {
-    document.getElementById('thead').innerHTML = `<tr><th>Nome</th><th>Departamento</th><th>Cargo</th><th>Admissão</th><th class="num">Salário</th><th>Status</th></tr>`;
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Carregando…</td></tr>`;
+// 8. Treinamentos
+DataGrid(resultado.slots.treinamentos,
+  [{ titulo: 'Curso' }, { titulo: 'Participantes' }, { titulo: 'Status' }],
+  [
+    { celulas: ['NR-12 — Segurança em Máquinas', '12', '<span class="badge parcial">Em andamento</span>'], onClick: () => abrirDrilldownGenerico('NR-12 — Segurança em Máquinas', '12 participantes · Em andamento') },
+    { celulas: ['Boas Práticas de Qualidade', '8', '<span class="badge pago">Concluído</span>'], onClick: () => abrirDrilldownGenerico('Boas Práticas de Qualidade', '8 participantes · Concluído') },
+  ]
+);
 
-    const { data, error } = await supabase.from('funcionarios')
-      .select('nome, data_admissao, salario, status, cargos(nome), departamentos(nome)').order('nome');
+// 11. Painel da Liderança — grid de MetricCard
+document.getElementById(resultado.slots.lideranca).innerHTML = `<div class="rh-lideranca-grid">${[
+  MetricCard({ nome: 'Posições de Liderança', valorTexto: '9' }),
+  MetricCard({ nome: 'Com Sucessor Mapeado', valorTexto: '6' }),
+  MetricCard({ nome: 'Turnover de Líderes', valorTexto: '0%' }),
+  MetricCard({ nome: 'Tempo Médio no Cargo', valorTexto: '3,2 anos' }),
+].join('')}</div>`;
 
-    if (error) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red);">Erro: ${error.message}</td></tr>`; return; }
-    if (!data?.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum funcionário cadastrado ainda.</td></tr>`; return; }
+// ---------- Timeline (Área Operacional) ----------
+const hoje = new Date().toISOString().slice(0,10);
+TimelineEngine(resultado.slots.operational, [
+  { id: '1', tipo: 'Treinamento', titulo: 'Turma NR-12 iniciada', data: hoje, hora: '08:00' },
+  { id: '2', tipo: 'Avaliação', titulo: 'Avaliação de desempenho — Ana Souza', data: hoje, hora: '14:00', autor: 'RH' },
+], { agrupamento: 'dia' });
 
-    tbody.innerHTML = data.map(f => `
-      <tr>
-        <td>${f.nome}</td>
-        <td>${f.departamentos?.nome ?? '—'}</td>
-        <td>${f.cargos?.nome ?? '—'}</td>
-        <td>${fmtData(f.data_admissao)}</td>
-        <td class="num mono">${f.salario != null ? fmt(f.salario) : '—'}</td>
-        <td><span class="badge ${BADGE_STATUS[f.status]}">${LABEL_STATUS[f.status]}</span></td>
-      </tr>`).join('');
-  }
+// ---------- Drawers (SYS-011) ----------
+function abrirDrilldownGenerico(titulo, texto) {
+  DetailDrawer({ titulo, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">${texto}</p><p style="color:var(--ink-faint); font-size:12px; margin-top:8px;">Estrutura de drill-down pronta — detalhamento real aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'headcount': 'Headcount Total', 'turnover': 'Turnover Mensal', 'absenteismo': 'Absenteísmo', 'treinamentos-mes': 'Treinamentos no Mês' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento (dado de exemplo)', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta pra este KPI — composição real aparece aqui quando ligada à consulta correspondente.</p>` });
+}
 
-  async function carregarCargosDeptos() {
-    document.getElementById('thead').innerHTML = `<tr><th>Departamento</th><th>Cargos vinculados</th><th style="text-align:right;">Ações</th></tr>`;
-    const tbody = document.getElementById('tbody');
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'RH', icone: 'users-round', href: 'dashboard.html' },
+    { label: 'Produção', icone: 'factory', href: '../producao/dashboard.html' },
+    { label: 'Qualidade', icone: 'badge-check', href: '../qualidade/dashboard.html' },
+    { label: 'Financeiro', icone: 'wallet', href: '../financeiro/dashboard.html' },
+  ],
+  acoes: [{ label: 'Abrir Funcionários', icone: 'users', onExecutar: () => { window.location.href = 'funcionarios.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
+});
 
-    if (!departamentosCache.length) { tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Nenhum departamento cadastrado ainda.</td></tr>`; return; }
-
-    tbody.innerHTML = departamentosCache.map(d => {
-      const cargosDoDepto = cargosCache.filter(c => c.departamento_id === d.id).map(c => c.nome).join(', ') || '—';
-      return `<tr><td>${d.nome}</td><td>${cargosDoDepto}</td><td></td></tr>`;
-    }).join('');
-  }
-
-  document.getElementById('btn-novo').addEventListener('click', () => {
-    document.getElementById('fn_departamento').innerHTML = '<option value="">Nenhum</option>' + departamentosCache.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
-    document.getElementById('fn_cargo').innerHTML = '<option value="">Nenhum</option>' + cargosCache.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-    ['fn_nome','fn_cpf','fn_salario','fn_email','fn_telefone'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fn_admissao').value = new Date().toISOString().slice(0,10);
-    document.getElementById('modal-func').classList.add('open');
-  });
-  document.getElementById('btn-cancelar-func').addEventListener('click', () => document.getElementById('modal-func').classList.remove('open'));
-
-  document.getElementById('btn-salvar-func').addEventListener('click', async () => {
-    const nome = document.getElementById('fn_nome').value.trim();
-    if (!nome) { alert('Preencha o nome.'); return; }
-
-    const { error } = await supabase.from('funcionarios').insert({
-      tenant_id: TENANT_ID, nome,
-      cpf: document.getElementById('fn_cpf').value.trim() || null,
-      departamento_id: document.getElementById('fn_departamento').value || null,
-      cargo_id: document.getElementById('fn_cargo').value || null,
-      data_admissao: document.getElementById('fn_admissao').value || null,
-      salario: document.getElementById('fn_salario').value ? Number(document.getElementById('fn_salario').value) : null,
-      email: document.getElementById('fn_email').value.trim() || null,
-      telefone: document.getElementById('fn_telefone').value.trim() || null,
-    });
-    if (error) { alert(error.code === '23505' ? 'Já existe um funcionário com esse CPF.' : 'Erro ao salvar: ' + error.message); return; }
-    document.getElementById('modal-func').classList.remove('open');
-    await carregar();
-  });
-
-  // ---------- Cargo/Departamento (modal compartilhado, muda de tipo) ----------
-  let tipoModalCargo = 'departamento';
-
-  function abrirModalCargo(tipo) {
-    tipoModalCargo = tipo;
-    document.getElementById('cargo-titulo').textContent = tipo === 'departamento' ? 'Novo Departamento' : 'Novo Cargo';
-    document.getElementById('campo-depto-do-cargo').style.display = tipo === 'cargo' ? 'block' : 'none';
-    document.getElementById('cg_nome').value = '';
-    if (tipo === 'cargo') document.getElementById('cg_departamento').innerHTML = departamentosCache.map(d => `<option value="${d.id}">${d.nome}</option>`).join('');
-    document.getElementById('modal-cargo').classList.add('open');
-  }
-  document.getElementById('btn-cancelar-cargo').addEventListener('click', () => document.getElementById('modal-cargo').classList.remove('open'));
-
-  document.getElementById('btn-salvar-cargo').addEventListener('click', async () => {
-    const nome = document.getElementById('cg_nome').value.trim();
-    if (!nome) { alert('Preencha o nome.'); return; }
-
-    const tabela = tipoModalCargo === 'departamento' ? 'departamentos' : 'cargos';
-    const payload = { tenant_id: TENANT_ID, nome };
-    if (tipoModalCargo === 'cargo') payload.departamento_id = document.getElementById('cg_departamento').value || null;
-
-    const { error } = await supabase.from(tabela).insert(payload);
-    if (error) { alert('Erro ao salvar: ' + error.message); return; }
-    document.getElementById('modal-cargo').classList.remove('open');
-    await carregar();
-  });
-
-  document.getElementById('btn-novo-depto').addEventListener('click', () => abrirModalCargo('departamento'));
-  document.getElementById('btn-novo-cargo').addEventListener('click', () => abrirModalCargo('cargo'));
-
-  await carregar();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
