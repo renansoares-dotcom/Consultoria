@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Estoque — Datativo Industrial</title>
+<title>Centro Inteligente de Estoque — Datativo Industrial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://qandcrcjecawcfsvqfhr.supabase.co">
@@ -11,7 +11,11 @@
   <link rel="preconnect" href="https://esm.sh">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../css/design-system.css">
+<link rel="stylesheet" href="../../css/dashboard-framework.css">
 <script src="https://unpkg.com/lucide@1.27.0" defer></script>
+<style>
+  #estoque-timeline { padding: 18px 24px; }
+</style>
 </head>
 <body>
 
@@ -23,9 +27,10 @@
     </div>
     <div class="sidebar-scroll">
       <nav class="sidebar-nav">
+        <a href="../decision-center.html" class="sidebar-link"><i data-lucide="sparkles"></i> Decision Center</a>
         <a href="../cadastro/dashboard.html" class="sidebar-link"><i data-lucide="database"></i> Cadastro</a>
         <a href="../compras/dashboard.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Compras</a>
-        <a href="../estoque/dashboard.html" class="sidebar-link active"><i data-lucide="package"></i> Estoque</a>
+        <a href="dashboard.html" class="sidebar-link active"><i data-lucide="package"></i> Estoque</a>
         <a href="../vendas/dashboard.html" class="sidebar-link"><i data-lucide="trending-up"></i> Comercial</a>
         <a href="../pcp/dashboard.html" class="sidebar-link"><i data-lucide="calendar-clock"></i> PCP</a>
         <a href="../producao/dashboard.html" class="sidebar-link"><i data-lucide="factory"></i> Produção</a>
@@ -52,70 +57,24 @@
   </div>
 </header>
 
-<main class="page">
-  <div class="page-header">
-    <div>
-      <span class="eyebrow">Estoque</span>
-      <h1>Produtos</h1>
-    </div>
-    <a href="produto-novo.html" class="btn primary"><i data-lucide="plus"></i> Novo Produto</a>
-  </div>
-
-  <div class="toolbar">
-    <input class="input" id="busca" placeholder="Buscar por código ou nome...">
-    <select class="input" id="f_tipo" style="max-width:190px;">
-      <option value="">Todos os tipos</option>
-      <option value="materia_prima">Matéria-Prima</option>
-      <option value="produto_acabado">Produto Acabado</option>
-      <option value="insumo">Insumo</option>
-    </select>
-    <span class="count-pill" id="contador">0 produtos</span>
-    <div class="spacer"></div>
-  </div>
-
-  <section class="card" style="padding:0; overflow:hidden;">
-    <table>
-      <thead>
-        <tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Unidade</th><th class="num">Saldo Atual</th><th class="num">Saldo Mínimo</th><th class="num">Ações</th></tr>
-      </thead>
-      <tbody id="tbody"><tr><td colspan="7" class="empty-state">Carregando…</td></tr></tbody>
-    </table>
-  </section>
-</main>
-  </div>
-</div>
-
-<!-- Modal: estrutura de produto (BOM) -->
-<div class="modal-overlay" id="modal-estrutura">
-  <div class="modal" style="max-width:640px;">
-    <h2>Estrutura de Produto</h2>
-    <div class="modal-sub" id="estrutura-produto-nome">—</div>
-
-    <div class="lista-selecao" id="lista-componentes" style="margin-bottom:18px;">
-      <div class="empty-state">Carregando…</div>
-    </div>
-
-    <div class="linha-flex">
-      <label class="field f-grow">
-        <span class="field-label">Componente (matéria-prima/insumo)</span>
-        <select class="input" id="ne_componente"></select>
-      </label>
-      <label class="field f-130">
-        <span class="field-label">Qtd. por unidade</span>
-        <input class="input mono" type="number" step="0.0001" min="0.0001" id="ne_quantidade">
-      </label>
-      <button class="btn primary" type="button" id="btn-add-componente"><i data-lucide="plus"></i></button>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn ghost" type="button" id="btn-fechar-estrutura">Fechar</button>
-    </div>
+<main class="page" id="est-main"></main>
   </div>
 </div>
 
 <script type="module">
 import { supabase, exigirSessao, usuarioAtual } from '../../js/supabase-client.js';
 import { initNav } from '../../js/nav.js';
+import {
+  WorkspaceLayout, GlobalSearch, CommandPalette, Charts, DataGrid,
+  TimelineEngine, DetailDrawer, KPIGrid, Score, AttentionCenter,
+  InsightGrid, DecisionCenter,
+} from '../../js/dtv-components.js';
+import {
+  calcularValorTotalEstoque, calcularViolacoesEstoqueMinimo, calcularViolacoesEstoqueMaximo,
+  calcularRuptura, calcularGiroEstoque, calcularCoberturaDias, calcularCurvaABC,
+  calcularProdutosParados, calcularTendenciaEstoque, calcularScore,
+} from '../../js/analytics-engine.js';
+import { buscarGlobalReal } from '../../js/dtv-search-provider.js';
 initNav();
 
 const sessao = await exigirSessao();
@@ -127,122 +86,177 @@ if (usuario) {
 document.getElementById('user-chip').addEventListener('click', async () => {
   if (confirm('Sair do sistema?')) { await supabase.auth.signOut(); window.location.href = '../../index.html'; }
 });
-const TENANT_ID = usuario?.tenant_id;
 
-const ROTULO_TIPO = { materia_prima: 'Matéria-Prima', produto_acabado: 'Produto Acabado', insumo: 'Insumo' };
-let registros = [];
+const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+const DIAS_PERIODO = 30;
 
-async function carregar() {
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Carregando…</td></tr>`;
-  const { data, error } = await supabase.from('produtos').select('*').order('codigo');
-  if (error) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state" style="color:var(--red)">Erro: ${error.message}</td></tr>`; return; }
-  registros = data || [];
-  desenhar();
-}
+// ============================================================================
+// SPRINT 004 — Estoque Enterprise. TODO indicador abaixo é cálculo REAL do
+// Analytics Engine (js/analytics-engine.js), não dado de exemplo — mesmo
+// princípio do Financeiro (Sprint 003). Dado real do tenant hoje é esparso
+// (1 produto de teste cadastrado) — os números vão refletir isso
+// honestamente, não é bug se aparecer quase tudo zerado.
+//
+// "Acuracidade" fica de fora — não existe tabela de inventário/contagem
+// física no banco (confirmado por auditoria), arquitetura reservada.
+// ============================================================================
 
-function desenhar() {
-  const busca = document.getElementById('busca').value.trim().toLowerCase();
-  const tipo = document.getElementById('f_tipo').value;
-  let filtrados = registros;
-  if (tipo) filtrados = filtrados.filter(r => r.tipo === tipo);
-  if (busca) filtrados = filtrados.filter(r => JSON.stringify(r).toLowerCase().includes(busca));
-
-  document.getElementById('contador').textContent = `${filtrados.length} produto${filtrados.length===1?'':'s'}`;
-  if (!filtrados.length) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7" class="empty-state">Nenhum produto encontrado.</td></tr>`; return; }
-
-  document.getElementById('tbody').innerHTML = filtrados.map(r => `
-    <tr>
-      <td class="mono">${r.codigo}</td>
-      <td>${r.nome}${!r.ativo ? ' <span class="badge inadimplente">Inativo</span>' : ''}</td>
-      <td>${ROTULO_TIPO[r.tipo] ?? r.tipo}</td>
-      <td>${r.unidade_medida}</td>
-      <td class="num mono ${r.saldo_minimo != null && Number(r.saldo_atual) < Number(r.saldo_minimo) ? 'valor negativo' : ''}">${Number(r.saldo_atual).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-      <td class="num mono">${r.saldo_minimo != null ? Number(r.saldo_minimo).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'}</td>
-      <td class="num"><a class="icon-btn" href="produto-novo.html?id=${r.id}">Editar</a>${r.tipo === 'produto_acabado' ? ` <button class="icon-btn" data-estrutura="${r.id}" data-nome="${r.nome.replace(/"/g,'&quot;')}"><i data-lucide="list-tree"></i> Estrutura</button>` : ''}</td>
-    </tr>`).join('');
-
-  if (window.lucide) lucide.createIcons();
-}
-
-document.getElementById('busca').addEventListener('input', desenhar);
-document.getElementById('f_tipo').addEventListener('change', desenhar);
-document.getElementById('tbody').addEventListener('click', e => {
-  const btnEstrutura = e.target.closest('[data-estrutura]');
-  if (btnEstrutura) abrirEstrutura(btnEstrutura.dataset.estrutura, btnEstrutura.dataset.nome);
+const resultado = WorkspaceLayout('est-main', {
+  header: {
+    titulo: 'Centro Inteligente de Estoque',
+    breadcrumb: 'Estoque',
+    buscaGlobal: true,
+    buscaPlaceholder: 'Buscar produtos...',
+    acoesRapidas: [{ label: 'Catálogo de Produtos', icone: 'list', href: 'catalogo.html' }, { label: 'Novo Produto', icone: 'plus', href: 'produto-novo.html', primario: true }],
+  },
+  attentionCenter: { titulo: 'Central de Atenção', alertas: [] }, // populado abaixo com dado real
+  healthScore: { nome: 'Inventory Score', tituloSecao: 'Saúde do Estoque', nota: 0, subMetricas: [] }, // populado abaixo
+  kpis: {
+    itens: [
+      { id: 'valor-total', nome: 'Valor Total em Estoque', icone: 'wallet', tom: 'tom-verde', valorTexto: 'R$ 0,00', clicavel: true },
+      { id: 'ruptura', nome: 'Produtos em Ruptura', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: '0', clicavel: true },
+      { id: 'giro', nome: 'Giro de Estoque (30d)', icone: 'refresh-cw', tom: 'tom-azul', valorTexto: '0,00x', clicavel: true },
+      { id: 'parados', nome: 'Produtos Parados (30d)', icone: 'pause-circle', tom: 'tom-ambar', valorTexto: '0', clicavel: true },
+    ],
+    onClickKpi: (id) => abrirDetalheKPI(id),
+  },
+  insights: { titulo: 'Insights de Estoque', itens: [] }, // populado abaixo
+  decisionCenter: { recomendacoes: [] }, // populado abaixo
+  analyticsArea: {
+    slots: [
+      { chave: 'abc', id: 'est-slot-abc', titulo: 'Curva ABC (por valor)' },
+      { chave: 'limites', id: 'est-slot-limites', titulo: 'Estoque Mínimo / Máximo' },
+      { chave: 'timeline', id: 'est-slot-timeline-analytics', titulo: 'Timeline de Movimentações', linha: 'secundaria' },
+    ],
+  },
+  operationalArea: { titulo: 'Produtos', id: 'est-produtos-tabela' },
 });
 
-// ---------- Estrutura de Produto (BOM) ----------
-const modalEstrutura = document.getElementById('modal-estrutura');
-const listaComponentes = document.getElementById('lista-componentes');
-const selComponente = document.getElementById('ne_componente');
-let produtoEmEstrutura = null;
+let produtosCache = [], movimentacoesCache = [];
 
-async function abrirEstrutura(produtoId, nome) {
-  produtoEmEstrutura = produtoId;
-  document.getElementById('estrutura-produto-nome').textContent = nome;
-
-  // Componentes disponíveis: matéria-prima ou insumo, ativos, exceto o próprio produto
-  const candidatosComponente = registros.filter(r => (r.tipo === 'materia_prima' || r.tipo === 'insumo') && r.ativo);
-  selComponente.innerHTML = candidatosComponente.map(r => `<option value="${r.id}" data-unidade="${r.unidade_medida}">${r.codigo} — ${r.nome}</option>`).join('');
-
-  modalEstrutura.classList.add('open');
-  await carregarComponentes();
+async function carregarDadosEstoque() {
+  const [{ data: produtos }, { data: movimentacoes }] = await Promise.all([
+    supabase.from('produtos').select('id, nome, codigo, saldo_atual, saldo_minimo, estoque_maximo, custo_medio, saldo_reservado, gera_estoque').eq('ativo', true),
+    supabase.from('estoque_movimentacoes').select('produto_id, tipo, quantidade, origem, data')
+      .gte('data', new Date(Date.now() - DIAS_PERIODO * 86400000).toISOString().slice(0,10)),
+  ]);
+  produtosCache = produtos || [];
+  movimentacoesCache = movimentacoes || [];
 }
 
-async function carregarComponentes() {
-  listaComponentes.innerHTML = `<div class="empty-state">Carregando…</div>`;
-  const { data, error } = await supabase
-    .from('estrutura_produto_itens')
-    .select('id, quantidade_por_unidade, produtos:componente_id(codigo, nome, unidade_medida)')
-    .eq('produto_id', produtoEmEstrutura)
-    .order('criado_em');
+function renderTudo() {
+  const produtosComEstoque = produtosCache.filter(p => p.gera_estoque !== false);
 
-  if (error) { listaComponentes.innerHTML = `<div class="empty-state" style="color:var(--red);">Erro: ${error.message}</div>`; return; }
-  if (!data?.length) { listaComponentes.innerHTML = `<div class="empty-state">Nenhum componente cadastrado ainda.</div>`; return; }
+  // KPIs
+  const valorTotal = calcularValorTotalEstoque(produtosCache);
+  const ruptura = calcularRuptura(produtosCache);
+  const giro = calcularGiroEstoque(produtosCache, movimentacoesCache);
+  const parados = calcularProdutosParados(produtosCache, movimentacoesCache, DIAS_PERIODO);
+  KPIGrid('wl-kpis', [
+    { id: 'valor-total', nome: 'Valor Total em Estoque', icone: 'wallet', tom: 'tom-verde', valorTexto: fmt(valorTotal), clicavel: true },
+    { id: 'ruptura', nome: 'Produtos em Ruptura', icone: 'alert-triangle', tom: 'tom-vermelho', valorTexto: String(ruptura.length), clicavel: true },
+    { id: 'giro', nome: 'Giro de Estoque (30d)', icone: 'refresh-cw', tom: 'tom-azul', valorTexto: giro.toFixed(2) + 'x', clicavel: true },
+    { id: 'parados', nome: 'Produtos Parados (30d)', icone: 'pause-circle', tom: 'tom-ambar', valorTexto: String(parados.length), clicavel: true },
+  ], (id) => abrirDetalheKPI(id));
 
-  listaComponentes.innerHTML = data.map(item => `
-    <div class="lista-selecao-linha">
-      <div class="col-desc">${item.produtos?.codigo ?? ''} — ${item.produtos?.nome ?? '(produto removido)'}</div>
-      <div class="col-valor mono">${Number(item.quantidade_por_unidade).toLocaleString('pt-BR', {minimumFractionDigits:4})} ${item.produtos?.unidade_medida ?? ''}</div>
-      <button class="icon-btn danger" data-remover="${item.id}" style="margin-left:8px;"><i data-lucide="trash-2"></i></button>
-    </div>`).join('');
+  // Health Score — Inventory Score real, 4 fatores
+  const violMin = calcularViolacoesEstoqueMinimo(produtosCache);
+  const violMax = calcularViolacoesEstoqueMaximo(produtosCache);
+  const totalComEstoque = Math.max(produtosComEstoque.length, 1);
+  const fatores = [
+    { nome: 'Disponibilidade (sem ruptura)', valor: Math.round((1 - ruptura.length / totalComEstoque) * 100), peso: 0.35 },
+    { nome: 'Dentro do estoque mínimo', valor: Math.round((1 - violMin.length / totalComEstoque) * 100), peso: 0.25 },
+    { nome: 'Dentro do estoque máximo', valor: Math.round((1 - violMax.length / totalComEstoque) * 100), peso: 0.2 },
+    { nome: 'Giro saudável', valor: Math.min(100, Math.round(giro * 100)), peso: 0.2 },
+  ];
+  Score('wl-healthscore', { nome: 'Inventory Score', tituloSecao: 'Saúde do Estoque', nota: calcularScore(fatores), subMetricas: fatores.map(f => ({ nome: f.nome, valorTexto: f.valor + '%' })) });
 
-  if (window.lucide) lucide.createIcons();
-}
+  // Central de Atenção — real, a partir de ruptura/violações
+  const alertas = [];
+  if (ruptura.length) alertas.push({ tipo: 'Ruptura', prioridade: 'alta', icone: 'alert-triangle', mensagem: `${ruptura.length} produto(s) com saldo zerado.`, acaoSugerida: 'Ver produtos em ruptura', link: '#' });
+  if (violMin.length) alertas.push({ tipo: 'Estoque Mínimo', prioridade: 'media', icone: 'trending-down', mensagem: `${violMin.length} produto(s) abaixo do estoque mínimo.`, acaoSugerida: 'Ver produtos', link: '#' });
+  if (violMax.length) alertas.push({ tipo: 'Estoque Máximo', prioridade: 'baixa', icone: 'trending-up', mensagem: `${violMax.length} produto(s) acima do estoque máximo.`, acaoSugerida: 'Ver produtos', link: '#' });
+  AttentionCenter('wl-attention', alertas);
 
-document.getElementById('btn-add-componente').addEventListener('click', async () => {
-  const componenteId = selComponente.value;
-  const quantidade = parseFloat(document.getElementById('ne_quantidade').value);
-  if (!componenteId) { alert('Selecione um componente.'); return; }
-  if (!quantidade || quantidade <= 0) { alert('Informe uma quantidade maior que zero.'); return; }
+  // Insights — reais
+  const insights = [];
+  if (parados.length) insights.push({ categoria: 'Produtos Parados', texto: `${parados.length} produto(s) sem nenhuma saída nos últimos ${DIAS_PERIODO} dias`, origem: 'Regra', grauConfianca: 90 });
+  const abc = calcularCurvaABC(produtosCache);
+  if (abc.A.length) insights.push({ categoria: 'Curva ABC', texto: `${abc.A.length} produto(s) concentram 80% do valor total em estoque (classe A)`, origem: 'Regra', grauConfianca: 92 });
+  InsightGrid('wl-insights', insights);
 
-  const { error } = await supabase.from('estrutura_produto_itens').insert({
-    tenant_id: TENANT_ID,
-    produto_id: produtoEmEstrutura,
-    componente_id: componenteId,
-    quantidade_por_unidade: quantidade,
-    criado_por: usuario?.id,
+  // Centro de Decisão — recomendações reais
+  const recomendacoes = [];
+  if (ruptura.length) recomendacoes.push({ titulo: 'Repor produtos em ruptura', descricao: `${ruptura.length} produto(s) com saldo zerado — risco de parada de atendimento.`, origem: 'Estoque', impactoTexto: 'Risco de parada', urgencia: 'alta', confianca: 95, acaoSugerida: 'Ver produtos em ruptura' });
+  if (parados.length) recomendacoes.push({ titulo: 'Revisar produtos parados', descricao: `${parados.length} produto(s) sem movimentação em ${DIAS_PERIODO} dias — capital parado.`, origem: 'Estoque', impactoTexto: 'Capital de giro', urgencia: 'baixa', confianca: 80, acaoSugerida: 'Ver produtos parados' });
+  DecisionCenter('wl-decisions', recomendacoes);
+
+  // Curva ABC (donut)
+  const coresABC = { A: '#1f7a5c', B: '#b76e11', C: '#94a3b8' };
+  const segmentosABC = ['A','B','C'].map(classe => ({
+    nome: `Classe ${classe} (${abc[classe].length} produtos)`,
+    valor: abc[classe].reduce((s,x) => s + x.valor, 0),
+    cor: coresABC[classe],
+  }));
+  Charts.donut('est-slot-abc', segmentosABC, 'Valor Total', fmt(valorTotal).replace('R$ ',''));
+
+  // Estoque Mínimo/Máximo (bar-list de violações)
+  const violacoes = [
+    ...violMin.map(p => ({ nome: p.nome, valor: Number(p.saldo_minimo) - Number(p.saldo_atual), onClick: () => abrirDetalheProduto(p) })),
+    ...violMax.map(p => ({ nome: p.nome, valor: Number(p.saldo_atual) - Number(p.estoque_maximo), onClick: () => abrirDetalheProduto(p) })),
+  ].sort((a,b) => b.valor - a.valor).slice(0, 8);
+  Charts.barList('est-slot-limites', violacoes);
+
+  // Timeline de Movimentações
+  const eventosTimeline = movimentacoesCache.slice(0, 30).map((m, i) => {
+    const p = produtosCache.find(x => x.id === m.produto_id);
+    return { id: String(i), tipo: m.tipo === 'entrada' ? 'Entrada' : 'Saída', titulo: `${m.tipo === 'entrada' ? 'Entrada' : 'Saída'} — ${p?.nome || 'Produto'}`, descricao: `Origem: ${m.origem || '—'}`, data: m.data, valorTexto: `${m.tipo === 'entrada' ? '+' : '-'}${m.quantidade}` };
   });
-  if (error) {
-    alert(error.code === '23505' ? 'Esse componente já está na estrutura deste produto.' : 'Erro ao adicionar: ' + error.message);
-    return;
-  }
-  document.getElementById('ne_quantidade').value = '';
-  await carregarComponentes();
+  TimelineEngine(resultado.slots.timeline, eventosTimeline, { agrupamento: 'dia' });
+
+  // Tabela de Produtos (Área Operacional)
+  DataGrid(resultado.slots.operational,
+    [{ titulo: 'Produto' }, { titulo: 'Saldo Atual', alinhamento: 'num' }, { titulo: 'Mínimo', alinhamento: 'num' }, { titulo: 'Máximo', alinhamento: 'num' }, { titulo: 'Reservado', alinhamento: 'num' }, { titulo: 'Status' }],
+    produtosComEstoque.map(p => {
+      const abaixo = Number(p.saldo_minimo || 0) > 0 && Number(p.saldo_atual || 0) < Number(p.saldo_minimo);
+      const acima = Number(p.estoque_maximo || 0) > 0 && Number(p.saldo_atual || 0) > Number(p.estoque_maximo);
+      const zerado = Number(p.saldo_atual || 0) <= 0;
+      const status = zerado ? '<span class="badge negativo">Ruptura</span>' : abaixo ? '<span class="badge parcial">Abaixo do mínimo</span>' : acima ? '<span class="badge aberto">Acima do máximo</span>' : '<span class="badge pago">Normal</span>';
+      return { celulas: [p.nome, String(p.saldo_atual ?? 0), String(p.saldo_minimo ?? '—'), String(p.estoque_maximo ?? '—'), String(p.saldo_reservado ?? 0), status], onClick: () => abrirDetalheProduto(p) };
+    })
+  );
+}
+
+function abrirDetalheProduto(p) {
+  DetailDrawer({ titulo: p.nome, subtitulo: 'Detalhamento do produto', corpo: `
+    <p style="color:var(--ink-soft); font-size:13px;">Saldo atual: <b style="color:var(--ink);">${p.saldo_atual ?? 0}</b></p>
+    <p style="color:var(--ink-soft); font-size:13px; margin-top:6px;">Estoque mínimo: ${p.saldo_minimo ?? '—'} · Estoque máximo: ${p.estoque_maximo ?? '—'}</p>
+    <p style="color:var(--ink-soft); font-size:13px; margin-top:6px;">Reservado: ${p.saldo_reservado ?? 0} · Custo médio: ${p.custo_medio != null ? fmt(p.custo_medio) : '—'}</p>` });
+}
+function abrirDetalheKPI(id) {
+  const nomes = { 'valor-total': 'Valor Total em Estoque', 'ruptura': 'Produtos em Ruptura', 'giro': 'Giro de Estoque', 'parados': 'Produtos Parados' };
+  DetailDrawer({ titulo: nomes[id] || id, subtitulo: 'Detalhamento', corpo: `<p style="color:var(--ink-soft); font-size:13px;">Estrutura de drawer pronta — detalhamento por produto aparece aqui quando ligado à consulta correspondente.</p>` });
+}
+
+await carregarDadosEstoque();
+renderTudo();
+
+// ---------- Pesquisa Global + Command Palette ----------
+GlobalSearch('wl-header-busca', 'wl-header-busca-dropdown', (termo) => buscarGlobalReal(supabase, termo));
+CommandPalette({
+  telas: [
+    { label: 'Minha Manhã', icone: 'sunrise', href: '../minha-manha.html' },
+    { label: 'Decision Center', icone: 'sparkles', href: '../decision-center.html' },
+    { label: 'Estoque', icone: 'package', href: 'dashboard.html' },
+    { label: 'Compras', icone: 'shopping-cart', href: '../compras/dashboard.html' },
+    { label: 'Produção', icone: 'factory', href: '../producao/dashboard.html' },
+    { label: 'PCP', icone: 'calendar-clock', href: '../pcp/dashboard.html' },
+  ],
+  acoes: [{ label: 'Novo Produto', icone: 'plus', onExecutar: () => { window.location.href = 'produto-novo.html'; } }],
+  buscarEntidades: (termo) => buscarGlobalReal(supabase, termo),
 });
 
-listaComponentes.addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-remover]');
-  if (!btn) return;
-  if (!confirm('Remover este componente da estrutura?')) return;
-  await supabase.from('estrutura_produto_itens').delete().eq('id', btn.dataset.remover);
-  await carregarComponentes();
-});
-
-document.getElementById('btn-fechar-estrutura').addEventListener('click', () => modalEstrutura.classList.remove('open'));
-modalEstrutura.addEventListener('click', e => { if (e.target === modalEstrutura) modalEstrutura.classList.remove('open'); });
-
-await carregar();
+if (window.lucide) lucide.createIcons();
 </script>
 </body>
 </html>
